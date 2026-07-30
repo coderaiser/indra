@@ -1,0 +1,6 @@
+version: 2
+builds:
+  - main: ./cmd/indra
+    binary: indra
+archives:
+  - format: binary

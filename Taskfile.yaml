@@ -1,0 +1,50 @@
+version: "3"
+tasks:
+  test:
+    desc: Run all unit tests
+    cmds:
+      - go test coderaiser/indra
+      - go test ./cmd/lint/
+  indra:
+    desc: |
+      Run tests with indra scoped to the library package only.
+      run.go (CLI glue) is intentionally excluded.
+    cmds:
+      - go test -coverprofile=indra.out -covermode=atomic coderaiser/indra > /dev/null
+      - go tool cover -func=indra.out | grep 'indra\.go'
+      - indra
+  build:
+    desc: Build the binary for the current platform
+    cmds:
+      - go build -o indra ./cmd/indra
+  release:snapshot:
+    desc: |
+      Dry-run GoReleaser locally — builds all platform binaries into ./dist
+      without publishing. Requires goreleaser to be installed (brew install goreleaser).
+    cmds:
+      - goreleaser release --snapshot --clean
+  release:check:
+    desc: Validate .goreleaser.yaml without building
+    cmds:
+      - goreleaser check
+  lint:
+    desc: Run go vet
+    cmds:
+      - go run ./cmd/lint ./...
+      - golangci-lint run
+  fix:lint:
+    desc: Run fix lint
+    cmds:
+      - go run ./cmd/lint --fix ./...
+      - golangci-lint run --fix
+  clean:
+    desc: Remove build artefacts
+    cmds:
+      - rm -f indra indra.out indra.html
+      - rm -rf dist
+  run:
+    desc: |
+      Run indra against a indra profile.
+      Usage: task run -- -f myproject.out --code-frame
+    cmds:
+      - go run ./cmd/indra {{.CLI_ARGS}}

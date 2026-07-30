@@ -1,0 +1,11 @@
+*.swp
+*.log
+*.lock
+
+.idea
+.DS_Store
+
+indra.out
+indra.html
+
+indra
