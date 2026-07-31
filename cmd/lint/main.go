@@ -27,9 +27,9 @@ func main() {
 
 	var failed bool
 	if fix {
-		failed = lint.Fix(files)
+		failed = lint.Fix(files, os.Stderr)
 	} else {
-		failed = lint.Run(files)
+		failed = lint.Run(files, os.Stderr)
 	}
 
 	if failed {

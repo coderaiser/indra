@@ -7,21 +7,22 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
+	"io"
 	"os"
 
 	"coderaiser/indra/internal/lint/rule"
 	"coderaiser/indra/internal/lint/rules"
 )
 
-func Run(files []string) bool {
-	return run(files, false)
+func Run(files []string, w io.Writer) bool {
+	return run(files, w, false, os.WriteFile)
 }
 
-func Fix(files []string) bool {
-	return run(files, true)
+func Fix(files []string, w io.Writer) bool {
+	return run(files, w, true, os.WriteFile)
 }
 
-func run(files []string, fix bool) bool {
+func run(files []string, w io.Writer, fix bool, writeFile func(string, []byte, os.FileMode) error) bool {
 	failed := false
 
 	for _, filename := range files {
@@ -36,7 +37,7 @@ func run(files []string, fix bool) bool {
 
 		if err != nil {
 			fmt.Fprintf(
-				os.Stderr,
+				w,
 				"file://%s: %v\n",
 				filename,
 				err,
@@ -63,7 +64,7 @@ func run(files []string, fix bool) bool {
 				failed = true
 
 				fmt.Fprintf(
-					os.Stderr,
+					w,
 					"file://%s:%d:%d: %s\n",
 					result.Pos.Filename,
 					result.Pos.Line,
@@ -74,8 +75,8 @@ func run(files []string, fix bool) bool {
 		}
 
 		if modified {
-			if err := writeFormatted(filename, file, fset); err != nil {
-				fmt.Fprintf(os.Stderr, "file://%s: fix: %v\n", filename, err)
+			if err := writeFormatted(filename, file, fset, writeFile); err != nil {
+				fmt.Fprintf(w, "file://%s: fix: %v\n", filename, err)
 			}
 		}
 	}
@@ -83,10 +84,9 @@ func run(files []string, fix bool) bool {
 	return failed
 }
 
-func writeFormatted(filename string, file *ast.File, fset *token.FileSet) error {
+func writeFormatted(filename string, file *ast.File, fset *token.FileSet, writeFile func(string, []byte, os.FileMode) error) error {
 	var buf bytes.Buffer
-	if err := format.Node(&buf, fset, file); err != nil {
-		return err
-	}
-	return os.WriteFile(filename, buf.Bytes(), 0644)
+	format.Node(&buf, fset, file)
+	return writeFile(filename, buf.Bytes(), 0644)
 }
+
