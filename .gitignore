@@ -1,11 +1,11 @@
 *.swp
 *.log
 *.lock
+*.out
+*.html
 
 .idea
 .DS_Store
 
-*.out
-*.html
-
 indra
+coverage
