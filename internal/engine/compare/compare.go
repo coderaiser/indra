@@ -80,16 +80,6 @@ func matchNode(pat ast.Node, real ast.Node, vars Vars) bool {
 		return true
 	}
 
-	// __args hole inside a CallExpr arg list captures the full arg slice.
-	if call, ok := pat.(*ast.CallExpr); ok && len(call.Args) == 1 {
-		if ident, ok := call.Args[0].(*ast.Ident); ok && ident.Name == "__args" {
-			if realCall, ok := real.(*ast.CallExpr); ok {
-				vars["__args"] = ArgSlice{Args: realCall.Args}
-				return true
-			}
-		}
-	}
-
 	// named hole __name: bind any node, enforce linked equality on repeat.
 	if ident, ok := pat.(*ast.Ident); ok && strings.HasPrefix(ident.Name, "__") && ident.Name != "__" {
 		// __array only matches a CompositeLit whose type is an ArrayType.
@@ -217,11 +207,18 @@ func matchField(name string, pf, rf reflect.Value, vars Vars) bool {
 
 // matchSliceLike matches a slice field, handling the __args hole.
 func matchSliceLike(pf, rf reflect.Value, vars Vars) bool {
-	// A slice containing only a __args hole already captured its content.
+	// A slice containing only a __args hole captures the whole real slice.
 	if pf.Len() == 1 {
 		expr, ok := pf.Index(0).Interface().(ast.Expr)
 		if ok {
 			if ident, ok := expr.(*ast.Ident); ok && ident.Name == "__args" {
+				var args []ast.Expr
+				for i := 0; i < rf.Len(); i++ {
+					if e, ok := rf.Index(i).Interface().(ast.Expr); ok {
+						args = append(args, e)
+					}
+				}
+				vars["__args"] = ArgSlice{Args: args}
 				return true
 			}
 		}
