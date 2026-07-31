@@ -19,14 +19,10 @@ func filterFlags(args []string) []string {
 	return files
 }
 
-func RunLint(args []string, w io.Writer) error {
+func Indra(args []string, w io.Writer) error {
 	for _, arg := range args {
 		if arg == "--version" || arg == "-v" {
 			fmt.Fprintln(w, VersionLine())
-			return nil
-		}
-		if arg == "--help" || arg == "-h" {
-			fmt.Fprint(w, Help())
 			return nil
 		}
 	}

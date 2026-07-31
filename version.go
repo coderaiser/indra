@@ -3,9 +3,10 @@ package indra
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 )
 
-// Version returns the version string embedded from package.json at build time.
+// VersionFromJSON returns the version string from package.json bytes.
 func VersionFromJSON(packageJSONBytes []byte) string {
 	var pkg struct {
 		Version string `json:"version"`
@@ -19,8 +20,13 @@ func VersionFromJSON(packageJSONBytes []byte) string {
 	return pkg.Version
 }
 
+// Version reads the version from package.json at runtime.
 func Version() string {
-	return VersionFromJSON(packageJSONBytes)
+	data, err := os.ReadFile("package.json")
+	if err != nil {
+		return "unknown"
+	}
+	return VersionFromJSON(data)
 }
 
 // VersionLine returns "indra x.y.z" for -v output.

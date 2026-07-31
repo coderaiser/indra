@@ -37,7 +37,9 @@ jobs:
       - name: Build
         run: redrun build
       - name: Coverage
-        run: redrun indra
+        run: |
+          go test -coverprofile=c.out ./...
+          go tool cover -func=c.out
       - name: Coveralls
         continue-on-error: true
         uses: coverallsapp/github-action@v2
