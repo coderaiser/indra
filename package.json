@@ -1,8 +1,8 @@
 {
   "name": "indra",
   "private": true,
-  "version": "1.1.0",
-  "description": "CLI tool that reads a Go `indra.out` profile and prints indra blocks. Optionally shows a code frame (source lines) around each indra block.",
+  "version": "1.0.0",
+  "description": "Go linter done right",
   "main": "index.js",
   "scripts": {
     "test": "task test",
