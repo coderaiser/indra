@@ -7,10 +7,9 @@ import (
 
 	"coderaiser/indra/internal/engine"
 	indratest "coderaiser/indra/internal/test"
-	tape "github.com/coderaiser/go-tape"
 )
 
-// ── fixtures written inline ──────────────────────────────────────────────────
+// ── fixture sources ──────────────────────────────────────────────────────────
 
 const matchSrc = `package fixture
 
@@ -31,14 +30,14 @@ func f() {
 }
 `
 
+// replacedSrc matches go/format output produced by the engine for replaceSrc.
 const replacedSrc = `package fixture
 
 func f() {
 	t.DeepEqual(a, b)
+
 }
 `
-
-const badSrc = "package p\nfunc (\n"
 
 // ── helper plugins ───────────────────────────────────────────────────────────
 
@@ -65,7 +64,7 @@ func replacePlugin() engine.Plugin {
 	}
 }
 
-// ── dir helpers ──────────────────────────────────────────────────────────────
+// ── dir helper ───────────────────────────────────────────────────────────────
 
 func writeDir(t *testing.T, files map[string]string) string {
 	t.Helper()
@@ -78,7 +77,7 @@ func writeDir(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-// ── normal happy-path tests (using tape) ─────────────────────────────────────
+// ── happy-path tests ─────────────────────────────────────────────────────────
 
 func TestReport(t *testing.T) {
 	dir := writeDir(t, map[string]string{"match.go": matchSrc})
@@ -106,6 +105,33 @@ func TestTransform(t *testing.T) {
 	Test := indratest.CreateTest(replacePlugin(), dir)
 	Test(t, "test: Transform matches fix fixture", func(t *indratest.T) {
 		t.Transform("replace")
+		t.End()
+	})
+}
+
+func TestTransformUpdate(t *testing.T) {
+	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
+	t.Setenv("UPDATE", "1")
+	Test := indratest.CreateTest(replacePlugin(), dir)
+	Test(t, "test: Transform UPDATE=1 writes fix fixture", func(t *indratest.T) {
+		t.Transform("replace")
+		t.End()
+	})
+	data, err := os.ReadFile(filepath.Join(dir, "replace-fix.go"))
+	if err != nil {
+		t.Fatalf("expected fix file to be written: %v", err)
+	}
+	if string(data) != replacedSrc {
+		t.Fatalf("fix file content wrong:\ngot:  %q\nwant: %q", data, replacedSrc)
+	}
+}
+
+func TestNoTransform(t *testing.T) {
+	// report-only plugin → no rewrite → src must be unchanged
+	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
+	Test := indratest.CreateTest(reportPlugin(), dir)
+	Test(t, "test: NoTransform unchanged fixture", func(t *indratest.T) {
+		t.NoTransform("replace")
 		t.End()
 	})
 }

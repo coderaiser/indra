@@ -14,11 +14,12 @@ type T struct {
 	*tape.T
 	plugin engine.Plugin
 	dir    string
+	fatal  func(format string, args ...any)
 }
 
 // New constructs a T for direct use in error-path tests.
 func New(tt *tape.T, plugin engine.Plugin, dir string) *T {
-	return &T{T: tt, plugin: plugin, dir: dir}
+	return &T{T: tt, plugin: plugin, dir: dir, fatal: tt.TB().Fatalf}
 }
 
 // Report asserts the plugin emits exactly ≥1 place whose first Message equals
@@ -28,10 +29,12 @@ func (t *T) Report(name, message string) {
 	src := t.read(name)
 	_, places, err := engine.Indra(src, []engine.Plugin{t.plugin}, false)
 	if err != nil {
-		t.TB().Fatalf("Report(%q): parse error: %v", name, err)
+		t.fatal("Report(%q): parse error: %v", name, err)
+		return
 	}
 	if len(places) == 0 {
-		t.TB().Fatalf("Report(%q): expected at least one place, got none", name)
+		t.fatal("Report(%q): expected at least one place, got none", name)
+		return
 	}
 	t.Equal(places[0].Message, message)
 }
@@ -42,10 +45,12 @@ func (t *T) NoReport(name string) {
 	src := t.read(name)
 	_, places, err := engine.Indra(src, []engine.Plugin{t.plugin}, false)
 	if err != nil {
-		t.TB().Fatalf("NoReport(%q): parse error: %v", name, err)
+		t.fatal("NoReport(%q): parse error: %v", name, err)
+		return
 	}
 	if len(places) != 0 {
-		t.TB().Fatalf("NoReport(%q): expected no places, got %d", name, len(places))
+		t.fatal("NoReport(%q): expected no places, got %d", name, len(places))
+		return
 	}
 	t.Pass("no report")
 }
@@ -58,12 +63,14 @@ func (t *T) Transform(name string) {
 	src := t.read(name)
 	got, _, err := engine.Indra(src, []engine.Plugin{t.plugin}, true)
 	if err != nil {
-		t.TB().Fatalf("Transform(%q): parse error: %v", name, err)
+		t.fatal("Transform(%q): parse error: %v", name, err)
+		return
 	}
 	fixPath := filepath.Join(t.dir, name+"-fix.go")
 	if os.Getenv("UPDATE") == "1" {
 		if werr := os.WriteFile(fixPath, got, 0644); werr != nil {
-			t.TB().Fatalf("Transform(%q): write fixture: %v", name, werr)
+			t.fatal("Transform(%q): write fixture: %v", name, werr)
+			return
 		}
 		t.Pass("fixture updated")
 		return
@@ -78,7 +85,8 @@ func (t *T) NoTransform(name string) {
 	src := t.read(name)
 	got, _, err := engine.Indra(src, []engine.Plugin{t.plugin}, true)
 	if err != nil {
-		t.TB().Fatalf("NoTransform(%q): parse error: %v", name, err)
+		t.fatal("NoTransform(%q): parse error: %v", name, err)
+		return
 	}
 	t.Equal(string(got), string(src))
 }
@@ -87,7 +95,8 @@ func (t *T) read(name string) []byte {
 	t.TB().Helper()
 	data, err := os.ReadFile(filepath.Join(t.dir, name+".go"))
 	if err != nil {
-		t.TB().Fatalf("read fixture %q: %v", name, err)
+		t.fatal("read fixture %q: %v", name, err)
+		return nil
 	}
 	return data
 }
@@ -97,7 +106,7 @@ func (t *T) read(name string) []byte {
 func CreateTest(plugin engine.Plugin, dir string) func(*testing.T, string, func(*T)) {
 	return func(t *testing.T, name string, fn func(*T)) {
 		tape.Test(t, name, func(tt *tape.T) {
-			fn(&T{T: tt, plugin: plugin, dir: dir})
+			fn(New(tt, plugin, dir))
 		})
 	}
 }
