@@ -64,6 +64,18 @@ func Indra(src []byte, plugins []Plugin, fix bool) ([]byte, []Place, error) {
 					pl.Rule = p.Name
 					places = append(places, pl)
 				}
+			case "*ast.BlockStmt":
+				ast.Inspect(file, func(n ast.Node) bool {
+					block, ok := n.(*ast.BlockStmt)
+					if !ok {
+						return true
+					}
+					for _, pl := range visitor(block, Vars{}) {
+						pl.Rule = p.Name
+						places = append(places, pl)
+					}
+					return true
+				})
 			}
 		}
 	}

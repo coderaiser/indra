@@ -153,3 +153,34 @@ func TestSubstituteHelpers(t *testing.T) {
 		t.Fatal("printNode(nil) should be empty")
 	}
 }
+
+func TestTraverseBlockStmt(t *testing.T) {
+	p := Plugin{
+		Name:   "block-visitor",
+		Report: func() string { return "block issue" },
+		Traverse: func() map[string]TraverseVisitor {
+			return map[string]TraverseVisitor{
+				"*ast.BlockStmt": func(node ast.Node, vars Vars) []Place {
+					return []Place{{Message: "block issue"}}
+				},
+			}
+		},
+	}
+	src := `package p
+func f() {
+	x := 1
+	_ = x
+}
+`
+	_, places, err := Indra([]byte(src), []Plugin{p}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// f() has one block, so expect 1 place
+	if len(places) != 1 {
+		t.Fatalf("expected 1 place from block visitor, got %d", len(places))
+	}
+	if places[0].Rule != "block-visitor" {
+		t.Fatalf("unexpected rule: %s", places[0].Rule)
+	}
+}

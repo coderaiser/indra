@@ -162,6 +162,9 @@ func TestReadMissingFile(t *testing.T) {
 }
 
 func TestTransformUpdateWriteError(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("running as root: chmod restrictions do not apply")
+	}
 	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
 	// r-x: allow reading fixtures but prevent writing the fix fixture.
 	if err := os.Chmod(dir, 0555); err != nil {
