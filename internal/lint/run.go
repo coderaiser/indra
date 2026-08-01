@@ -1,17 +1,12 @@
 package lint
 
 import (
-	"bytes"
 	"fmt"
-	"go/ast"
-	"go/format"
-	"go/parser"
-	"go/token"
 	"io"
 	"os"
 
-	"coderaiser/indra/internal/lint/rule"
-	"coderaiser/indra/internal/lint/rules"
+	"coderaiser/indra/internal/engine"
+	"coderaiser/indra/internal/plugins"
 )
 
 func Run(files []string, w io.Writer) bool {
@@ -26,56 +21,32 @@ func run(files []string, w io.Writer, fix bool, writeFile func(string, []byte, o
 	failed := false
 
 	for _, filename := range files {
-		fset := token.NewFileSet()
-
-		file, err := parser.ParseFile(
-			fset,
-			filename,
-			nil,
-			parser.ParseComments,
-		)
-
+		src, err := os.ReadFile(filename)
 		if err != nil {
-			fmt.Fprintf(
-				w,
-				"file://%s: %v\n",
-				filename,
-				err,
-			)
-
+			fmt.Fprintf(w, "file://%s: %v\n", filename, err)
 			failed = true
 			continue
 		}
 
-		modified := false
-
-		for _, r := range rules.All {
-			if fix {
-				if fixer, ok := r.(rule.Fixer); ok {
-					if fixer.Fix(file, fset) {
-						modified = true
-					}
-				}
-			}
-
-			results := r.Check(file, fset)
-
-			for _, result := range results {
-				failed = true
-
-				fmt.Fprintf(
-					w,
-					"file://%s:%d:%d: %s\n",
-					result.Pos.Filename,
-					result.Pos.Line,
-					result.Pos.Column,
-					result.Message,
-				)
-			}
+		out, places, err := engine.Indra(src, plugins.All, fix)
+		if err != nil {
+			fmt.Fprintf(w, "file://%s: %v\n", filename, err)
+			failed = true
+			continue
 		}
 
-		if modified {
-			if err := writeFormatted(filename, file, fset, writeFile); err != nil {
+		for _, pl := range places {
+			failed = true
+			fmt.Fprintf(w, "file://%s:%d:%d: %s\n",
+				filename,
+				pl.Pos.Line,
+				pl.Pos.Column,
+				pl.Message,
+			)
+		}
+
+		if fix && string(out) != string(src) {
+			if err := writeFile(filename, out, 0644); err != nil {
 				fmt.Fprintf(w, "file://%s: fix: %v\n", filename, err)
 			}
 		}
@@ -83,10 +54,3 @@ func run(files []string, w io.Writer, fix bool, writeFile func(string, []byte, o
 
 	return failed
 }
-
-func writeFormatted(filename string, file *ast.File, fset *token.FileSet, writeFile func(string, []byte, os.FileMode) error) error {
-	var buf bytes.Buffer
-	format.Node(&buf, fset, file)
-	return writeFile(filename, buf.Bytes(), 0644)
-}
-

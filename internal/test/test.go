@@ -75,8 +75,9 @@ func (t *T) Transform(name string) {
 		t.Pass("fixture updated")
 		return
 	}
-	expected := t.read(name + "-fix")
-	t.Equal(string(got), string(expected))
+	fixSrc := t.read(name + "-fix")
+	gotStr := string(got)
+	t.Equal(gotStr, string(fixSrc))
 }
 
 // NoTransform asserts that fix=true leaves fixture <name>.go source unchanged.
@@ -88,7 +89,8 @@ func (t *T) NoTransform(name string) {
 		t.fatal("NoTransform(%q): parse error: %v", name, err)
 		return
 	}
-	t.Equal(string(got), string(src))
+	gotStr := string(got)
+	t.Equal(gotStr, string(src))
 }
 
 func (t *T) read(name string) []byte {

@@ -143,3 +143,13 @@ func TestFixNoFiles(t *testing.T) {
 		t.Error("expected failed=false for no files")
 	}
 }
+func TestRunReadError(t *testing.T) {
+	var buf bytes.Buffer
+	failed := Run([]string{"/nonexistent/path/file.go"}, &buf)
+	if !failed {
+		t.Error("expected failed=true for unreadable file")
+	}
+	if buf.Len() == 0 {
+		t.Error("expected error output for unreadable file")
+	}
+}

@@ -11,17 +11,20 @@ import (
 
 func TestVersionFromJSON(t *testing.T) {
 	tape.Test(t, "version: returns version string", func(t *tape.T) {
-		t.Equal(indra.VersionFromJSON([]byte("{\"version\":\"1.2.3\"}")), "1.2.3")
+		result := indra.VersionFromJSON([]byte("{\"version\":\"1.2.3\"}"))
+		t.Equal(result, "1.2.3")
 		t.End()
 	})
 
 	tape.Test(t, "version: invalid JSON returns unknown", func(t *tape.T) {
-		t.Equal(indra.VersionFromJSON([]byte("{invalid")), "unknown")
+		result := indra.VersionFromJSON([]byte("{invalid"))
+		t.Equal(result, "unknown")
 		t.End()
 	})
 
 	tape.Test(t, "version: empty version returns unknown", func(t *tape.T) {
-		t.Equal(indra.VersionFromJSON([]byte("{\"version\":\"\"}")), "unknown")
+		result := indra.VersionFromJSON([]byte("{\"version\":\"\"}"))
+		t.Equal(result, "unknown")
 		t.End()
 	})
 }
@@ -42,7 +45,8 @@ func TestVersion(t *testing.T) {
 
 	tape.Test(t, "version: missing package.json returns unknown", func(t *tape.T) {
 		t.TB().Chdir(t.TB().TempDir())
-		t.Equal(indra.Version(), "unknown")
+		result := indra.Version()
+		t.Equal(result, "unknown")
 		t.End()
 	})
 }
