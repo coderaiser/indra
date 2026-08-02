@@ -45,4 +45,19 @@ func TestRemoveUnusedImport(t *testing.T) {
 		t.NoReport("alias-used")
 		t.End()
 	})
+
+	Test(t, "remove-unused-import: fix removes unused import", func(t *indratest.T) {
+		t.Transform("unused-import")
+		t.End()
+	})
+
+	Test(t, "remove-unused-import: fix removes unused aliased import", func(t *indratest.T) {
+		t.Transform("alias-unused")
+		t.End()
+	})
+
+	Test(t, "remove-unused-import: fix keeps used import in mixed block", func(t *indratest.T) {
+		t.Transform("mixed-imports")
+		t.End()
+	})
 }

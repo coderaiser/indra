@@ -30,4 +30,19 @@ func TestRemoveUnusedVariable(t *testing.T) {
 		t.NoReport("tuple-blank")
 		t.End()
 	})
+
+	Test(t, "remove-unused-variable: fix removes unused var", func(t *indratest.T) {
+		t.Transform("unused-var")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variable: fix blank the unused var in tuple", func(t *indratest.T) {
+		t.Transform("tuple-unused")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variable: fix drops tuple with blank and unused var", func(t *indratest.T) {
+		t.Transform("tuple-blank-unused")
+		t.End()
+	})
 }

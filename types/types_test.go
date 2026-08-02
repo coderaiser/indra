@@ -9,8 +9,8 @@ import (
 // replacerLike is a minimal plugin exposing the replacer method set.
 type replacerLike struct{}
 
-func (replacerLike) Report() string   { return "r" }
-func (replacerLike) Match() Matcher   { return nil }
+func (replacerLike) Report() string    { return "r" }
+func (replacerLike) Match() Matcher    { return nil }
 func (replacerLike) Replace() Replacer { return nil }
 
 // traverserLike is a minimal plugin exposing the traverser method set.
