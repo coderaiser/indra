@@ -2,10 +2,13 @@
 
 package fixture
 
-import tape "github.com/coderaiser/go-tape"
+import (
+	Test "github.com/coderaiser/go-tape"
+	"testing"
+)
 
 func TestFoo(t *testing.T) {
-	tape.Only(t, "foo: something", func(t *tape.T) {
+	Test.Only(t, "foo: something", func(t *Test.T) {
 		t.Equal(1, 1)
 		t.End()
 	})

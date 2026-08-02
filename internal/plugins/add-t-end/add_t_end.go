@@ -8,27 +8,33 @@ import (
 )
 
 var Plugin = engine.Plugin{
-	Name:   "add-t-end",
-	Report: func() string { return "tape: missing t.End()" },
-	Match: func() map[string]engine.MatchFn {
-		guard := func(vars engine.Vars) bool {
-			body, ok := vars["__body"].(compare.BodySlice)
-			if !ok {
-				return false
-			}
-			return !stmtsContainEnd(body.Stmts)
+	Name:    "add-t-end",
+	Report:  report,
+	Match:   match,
+	Replace: replace,
+}
+
+func report() string { return "tape: missing t.End()" }
+
+func match() map[string]engine.MatchFn {
+	guard := func(vars engine.Vars) bool {
+		body, ok := vars["__body"].(compare.BodySlice)
+		if !ok {
+			return false
 		}
-		return map[string]engine.MatchFn{
-			`tape.Test(__t, __name, func(__t *tape.T) { __body })`: guard,
-			`tape.Only(__t, __name, func(__t *tape.T) { __body })`: guard,
-		}
-	},
-	Replace: func() map[string]string {
-		return map[string]string{
-			`tape.Test(__t, __name, func(__t *tape.T) { __body })`: "tape.Test(__t, __name, func(__t *tape.T) {\n__body\n__t.End()\n})",
-			`tape.Only(__t, __name, func(__t *tape.T) { __body })`: "tape.Only(__t, __name, func(__t *tape.T) {\n__body\n__t.End()\n})",
-		}
-	},
+		return !stmtsContainEnd(body.Stmts)
+	}
+	return map[string]engine.MatchFn{
+		`Test(__a, __b, func(__a *Test.T) { __body })`:      guard,
+		`Test.Only(__a, __b, func(__a *Test.T) { __body })`: guard,
+	}
+}
+
+func replace() map[string]string {
+	return map[string]string{
+		`Test(__a, __b, func(__a *Test.T) { __body })`:      "Test(__a, __b, func(__a *Test.T) {\n__body\n__a.End()\n})",
+		`Test.Only(__a, __b, func(__a *Test.T) { __body })`: "Test.Only(__a, __b, func(__a *Test.T) {\n__body\n__a.End()\n})",
+	}
 }
 
 func stmtsContainEnd(stmts []ast.Stmt) bool {
