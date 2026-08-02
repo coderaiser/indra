@@ -107,9 +107,7 @@ func (t *T) read(name string) []byte {
 // CreateTest returns a typed test runner bound to plugin.
 // Call once at package level with the fixture dir relative to the caller file.
 func CreateTest(plugin engine.Plugin, dir string) func(*testing.T, string, func(*T)) {
-	return func(t *testing.T, name string, fn func(*T)) {
-		tape.Test(t, name, func(tt *tape.T) {
-			fn(New(tt, plugin, dir))
-		})
-	}
+	return tape.Extend(func(base *tape.T) *T {
+		return New(base, plugin, dir)
+	})
 }
