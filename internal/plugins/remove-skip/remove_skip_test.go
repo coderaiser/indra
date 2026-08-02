@@ -16,13 +16,23 @@ var (
 )
 
 func TestRemoveSkip(t *testing.T) {
-	Test(t, "remove-skip: report skip call", func(t *indratest.T) {
-		t.Report("skip", "remove t.Skip call")
+	Test(t, "remove-skip: report Test.Skip call", func(t *indratest.T) {
+		t.Report("skip", "remove Test.Skip call")
 		t.End()
 	})
 
-	Test(t, "remove-skip: no report for clean file", func(t *indratest.T) {
+	Test(t, "remove-skip: transform Test.Skip to Test", func(t *indratest.T) {
+		t.Transform("skip")
+		t.End()
+	})
+
+	Test(t, "remove-skip: no report for Test call", func(t *indratest.T) {
 		t.NoReport("no-skip")
+		t.End()
+	})
+
+	Test(t, "remove-skip: no transform for Test call", func(t *indratest.T) {
+		t.NoTransform("no-skip")
 		t.End()
 	})
 }

@@ -2,8 +2,14 @@
 
 package fixture
 
-import "testing"
+import (
+	"testing"
+	Test "github.com/coderaiser/go-tape"
+)
 
 func TestFoo(t *testing.T) {
-	t.Equal(1, 1)
+	Test(t, "foo: something", func(t *Test.T) {
+		t.Equal(1, 1)
+		t.End()
+	})
 }
