@@ -1,4 +1,4 @@
-package convertequaltoDeepEqual
+package convert_equal_to_deep_equal
 
 import "coderaiser/indra/internal/engine"
 

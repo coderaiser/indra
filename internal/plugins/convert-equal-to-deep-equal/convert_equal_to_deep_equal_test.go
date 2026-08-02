@@ -1,4 +1,4 @@
-package convertequaltoDeepEqual_test
+package convert_equal_to_deep_equal_test
 
 import (
 	"path/filepath"

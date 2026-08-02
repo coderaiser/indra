@@ -1,10 +1,10 @@
-package addtend
+package add_t_end
 
 import (
 	"go/ast"
 
-	"coderaiser/indra/internal/engine"
 	"coderaiser/indra/compare"
+	"coderaiser/indra/internal/engine"
 )
 
 var Plugin = engine.Plugin{

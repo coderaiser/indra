@@ -1,4 +1,4 @@
-package removeskip
+package remove_skip
 
 import "coderaiser/indra/internal/engine"
 

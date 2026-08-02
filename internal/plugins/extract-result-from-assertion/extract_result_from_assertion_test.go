@@ -1,4 +1,4 @@
-package extractresultfromassertion_test
+package extract_result_from_assertion_test
 
 import (
 	"path/filepath"

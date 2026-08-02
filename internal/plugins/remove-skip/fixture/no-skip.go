@@ -3,8 +3,8 @@
 package fixture
 
 import (
-	"testing"
 	Test "github.com/coderaiser/go-tape"
+	"testing"
 )
 
 func TestFoo(t *testing.T) {

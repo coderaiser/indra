@@ -1,4 +1,4 @@
-package removeunusedimport
+package remove_unused_import
 
 import (
 	"fmt"

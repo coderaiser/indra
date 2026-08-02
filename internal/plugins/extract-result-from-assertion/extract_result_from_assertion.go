@@ -1,4 +1,4 @@
-package extractresultfromassertion
+package extract_result_from_assertion
 
 import "coderaiser/indra/internal/engine"
 

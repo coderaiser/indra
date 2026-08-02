@@ -1,12 +1,12 @@
-package removeunusedvariable_test
+package remove_unused_variable_test
 
 import (
 	"path/filepath"
 	"runtime"
 	"testing"
 
-	indratest "coderaiser/indra/internal/test"
 	. "coderaiser/indra/internal/plugins/remove-unused-variable"
+	indratest "coderaiser/indra/internal/test"
 )
 
 var (

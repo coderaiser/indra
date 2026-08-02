@@ -1,4 +1,4 @@
-package removeunusedvariable
+package remove_unused_variable
 
 import (
 	"go/ast"

@@ -1,4 +1,4 @@
-package addtend_test
+package add_t_end_test
 
 import (
 	"path/filepath"

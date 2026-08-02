@@ -1,4 +1,4 @@
-package removeskip_test
+package remove_skip_test
 
 import (
 	"path/filepath"

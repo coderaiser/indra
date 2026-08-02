@@ -1,11 +1,11 @@
-package addtend
+package add_t_end
 
 import (
 	"go/ast"
 	"testing"
 
-	"coderaiser/indra/internal/engine"
 	"coderaiser/indra/compare"
+	"coderaiser/indra/internal/engine"
 )
 
 func TestStmtsContainEnd(t *testing.T) {

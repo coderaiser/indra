@@ -1,4 +1,4 @@
-package removeunusedimport_test
+package remove_unused_import_test
 
 import (
 	"path/filepath"
