@@ -185,11 +185,18 @@ func Indra(src []byte, plugins []any, fix bool) ([]byte, []types.Place, error) {
 		}
 	})
 
-	if fix && len(rewrites) > 0 {
-		applyRewrites(rewrites)
+	if fix {
+		// Replacer rewrites and/or in-place traverser fixes may have mutated
+		// the AST. Re-print and return the output only when it changed.
+		if len(rewrites) > 0 {
+			applyRewrites(rewrites)
+		}
 		var buf bytes.Buffer
 		_ = format.Node(&buf, fset, file)
-		return buf.Bytes(), places, nil
+		out := buf.Bytes()
+		if string(out) != string(src) {
+			return out, places, nil
+		}
 	}
 
 	return src, places, nil
