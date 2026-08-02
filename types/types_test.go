@@ -6,36 +6,21 @@ import (
 	"testing"
 )
 
-// replacerLike is a minimal ReplacerPlugin that satisfies Plugin.
+// replacerLike is a minimal plugin exposing the replacer method set.
 type replacerLike struct{}
 
-func (replacerLike) Report() string    { return "r" }
-func (replacerLike) Match() Matcher    { return nil }
+func (replacerLike) Report() string   { return "r" }
+func (replacerLike) Match() Matcher   { return nil }
 func (replacerLike) Replace() Replacer { return nil }
-func (replacerLike) isPlugin()         {}
 
-// traverserLike is a minimal TraverserPlugin that satisfies Plugin.
+// traverserLike is a minimal plugin exposing the traverser method set.
 type traverserLike struct{}
 
 func (traverserLike) Report() string                    { return "t" }
 func (traverserLike) Traverse() Traverser               { return nil }
 func (traverserLike) Fix(node ast.Node, places []Place) {}
-func (traverserLike) isPlugin()                         {}
 
-// TestPluginInterface verifies both plugin kinds satisfy the Plugin interface.
-func TestPluginInterface(t *testing.T) {
-	var p Plugin = replacerLike{}
-	if p == nil {
-		t.Fatal("expected non-nil plugin")
-	}
-
-	var tr Plugin = traverserLike{}
-	if tr == nil {
-		t.Fatal("expected non-nil traverser plugin")
-	}
-}
-
-// TestNestedHoldsSubPlugins verifies Nested can hold both plugin kinds.
+// TestNestedHoldsSubPlugins verifies Nested can hold any plugin value.
 func TestNestedHoldsSubPlugins(t *testing.T) {
 	n := Nested{
 		"replacer":  replacerLike{},

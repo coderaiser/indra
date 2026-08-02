@@ -5,44 +5,42 @@ import (
 	"go/token"
 	"strings"
 	"testing"
+
+	"coderaiser/indra/types"
 )
 
-func reportOnlyPlugin() Plugin {
-	return Plugin{
-		Name:   "report",
-		Report: func() string { return "message" },
-		Match: func() map[string]MatchFn {
-			return map[string]MatchFn{"t.Equal(__a, __b)": nil}
-		},
-	}
+// reportOnly is a Self-shaped replacer plugin with no Replace method.
+type reportOnly struct{}
+
+func (reportOnly) Report() string { return "message" }
+func (reportOnly) Match() types.Matcher {
+	return types.Matcher{"t.Equal(__a, __b)": nil}
+}
+func (reportOnly) Replace() types.Replacer { return nil }
+
+// replacer is a Self-shaped replacer plugin with a Replace template.
+type replacer struct{}
+
+func (replacer) Report() string { return "message" }
+func (replacer) Match() types.Matcher {
+	return types.Matcher{"t.Equal(__a, __b)": nil}
+}
+func (replacer) Replace() types.Replacer {
+	return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}
 }
 
-func replacePlugin() Plugin {
-	return Plugin{
-		Name:   "replace",
-		Report: func() string { return "message" },
-		Match: func() map[string]MatchFn {
-			return map[string]MatchFn{"t.Equal(__a, __b)": nil}
-		},
-		Replace: func() map[string]string {
-			return map[string]string{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}
-		},
-	}
-}
+// traverser is a Self-shaped traverser plugin reporting on the whole file.
+type traverser struct{}
 
-func traversePlugin() Plugin {
-	return Plugin{
-		Name:   "traverse",
-		Report: func() string { return "file issue" },
-		Traverse: func() map[string]TraverseVisitor {
-			return map[string]TraverseVisitor{
-				"*ast.File": func(node ast.Node, vars Vars) []Place {
-					return []Place{{Message: "file issue", Pos: token.Position{Line: 1}}}
-				},
-			}
+func (traverser) Report() string { return "file issue" }
+func (traverser) Traverse() types.Traverser {
+	return types.Traverser{
+		"*ast.File": func(node ast.Node, vars types.Vars) []types.Place {
+			return []types.Place{{Message: "file issue", Pos: token.Position{Line: 1}}}
 		},
 	}
 }
+func (traverser) Fix(node ast.Node, places []types.Place) {}
 
 const equalSrc = `package p
 
@@ -54,14 +52,14 @@ func TestFoo(t *testing.T) {
 `
 
 func TestReportOnly(t *testing.T) {
-	out, places, err := Indra([]byte(equalSrc), []Plugin{reportOnlyPlugin()}, false)
+	out, places, err := Indra([]byte(equalSrc), []any{reportOnly{}}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(places) != 1 {
 		t.Fatalf("expected 1 place, got %d", len(places))
 	}
-	if places[0].Rule != "report" || places[0].Message != "message" {
+	if places[0].Rule != "reportOnly" || places[0].Message != "message" {
 		t.Fatalf("unexpected place: %+v", places[0])
 	}
 	if string(out) != equalSrc {
@@ -70,7 +68,7 @@ func TestReportOnly(t *testing.T) {
 }
 
 func TestReplacePlugin(t *testing.T) {
-	out, places, err := Indra([]byte(equalSrc), []Plugin{replacePlugin()}, true)
+	out, places, err := Indra([]byte(equalSrc), []any{replacer{}}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,14 +81,14 @@ func TestReplacePlugin(t *testing.T) {
 }
 
 func TestTraversePlugin(t *testing.T) {
-	out, places, err := Indra([]byte(equalSrc), []Plugin{traversePlugin()}, false)
+	out, places, err := Indra([]byte(equalSrc), []any{traverser{}}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(places) != 1 {
 		t.Fatalf("expected 1 place, got %d", len(places))
 	}
-	if places[0].Rule != "traverse" || places[0].Message != "file issue" {
+	if places[0].Rule != "traverser" || places[0].Message != "file issue" {
 		t.Fatalf("unexpected place: %+v", places[0])
 	}
 	if string(out) != equalSrc {
@@ -99,7 +97,7 @@ func TestTraversePlugin(t *testing.T) {
 }
 
 func TestFixFalseKeepsReplacement(t *testing.T) {
-	out, places, err := Indra([]byte(equalSrc), []Plugin{replacePlugin()}, false)
+	out, places, err := Indra([]byte(equalSrc), []any{replacer{}}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,23 +110,14 @@ func TestFixFalseKeepsReplacement(t *testing.T) {
 }
 
 func TestMultiStmtReplace(t *testing.T) {
-	p := Plugin{
-		Name:   "multi",
-		Report: func() string { return "msg" },
-		Match: func() map[string]MatchFn {
-			return map[string]MatchFn{"makeSlices(__x)": nil}
-		},
-		Replace: func() map[string]string {
-			return map[string]string{"makeSlices(__x)": "x := __x\ny := __x"}
-		},
-	}
+	p := multiPlacer{}
 	src := `package p
 
 func f() {
 	makeSlices(v)
 }
 `
-	out, _, err := Indra([]byte(src), []Plugin{p}, true)
+	out, _, err := Indra([]byte(src), []any{p}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,23 +128,21 @@ func f() {
 }
 
 func TestMultiplePluginsOrder(t *testing.T) {
-	p2 := reportOnlyPlugin()
-	p2.Name = "second"
-	_, places, err := Indra([]byte(equalSrc), []Plugin{reportOnlyPlugin(), p2}, false)
+	_, places, err := Indra([]byte(equalSrc), []any{reportOnly{}, second{}}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(places) != 2 {
 		t.Fatalf("expected 2 places, got %d", len(places))
 	}
-	if places[0].Rule != "report" || places[1].Rule != "second" {
+	if places[0].Rule != "reportOnly" || places[1].Rule != "second" {
 		t.Fatalf("plugins ran out of order: %+v", places)
 	}
 }
 
 func TestParseError(t *testing.T) {
 	src := []byte("package p\nfunc (\n")
-	out, places, err := Indra(src, []Plugin{reportOnlyPlugin()}, false)
+	out, places, err := Indra(src, []any{reportOnly{}}, false)
 	if err == nil {
 		t.Fatal("expected parse error")
 	}

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"coderaiser/indra/compare"
-	"coderaiser/indra/internal/engine"
+	. "coderaiser/indra/types"
 )
 
 func TestStmtsContainEnd(t *testing.T) {
@@ -48,11 +48,11 @@ func TestStmtsContainEnd(t *testing.T) {
 
 func TestGuardRejectsNonBodySlice(t *testing.T) {
 	// the guard must reject when __body is not bound to a BodySlice
-	var guard engine.MatchFn
-	for _, g := range Plugin.Match() {
+	var guard MatchFn
+	for _, g := range Match() {
 		guard = g
 	}
-	vars := engine.Vars{"__body": ast.NewIdent("x")}
+	vars := Vars{"__body": ast.NewIdent("x")}
 	if guard(vars) {
 		t.Error("guard should reject a non-BodySlice __body")
 	}
@@ -60,7 +60,7 @@ func TestGuardRejectsNonBodySlice(t *testing.T) {
 	// with a genuine BodySlice the guard inspects its statements;
 	// an empty body (no End present) must be reported as matching
 	body := compare.BodySlice{Stmts: []ast.Stmt{}}
-	if !guard(engine.Vars{"__body": body}) {
+	if !guard(Vars{"__body": body}) {
 		t.Error("guard should match an empty body (no End present)")
 	}
 }

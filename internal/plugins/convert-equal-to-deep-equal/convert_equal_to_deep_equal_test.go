@@ -12,7 +12,7 @@ import (
 var (
 	_, _file, _, _ = runtime.Caller(0)
 	_dir           = filepath.Join(filepath.Dir(_file), "fixture")
-	Test           = indratest.CreateTest(Plugin, _dir)
+	Test           = indratest.CreateTest(Self, _dir)
 )
 
 func TestConvertEqualToDeepEqual(t *testing.T) {

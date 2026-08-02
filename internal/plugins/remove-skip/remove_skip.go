@@ -1,24 +1,28 @@
 package remove_skip
 
-import "coderaiser/indra/internal/engine"
+import . "coderaiser/indra/types"
 
-var Plugin = engine.Plugin{
-	Name:    "remove-skip",
-	Report:  report,
-	Match:   match,
-	Replace: replace,
-}
+// Self is the plugin value used in engine-loader and Nested maps.
+var Self = self{}
 
-func report() string { return "remove Test.Skip call" }
+type self struct{}
 
-func match() map[string]engine.MatchFn {
-	return map[string]engine.MatchFn{
+func (self) Report() string    { return Report() }
+func (self) Match() Matcher    { return Match() }
+func (self) Replace() Replacer { return Replace() }
+
+// Top-level exported funcs are readable and testable individually.
+
+func Report() string { return "remove Test.Skip call" }
+
+func Match() Matcher {
+	return Matcher{
 		`Test.Skip(__a, __b, func(__a *Test.T) { __body })`: nil,
 	}
 }
 
-func replace() map[string]string {
-	return map[string]string{
+func Replace() Replacer {
+	return Replacer{
 		`Test.Skip(__a, __b, func(__a *Test.T) { __body })`: "Test(__a, __b, func(__a *Test.T) {\n__body\n})",
 	}
 }

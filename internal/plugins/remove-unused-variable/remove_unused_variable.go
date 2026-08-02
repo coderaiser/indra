@@ -3,26 +3,34 @@ package remove_unused_variable
 import (
 	"go/ast"
 	"go/token"
+	"strings"
 
-	"coderaiser/indra/internal/engine"
+	. "coderaiser/indra/types"
 )
 
-var Plugin = engine.Plugin{
-	Name: "remove-unused-variable",
-	Traverse: func() map[string]engine.TraverseVisitor {
-		return map[string]engine.TraverseVisitor{
-			"*ast.BlockStmt": visitBlock,
-		}
-	},
+// Self is the plugin value used in engine-loader and Nested maps.
+var Self = self{}
+
+type self struct{}
+
+func (self) Report() string                    { return Report() }
+func (self) Traverse() Traverser               { return Traverse() }
+func (self) Fix(node ast.Node, places []Place) { Fix(node, places) }
+
+// Top-level exported funcs are readable and testable individually.
+
+func Report() string { return "remove unused variable" }
+
+func Traverse() Traverser {
+	return Traverser{
+		"*ast.BlockStmt": visitBlock,
+	}
 }
 
-func visitBlock(node ast.Node, _ engine.Vars) []engine.Place {
+func visitBlock(node ast.Node, _ Vars) []Place {
 	block := node.(*ast.BlockStmt)
 
-	type decl struct {
-		name string
-	}
-	var decls []decl
+	var decls []string
 	seen := map[string]bool{}
 
 	for _, stmt := range block.List {
@@ -37,7 +45,7 @@ func visitBlock(node ast.Node, _ engine.Vars) []engine.Place {
 			}
 			if !seen[ident.Name] {
 				seen[ident.Name] = true
-				decls = append(decls, decl{name: ident.Name})
+				decls = append(decls, ident.Name)
 			}
 		}
 	}
@@ -46,12 +54,10 @@ func visitBlock(node ast.Node, _ engine.Vars) []engine.Place {
 		return nil
 	}
 
-	// count reads: ident uses not on the lhs of a := statement
 	reads := map[string]int{}
 	for _, stmt := range block.List {
 		assign, ok := stmt.(*ast.AssignStmt)
 		if ok && assign.Tok == token.DEFINE {
-			// only count rhs of :=
 			for _, rhs := range assign.Rhs {
 				countIdents(rhs, reads)
 			}
@@ -60,15 +66,54 @@ func visitBlock(node ast.Node, _ engine.Vars) []engine.Place {
 		countIdents(stmt, reads)
 	}
 
-	var places []engine.Place
+	var places []Place
 	for _, d := range decls {
-		if reads[d.name] == 0 {
-			places = append(places, engine.Place{
-				Message: "remove unused variable: " + d.name,
+		if reads[d] == 0 {
+			places = append(places, Place{
+				Message: "remove unused variable: " + d,
 			})
 		}
 	}
 	return places
+}
+
+// Fix removes unused variables from a block in place.
+// node is *ast.BlockStmt. places contains findings from Traverse (one per var).
+func Fix(node ast.Node, places []Place) {
+	block := node.(*ast.BlockStmt)
+	unused := make(map[string]bool, len(places))
+	for _, p := range places {
+		unused[strings.TrimPrefix(p.Message, "remove unused variable: ")] = true
+	}
+	kept := block.List[:0]
+	for _, stmt := range block.List {
+		assign, ok := stmt.(*ast.AssignStmt)
+		if !ok || assign.Tok != token.DEFINE {
+			kept = append(kept, stmt)
+			continue
+		}
+		allUnused := true
+		for _, lhs := range assign.Lhs {
+			ident, ok := lhs.(*ast.Ident)
+			if !ok || ident.Name == "_" {
+				continue
+			}
+			if !unused[ident.Name] {
+				allUnused = false
+			}
+		}
+		if allUnused {
+			continue // drop statement
+		}
+		for _, lhs := range assign.Lhs {
+			ident, ok := lhs.(*ast.Ident)
+			if ok && unused[ident.Name] {
+				ident.Name = "_"
+			}
+		}
+		kept = append(kept, stmt)
+	}
+	block.List = kept
 }
 
 func countIdents(n ast.Node, reads map[string]int) {

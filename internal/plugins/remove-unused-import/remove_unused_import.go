@@ -7,36 +7,78 @@ import (
 	"path/filepath"
 	"strings"
 
-	"coderaiser/indra/internal/engine"
+	. "coderaiser/indra/types"
 )
 
-var Plugin = engine.Plugin{
-	Name:   "remove-unused-import",
-	Report: func() string { return "remove unused import" },
-	Traverse: func() map[string]engine.TraverseVisitor {
-		return map[string]engine.TraverseVisitor{
-			"*ast.File": visitFile,
-		}
-	},
+// Self is the plugin value used in engine-loader and Nested maps.
+var Self = self{}
+
+type self struct{}
+
+func (self) Report() string                    { return Report() }
+func (self) Traverse() Traverser               { return Traverse() }
+func (self) Fix(node ast.Node, places []Place) { Fix(node, places) }
+
+// Top-level exported funcs are readable and testable individually.
+
+func Report() string { return "remove unused import" }
+
+func Traverse() Traverser {
+	return Traverser{
+		"*ast.File": visitFile,
+	}
 }
 
-func visitFile(node ast.Node, _ engine.Vars) []engine.Place {
+func visitFile(node ast.Node, _ Vars) []Place {
 	file := node.(*ast.File)
 	imports := collectImports(file)
 	used := countIdentUses(file)
 
-	var places []engine.Place
+	var places []Place
 	for _, imp := range imports {
 		if imp.blank || imp.dot {
 			continue
 		}
 		if used[imp.localName] == 0 {
-			places = append(places, engine.Place{
+			places = append(places, Place{
 				Message: fmt.Sprintf("remove unused import: %s", imp.path),
 			})
 		}
 	}
 	return places
+}
+
+// Fix removes unused imports from the AST in place.
+// node is *ast.File. places contains findings from Traverse.
+func Fix(node ast.Node, places []Place) {
+	file := node.(*ast.File)
+	unused := make(map[string]bool, len(places))
+	for _, p := range places {
+		unused[strings.TrimPrefix(p.Message, "remove unused import: ")] = true
+	}
+	for _, decl := range file.Decls {
+		genDecl, ok := decl.(*ast.GenDecl)
+		if !ok || genDecl.Tok != token.IMPORT {
+			continue
+		}
+		kept := genDecl.Specs[:0]
+		for _, spec := range genDecl.Specs {
+			imp := spec.(*ast.ImportSpec)
+			if !unused[imp.Path.Value] {
+				kept = append(kept, spec)
+			}
+		}
+		genDecl.Specs = kept
+	}
+	kept := file.Decls[:0]
+	for _, decl := range file.Decls {
+		genDecl, ok := decl.(*ast.GenDecl)
+		if ok && genDecl.Tok == token.IMPORT && len(genDecl.Specs) == 0 {
+			continue
+		}
+		kept = append(kept, decl)
+	}
+	file.Decls = kept
 }
 
 type importInfo struct {
@@ -85,7 +127,6 @@ func collectImports(file *ast.File) []importInfo {
 func countIdentUses(file *ast.File) map[string]int {
 	used := make(map[string]int)
 	ast.Inspect(file, func(n ast.Node) bool {
-		// skip import decls themselves
 		if genDecl, ok := n.(*ast.GenDecl); ok && genDecl.Tok == token.IMPORT {
 			return false
 		}

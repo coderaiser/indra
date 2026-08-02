@@ -1,3 +1,10 @@
+// Package engine runs plugins against Go source.
+//
+// It is a shim over the higher-level pipeline: it parses the source, resolves
+// a flat list of Self-shaped plugin values into concrete kinds, then runs
+// pattern-based replacers and whole-AST traversers, applying Fix when asked.
+//
+// Internal engine depends on types; it does not import plugin packages.
 package engine
 
 import (
@@ -12,56 +19,112 @@ import (
 	"strings"
 
 	"coderaiser/indra/compare"
+	"coderaiser/indra/types"
 )
 
-// Vars is an alias for the compare hole-bindings map.
-type Vars = compare.Vars
+// Vars is an alias for the shared hole-bindings type.
+type Vars = types.Vars
 
-// MatchFn is an optional guard run after a pattern matches. It may inspect
-// the bound holes and decide whether the match should be accepted.
-type MatchFn = func(Vars) bool
+// Place is an alias for the shared lint-finding type.
+type Place = types.Place
 
-// TraverseVisitor runs against a whole-file node (e.g. *ast.File) and
-// returns any places it detected.
-type TraverseVisitor = func(node ast.Node, vars Vars) []Place
+// MatchFn is an alias for the shared pattern guard type.
+type MatchFn = types.MatchFn
 
-// Plugin describes a single lint rule.
-type Plugin struct {
-	Name     string
-	Report   func() string
-	Match    func() map[string]MatchFn // nil = always match
-	Replace  func() map[string]string  // nil = report only
-	Traverse func() map[string]TraverseVisitor
+// TraverseVisitor is an alias for the shared AST visitor type.
+type TraverseVisitor = types.VisitFn
+
+// replacerPlugin is implemented by any Self-shaped plugin exposing
+// pattern-based rewriting (Report/Match/Replace). Only exported methods are
+// used so reflection can detect the kind across packages.
+type replacerPlugin interface {
+	Report() string
+	Match() types.Matcher
+	Replace() types.Replacer
 }
 
-// Place is a single lint finding.
-type Place struct {
-	Rule    string
-	Message string
-	Pos     token.Position
+// traverserPlugin is implemented by any Self-shaped plugin exposing
+// whole-node analysis (Report/Traverse/Fix). Only exported methods are used
+// so reflection can detect the kind across packages.
+type traverserPlugin interface {
+	Report() string
+	Traverse() types.Traverser
+	Fix(node ast.Node, places []types.Place)
+}
+
+// resolvedPlugin is a Self-shaped plugin normalized into a concrete kind.
+type resolvedPlugin struct {
+	name      string
+	kind      string // "replacer" or "traverser"
+	report    func() string
+	replacer  replacerPlugin
+	traverser traverserPlugin
+}
+
+// load normalizes a flat list of Self-shaped values, expanding Nested groups.
+// It panics on an unknowable plugin value.
+func load(plugins []any) []resolvedPlugin {
+	var out []resolvedPlugin
+	for _, p := range plugins {
+		if nested, ok := p.(types.Nested); ok {
+			for name, sub := range nested {
+				out = append(out, resolve(name, sub))
+			}
+			continue
+		}
+		out = append(out, resolve(deriveName(p), p))
+	}
+	return out
+}
+
+// resolve detects a plugin's kind by method presence.
+func resolve(name string, p any) resolvedPlugin {
+	switch v := p.(type) {
+	case replacerPlugin:
+		return resolvedPlugin{name: name, kind: "replacer", report: v.Report, replacer: v}
+	case traverserPlugin:
+		return resolvedPlugin{name: name, kind: "traverser", report: v.Report, traverser: v}
+	default:
+		panic("unknown plugin kind: " + name)
+	}
+}
+
+// deriveName gets a display name from the type's name, else the package path.
+func deriveName(p any) string {
+	t := reflect.TypeOf(p)
+	name := t.Name()
+	if name == "" {
+		name = t.String()
+	}
+	return name
 }
 
 // Indra runs plugins against src. It returns the (possibly modified) source,
 // the collected places, and a parse error when the source is invalid.
-func Indra(src []byte, plugins []Plugin, fix bool) ([]byte, []Place, error) {
+func Indra(src []byte, plugins []any, fix bool) ([]byte, []types.Place, error) {
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, "", src, parser.ParseComments)
 	if err != nil {
 		return src, nil, err
 	}
 
-	var places []Place
+	var places []types.Place
+	resolved := load(plugins)
 
-	// Traverse plugins own whole-file analysis.
-	for _, p := range plugins {
-		if p.Traverse == nil {
+	// Traverser plugins own whole-file analysis and may fix in place.
+	for _, p := range resolved {
+		if p.kind != "traverser" {
 			continue
 		}
-		for key, visitor := range p.Traverse() {
+		for key, visitor := range p.traverser.Traverse() {
 			switch key {
 			case "*ast.File":
-				for _, pl := range visitor(file, Vars{}) {
-					pl.Rule = p.Name
+				findings := visitor(file, Vars{})
+				if fix && len(findings) > 0 {
+					p.traverser.Fix(file, findings)
+				}
+				for _, pl := range findings {
+					pl.Rule = p.name
 					places = append(places, pl)
 				}
 			case "*ast.BlockStmt":
@@ -70,8 +133,12 @@ func Indra(src []byte, plugins []Plugin, fix bool) ([]byte, []Place, error) {
 					if !ok {
 						return true
 					}
-					for _, pl := range visitor(block, Vars{}) {
-						pl.Rule = p.Name
+					findings := visitor(block, Vars{})
+					if fix && len(findings) > 0 {
+						p.traverser.Fix(block, findings)
+					}
+					for _, pl := range findings {
+						pl.Rule = p.name
 						places = append(places, pl)
 					}
 					return true
@@ -80,14 +147,14 @@ func Indra(src []byte, plugins []Plugin, fix bool) ([]byte, []Place, error) {
 		}
 	}
 
-	// Pattern-based (reporter/replacer) plugins run over every statement.
+	// Pattern-based (replacer) plugins run over every statement.
 	var rewrites []rewrite
 	walkStmts(file, func(stmt ast.Stmt, block *ast.BlockStmt, idx int) {
-		for _, p := range plugins {
-			if p.Traverse != nil || p.Match == nil {
+		for _, p := range resolved {
+			if p.kind != "replacer" {
 				continue
 			}
-			patterns := p.Match()
+			patterns := p.replacer.Match()
 			for pattern, guard := range patterns {
 				vars := compare.Compare(stmt, pattern)
 				if vars == nil {
@@ -96,13 +163,13 @@ func Indra(src []byte, plugins []Plugin, fix bool) ([]byte, []Place, error) {
 				if guard != nil && !guard(vars) {
 					continue
 				}
-				places = append(places, Place{
-					Rule:    p.Name,
-					Message: p.Report(),
+				places = append(places, types.Place{
+					Rule:    p.name,
+					Message: p.report(),
 					Pos:     fset.Position(stmt.Pos()),
 				})
-				if fix && p.Replace != nil {
-					if tmpl, ok := p.Replace()[pattern]; ok {
+				if fix {
+					if tmpl, ok := p.replacer.Replace()[pattern]; ok {
 						newStmts := substituteAndParse(tmpl, vars)
 						if newStmts == nil {
 							continue

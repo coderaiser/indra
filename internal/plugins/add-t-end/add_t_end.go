@@ -4,34 +4,38 @@ import (
 	"go/ast"
 
 	"coderaiser/indra/compare"
-	"coderaiser/indra/internal/engine"
+	. "coderaiser/indra/types"
 )
 
-var Plugin = engine.Plugin{
-	Name:    "add-t-end",
-	Report:  report,
-	Match:   match,
-	Replace: replace,
-}
+// Self is the plugin value used in engine-loader and Nested maps.
+var Self = self{}
 
-func report() string { return "tape: missing t.End()" }
+type self struct{}
 
-func match() map[string]engine.MatchFn {
-	guard := func(vars engine.Vars) bool {
+func (self) Report() string    { return Report() }
+func (self) Match() Matcher    { return Match() }
+func (self) Replace() Replacer { return Replace() }
+
+// Top-level exported funcs are readable and testable individually.
+
+func Report() string { return "tape: missing t.End()" }
+
+func Match() Matcher {
+	guard := func(vars Vars) bool {
 		body, ok := vars["__body"].(compare.BodySlice)
 		if !ok {
 			return false
 		}
 		return !stmtsContainEnd(body.Stmts)
 	}
-	return map[string]engine.MatchFn{
+	return Matcher{
 		`Test(__a, __b, func(__a *Test.T) { __body })`:      guard,
 		`Test.Only(__a, __b, func(__a *Test.T) { __body })`: guard,
 	}
 }
 
-func replace() map[string]string {
-	return map[string]string{
+func Replace() Replacer {
+	return Replacer{
 		`Test(__a, __b, func(__a *Test.T) { __body })`:      "Test(__a, __b, func(__a *Test.T) {\n__body\n__a.End()\n})",
 		`Test.Only(__a, __b, func(__a *Test.T) { __body })`: "Test.Only(__a, __b, func(__a *Test.T) {\n__body\n__a.End()\n})",
 	}

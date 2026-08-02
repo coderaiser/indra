@@ -12,14 +12,14 @@ import (
 // T wraps tape.T with plugin-level lint assertions.
 type T struct {
 	*tape.T
-	plugin    engine.Plugin
+	plugin    any
 	dir       string
 	fatal     func(format string, args ...any)
 	writeFile func(string, []byte, os.FileMode) error
 }
 
 // New constructs a T for direct use in error-path tests.
-func New(tt *tape.T, plugin engine.Plugin, dir string) *T {
+func New(tt *tape.T, plugin any, dir string) *T {
 	return &T{T: tt, plugin: plugin, dir: dir, fatal: tt.TB().Fatalf, writeFile: os.WriteFile}
 }
 
@@ -28,7 +28,7 @@ func New(tt *tape.T, plugin engine.Plugin, dir string) *T {
 func (t *T) Report(name, message string) {
 	t.TB().Helper()
 	src := t.read(name)
-	_, places, err := engine.Indra(src, []engine.Plugin{t.plugin}, false)
+	_, places, err := engine.Indra(src, []any{t.plugin}, false)
 	if err != nil {
 		t.fatal("Report(%q): parse error: %v", name, err)
 		return
@@ -44,7 +44,7 @@ func (t *T) Report(name, message string) {
 func (t *T) NoReport(name string) {
 	t.TB().Helper()
 	src := t.read(name)
-	_, places, err := engine.Indra(src, []engine.Plugin{t.plugin}, false)
+	_, places, err := engine.Indra(src, []any{t.plugin}, false)
 	if err != nil {
 		t.fatal("NoReport(%q): parse error: %v", name, err)
 		return
@@ -62,7 +62,7 @@ func (t *T) NoReport(name string) {
 func (t *T) Transform(name string) {
 	t.TB().Helper()
 	src := t.read(name)
-	got, _, err := engine.Indra(src, []engine.Plugin{t.plugin}, true)
+	got, _, err := engine.Indra(src, []any{t.plugin}, true)
 	if err != nil {
 		t.fatal("Transform(%q): parse error: %v", name, err)
 		return
@@ -85,7 +85,7 @@ func (t *T) Transform(name string) {
 func (t *T) NoTransform(name string) {
 	t.TB().Helper()
 	src := t.read(name)
-	got, _, err := engine.Indra(src, []engine.Plugin{t.plugin}, true)
+	got, _, err := engine.Indra(src, []any{t.plugin}, true)
 	if err != nil {
 		t.fatal("NoTransform(%q): parse error: %v", name, err)
 		return
@@ -106,7 +106,7 @@ func (t *T) read(name string) []byte {
 
 // CreateTest returns a typed test runner bound to plugin.
 // Call once at package level with the fixture dir relative to the caller file.
-func CreateTest(plugin engine.Plugin, dir string) func(*testing.T, string, func(*T)) {
+func CreateTest(plugin any, dir string) func(*testing.T, string, func(*T)) {
 	return tape.Extend(func(base *tape.T) *T {
 		return New(base, plugin, dir)
 	})

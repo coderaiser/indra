@@ -7,7 +7,7 @@ import (
 )
 
 func TestPluginReportMessage(t *testing.T) {
-	if got := Plugin.Report(); got != "remove unused import" {
+	if got := Report(); got != "remove unused import" {
 		t.Fatalf("unexpected report message: %q", got)
 	}
 }

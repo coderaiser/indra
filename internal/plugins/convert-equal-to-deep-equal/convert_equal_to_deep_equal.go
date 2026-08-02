@@ -1,25 +1,29 @@
 package convert_equal_to_deep_equal
 
-import "coderaiser/indra/internal/engine"
+import . "coderaiser/indra/types"
 
-var Plugin = engine.Plugin{
-	Name:    "convert-equal-to-deep-equal",
-	Report:  report,
-	Match:   match,
-	Replace: replace,
-}
+// Self is the plugin value used in engine-loader and Nested maps.
+var Self = self{}
 
-func report() string { return "Equal: use DeepEqual for slices" }
+type self struct{}
 
-func match() map[string]engine.MatchFn {
-	return map[string]engine.MatchFn{
+func (self) Report() string    { return Report() }
+func (self) Match() Matcher    { return Match() }
+func (self) Replace() Replacer { return Replace() }
+
+// Top-level exported funcs are readable and testable individually.
+
+func Report() string { return "Equal: use DeepEqual for slices" }
+
+func Match() Matcher {
+	return Matcher{
 		"__a.Equal(__b, __array)": nil,
 		"__a.Equal(__array, __b)": nil,
 	}
 }
 
-func replace() map[string]string {
-	return map[string]string{
+func Replace() Replacer {
+	return Replacer{
 		"__a.Equal(__b, __array)": "__a.DeepEqual(__b, __array)",
 		"__a.Equal(__array, __b)": "__a.DeepEqual(__array, __b)",
 	}

@@ -1,18 +1,22 @@
 package extract_result_from_assertion
 
-import "coderaiser/indra/internal/engine"
+import . "coderaiser/indra/types"
 
-var Plugin = engine.Plugin{
-	Name:    "extract-result-from-assertion",
-	Report:  report,
-	Match:   match,
-	Replace: replace,
-}
+// Self is the plugin value used in engine-loader and Nested maps.
+var Self = self{}
 
-func report() string { return "extract inline expression from assertion" }
+type self struct{}
 
-func match() map[string]engine.MatchFn {
-	return map[string]engine.MatchFn{
+func (self) Report() string    { return Report() }
+func (self) Match() Matcher    { return Match() }
+func (self) Replace() Replacer { return Replace() }
+
+// Top-level exported funcs are readable and testable individually.
+
+func Report() string { return "extract inline expression from assertion" }
+
+func Match() Matcher {
+	return Matcher{
 		"__a.Equal(__b(__args), __c)":     nil,
 		"__a.DeepEqual(__b(__args), __c)": nil,
 		"__a.Equal(__b, __array)":         nil,
@@ -20,8 +24,8 @@ func match() map[string]engine.MatchFn {
 	}
 }
 
-func replace() map[string]string {
-	return map[string]string{
+func Replace() Replacer {
+	return Replacer{
 		"__a.Equal(__b(__args), __c)":     "result := __b(__args)\n__a.Equal(result, __c)",
 		"__a.DeepEqual(__b(__args), __c)": "result := __b(__args)\n__a.DeepEqual(result, __c)",
 		"__a.Equal(__b, __array)":         "expected := __array\n__a.Equal(__b, expected)",

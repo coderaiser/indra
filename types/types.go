@@ -35,11 +35,5 @@ type Place struct {
 	Pos     token.Position
 }
 
-// Plugin is the union interface for all plugin kinds.
-// Implemented by ReplacerPlugin and TraverserPlugin via Self var.
-type Plugin interface {
-	isPlugin()
-}
-
 // Nested is a group plugin: maps rule name → sub-plugin Self value.
-type Nested map[string]Plugin
+type Nested map[string]any

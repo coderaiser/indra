@@ -4,7 +4,93 @@ import (
 	"go/ast"
 	"strings"
 	"testing"
+
+	"coderaiser/indra/types"
 )
+
+// second is a duplicate of reportOnly to test ordering.
+type second struct{}
+
+func (second) Report() string { return "message" }
+func (second) Match() types.Matcher {
+	return types.Matcher{"t.Equal(__a, __b)": nil}
+}
+func (second) Replace() types.Replacer { return nil }
+
+// multiPlacer replaces one statement with two.
+type multiPlacer struct{}
+
+func (multiPlacer) Report() string { return "msg" }
+func (multiPlacer) Match() types.Matcher {
+	return types.Matcher{"makeSlices(__x)": nil}
+}
+func (multiPlacer) Replace() types.Replacer {
+	return types.Replacer{"makeSlices(__x)": "x := __x\ny := __x"}
+}
+
+// guardedFalse has a guard that rejects every match.
+type guardedFalse struct{}
+
+func (guardedFalse) Report() string { return "msg" }
+func (guardedFalse) Match() types.Matcher {
+	return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return false }}
+}
+func (guardedFalse) Replace() types.Replacer { return nil }
+
+// guardedTrue has a guard that accepts every match.
+type guardedTrue struct{}
+
+func (guardedTrue) Report() string { return "msg" }
+func (guardedTrue) Match() types.Matcher {
+	return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}
+}
+func (guardedTrue) Replace() types.Replacer { return nil }
+
+// badTemplate has an invalid replacement template.
+type badTemplate struct{}
+
+func (badTemplate) Report() string { return "msg" }
+func (badTemplate) Match() types.Matcher {
+	return types.Matcher{"call(__a)": nil}
+}
+func (badTemplate) Replace() types.Replacer {
+	return types.Replacer{"call(__a)": "this is ( broken"}
+}
+
+// wrap moves an arg slice into a call.
+type wrap struct{}
+
+func (wrap) Report() string { return "msg" }
+func (wrap) Match() types.Matcher {
+	return types.Matcher{"g(__args)": nil}
+}
+func (wrap) Replace() types.Replacer {
+	return types.Replacer{"g(__args)": "f(__args)"}
+}
+
+// body rewraps a function literal body.
+type body struct{}
+
+func (body) Report() string { return "msg" }
+func (body) Match() types.Matcher {
+	return types.Matcher{"g(func() { __body })": nil}
+}
+func (body) Replace() types.Replacer {
+	return types.Replacer{"g(func() { __body })": "h(func() {\n__body\n})"}
+}
+
+// blockVisitor reports one place for every block.
+type blockVisitor struct{}
+
+func (blockVisitor) Report() string { return "block issue" }
+func (blockVisitor) Traverse() types.Traverser {
+	return types.Traverser{
+		"*ast.BlockStmt": func(node ast.Node, vars types.Vars) []types.Place {
+			return []types.Place{{Message: "block issue"}}
+		},
+	}
+}
+func (blockVisitor) Fix(node ast.Node, places []types.Place) {}
 
 func TestNonMatchingStatement(t *testing.T) {
 	src := `package p
@@ -14,7 +100,7 @@ func f() {
 	t.Equal(a, b)
 }
 `
-	_, places, err := Indra([]byte(src), []Plugin{reportOnlyPlugin()}, false)
+	_, places, err := Indra([]byte(src), []any{reportOnly{}}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,14 +110,7 @@ func f() {
 }
 
 func TestGuardRejects(t *testing.T) {
-	p := Plugin{
-		Name:   "guarded",
-		Report: func() string { return "msg" },
-		Match: func() map[string]MatchFn {
-			return map[string]MatchFn{"t.Equal(__a, __b)": func(v Vars) bool { return false }}
-		},
-	}
-	_, places, err := Indra([]byte(equalSrc), []Plugin{p}, false)
+	_, places, err := Indra([]byte(equalSrc), []any{guardedFalse{}}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,14 +120,7 @@ func TestGuardRejects(t *testing.T) {
 }
 
 func TestGuardAccepts(t *testing.T) {
-	p := Plugin{
-		Name:   "guarded",
-		Report: func() string { return "msg" },
-		Match: func() map[string]MatchFn {
-			return map[string]MatchFn{"t.Equal(__a, __b)": func(v Vars) bool { return true }}
-		},
-	}
-	_, places, err := Indra([]byte(equalSrc), []Plugin{p}, false)
+	_, places, err := Indra([]byte(equalSrc), []any{guardedTrue{}}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,17 +130,7 @@ func TestGuardAccepts(t *testing.T) {
 }
 
 func TestInvalidTemplateSkipsRewrite(t *testing.T) {
-	p := Plugin{
-		Name:   "bad",
-		Report: func() string { return "msg" },
-		Match: func() map[string]MatchFn {
-			return map[string]MatchFn{"call(__a)": nil}
-		},
-		Replace: func() map[string]string {
-			return map[string]string{"call(__a)": "this is ( broken"}
-		},
-	}
-	out, places, err := Indra([]byte("package p\nfunc f() {\n\tcall(x)\n}\n"), []Plugin{p}, true)
+	out, places, err := Indra([]byte("package p\nfunc f() {\n\tcall(x)\n}\n"), []any{badTemplate{}}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +150,7 @@ func f() {
 	t.Equal(c, d)
 }
 `
-	out, _, err := Indra([]byte(src), []Plugin{replacePlugin()}, true)
+	out, _, err := Indra([]byte(src), []any{replacer{}}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,17 +161,7 @@ func f() {
 }
 
 func TestRenderArgsSlice(t *testing.T) {
-	p := Plugin{
-		Name:   "wrap",
-		Report: func() string { return "msg" },
-		Match: func() map[string]MatchFn {
-			return map[string]MatchFn{"g(__args)": nil}
-		},
-		Replace: func() map[string]string {
-			return map[string]string{"g(__args)": "f(__args)"}
-		},
-	}
-	out, _, err := Indra([]byte("package p\nfunc f() {\n\tg(a, b)\n}\n"), []Plugin{p}, true)
+	out, _, err := Indra([]byte("package p\nfunc f() {\n\tg(a, b)\n}\n"), []any{wrap{}}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,17 +171,7 @@ func TestRenderArgsSlice(t *testing.T) {
 }
 
 func TestRenderBodySlice(t *testing.T) {
-	p := Plugin{
-		Name:   "body",
-		Report: func() string { return "msg" },
-		Match: func() map[string]MatchFn {
-			return map[string]MatchFn{"g(func() { __body })": nil}
-		},
-		Replace: func() map[string]string {
-			return map[string]string{"g(func() { __body })": "h(func() {\n__body\n})"}
-		},
-	}
-	out, _, err := Indra([]byte("package p\nfunc f() {\n\tg(func() { x() })\n}\n"), []Plugin{p}, true)
+	out, _, err := Indra([]byte("package p\nfunc f() {\n\tg(func() { x() })\n}\n"), []any{body{}}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,40 +197,25 @@ func TestSubstituteHelpers(t *testing.T) {
 }
 
 func TestTraverseBlockStmt(t *testing.T) {
-	p := Plugin{
-		Name:   "block-visitor",
-		Report: func() string { return "block issue" },
-		Traverse: func() map[string]TraverseVisitor {
-			return map[string]TraverseVisitor{
-				"*ast.BlockStmt": func(node ast.Node, vars Vars) []Place {
-					return []Place{{Message: "block issue"}}
-				},
-			}
-		},
-	}
 	src := `package p
 func f() {
 	x := 1
 	_ = x
 }
 `
-	_, places, err := Indra([]byte(src), []Plugin{p}, false)
+	_, places, err := Indra([]byte(src), []any{blockVisitor{}}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// f() has one block, so expect 1 place
 	if len(places) != 1 {
 		t.Fatalf("expected 1 place from block visitor, got %d", len(places))
 	}
-	if places[0].Rule != "block-visitor" {
+	if places[0].Rule != "blockVisitor" {
 		t.Fatalf("unexpected rule: %s", places[0].Rule)
 	}
 }
 
 func TestStripPositionsNilNode(t *testing.T) {
-	// ast.Inspect calls the visitor with nil to signal end-of-subtree.
-	// Pass a node whose child is nil to exercise the nil branch in stripPositions.
 	node := &ast.Ident{Name: "x"}
-	// stripPositions must not panic on a node that ast.Inspect will call with nil
 	stripPositions(node)
 }
