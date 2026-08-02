@@ -12,14 +12,15 @@ import (
 // T wraps tape.T with plugin-level lint assertions.
 type T struct {
 	*tape.T
-	plugin engine.Plugin
-	dir    string
-	fatal  func(format string, args ...any)
+	plugin    engine.Plugin
+	dir       string
+	fatal     func(format string, args ...any)
+	writeFile func(string, []byte, os.FileMode) error
 }
 
 // New constructs a T for direct use in error-path tests.
 func New(tt *tape.T, plugin engine.Plugin, dir string) *T {
-	return &T{T: tt, plugin: plugin, dir: dir, fatal: tt.TB().Fatalf}
+	return &T{T: tt, plugin: plugin, dir: dir, fatal: tt.TB().Fatalf, writeFile: os.WriteFile}
 }
 
 // Report asserts the plugin emits exactly ≥1 place whose first Message equals
@@ -68,7 +69,7 @@ func (t *T) Transform(name string) {
 	}
 	fixPath := filepath.Join(t.dir, name+"-fix.go")
 	if os.Getenv("UPDATE") == "1" {
-		if werr := os.WriteFile(fixPath, got, 0644); werr != nil {
+		if werr := t.writeFile(fixPath, got, 0644); werr != nil {
 			t.fatal("Transform(%q): write fixture: %v", name, werr)
 			return
 		}

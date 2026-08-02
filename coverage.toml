@@ -1,0 +1,5 @@
+# coverage.toml — packages excluded from the 100% coverage requirement.
+# cmd/indra/main is a 3-line OS entry point (os.Args + os.Exit);
+# it is exercised by integration/e2e tests, not unit tests.
+[exclude]
+packages = ["coderaiser/indra/cmd/indra"]

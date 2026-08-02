@@ -8,8 +8,7 @@ import (
 )
 
 var Plugin = engine.Plugin{
-	Name:   "remove-unused-variable",
-	Report: func() string { return "remove unused variable" },
+	Name: "remove-unused-variable",
 	Traverse: func() map[string]engine.TraverseVisitor {
 		return map[string]engine.TraverseVisitor{
 			"*ast.BlockStmt": visitBlock,

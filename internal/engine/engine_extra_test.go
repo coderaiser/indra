@@ -184,3 +184,11 @@ func f() {
 		t.Fatalf("unexpected rule: %s", places[0].Rule)
 	}
 }
+
+func TestStripPositionsNilNode(t *testing.T) {
+	// ast.Inspect calls the visitor with nil to signal end-of-subtree.
+	// Pass a node whose child is nil to exercise the nil branch in stripPositions.
+	node := &ast.Ident{Name: "x"}
+	// stripPositions must not panic on a node that ast.Inspect will call with nil
+	stripPositions(node)
+}

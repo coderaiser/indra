@@ -162,20 +162,13 @@ func TestReadMissingFile(t *testing.T) {
 }
 
 func TestTransformUpdateWriteError(t *testing.T) {
-	if os.Getuid() == 0 {
-		t.Logf("skip: running as root, chmod restrictions do not apply")
-		return
-	}
 	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
-	// r-x: allow reading fixtures but prevent writing the fix fixture.
-	if err := os.Chmod(dir, 0555); err != nil {
-		t.Logf("skip: cannot chmod: %v", err)
-		return
-	}
-	t.Cleanup(func() { os.Chmod(dir, 0755) })
 	t.Setenv("UPDATE", "1")
 	tape.Test(t, "test: Transform UPDATE write error", func(tt *tape.T) {
 		tr, calls := newRecording(tt, replacePlugin(), dir)
+		tr.writeFile = func(_ string, _ []byte, _ os.FileMode) error {
+			return os.ErrPermission
+		}
 		tr.Transform("replace")
 		assertFatal(tt.TB(), *calls)
 		tt.End()

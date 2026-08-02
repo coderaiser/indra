@@ -191,11 +191,7 @@ func stripPositions(n ast.Node) {
 		if node == nil {
 			return false
 		}
-		v := reflect.ValueOf(node)
-		if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
-			return true
-		}
-		e := v.Elem()
+		e := reflect.ValueOf(node).Elem()
 		t := e.Type()
 		for i := 0; i < e.NumField(); i++ {
 			if t.Field(i).Type == reflect.TypeOf(token.NoPos) {
