@@ -3,22 +3,28 @@ package extractresultfromassertion
 import "coderaiser/indra/internal/engine"
 
 var Plugin = engine.Plugin{
-	Name:   "extract-result-from-assertion",
-	Report: func() string { return "extract inline expression from assertion" },
-	Match: func() map[string]engine.MatchFn {
-		return map[string]engine.MatchFn{
-			"__recv.Equal(__call(__args), __b)":     nil,
-			"__recv.DeepEqual(__call(__args), __b)": nil,
-			"__recv.Equal(__a, __array)":            nil,
-			"__recv.DeepEqual(__a, __array)":        nil,
-		}
-	},
-	Replace: func() map[string]string {
-		return map[string]string{
-			"__recv.Equal(__call(__args), __b)":     "result := __call(__args)\n__recv.Equal(result, __b)",
-			"__recv.DeepEqual(__call(__args), __b)": "result := __call(__args)\n__recv.DeepEqual(result, __b)",
-			"__recv.Equal(__a, __array)":            "expected := __array\n__recv.Equal(__a, expected)",
-			"__recv.DeepEqual(__a, __array)":        "expected := __array\n__recv.DeepEqual(__a, expected)",
-		}
-	},
+	Name:    "extract-result-from-assertion",
+	Report:  report,
+	Match:   match,
+	Replace: replace,
+}
+
+func report() string { return "extract inline expression from assertion" }
+
+func match() map[string]engine.MatchFn {
+	return map[string]engine.MatchFn{
+		"__a.Equal(__b(__args), __c)":     nil,
+		"__a.DeepEqual(__b(__args), __c)": nil,
+		"__a.Equal(__b, __array)":         nil,
+		"__a.DeepEqual(__b, __array)":     nil,
+	}
+}
+
+func replace() map[string]string {
+	return map[string]string{
+		"__a.Equal(__b(__args), __c)":     "result := __b(__args)\n__a.Equal(result, __c)",
+		"__a.DeepEqual(__b(__args), __c)": "result := __b(__args)\n__a.DeepEqual(result, __c)",
+		"__a.Equal(__b, __array)":         "expected := __array\n__a.Equal(__b, expected)",
+		"__a.DeepEqual(__b, __array)":     "expected := __array\n__a.DeepEqual(__b, expected)",
+	}
 }

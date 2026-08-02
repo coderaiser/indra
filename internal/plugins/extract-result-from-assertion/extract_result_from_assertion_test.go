@@ -16,7 +16,7 @@ var (
 )
 
 func TestExtractResultFromAssertion(t *testing.T) {
-	Test(t, "extract-result-from-assertion: report inline call as first arg", func(t *indratest.T) {
+	Test(t, "extract-result-from-assertion: report inline call", func(t *indratest.T) {
 		t.Report("inline-call", "extract inline expression from assertion")
 		t.End()
 	})
@@ -26,7 +26,7 @@ func TestExtractResultFromAssertion(t *testing.T) {
 		t.End()
 	})
 
-	Test(t, "extract-result-from-assertion: report array literal as second arg", func(t *indratest.T) {
+	Test(t, "extract-result-from-assertion: report array literal", func(t *indratest.T) {
 		t.Report("array-literal", "extract inline expression from assertion")
 		t.End()
 	})
