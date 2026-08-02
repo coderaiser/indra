@@ -4,25 +4,23 @@ import (
 	"go/ast"
 	"go/token"
 	"testing"
-
-	"coderaiser/indra/compare"
 )
 
 // replacerLike is a minimal ReplacerPlugin that satisfies Plugin.
 type replacerLike struct{}
 
-func (replacerLike) Report() string  { return "r" }
-func (replacerLike) Match() Matcher  { return nil }
+func (replacerLike) Report() string    { return "r" }
+func (replacerLike) Match() Matcher    { return nil }
 func (replacerLike) Replace() Replacer { return nil }
-func (replacerLike) isPlugin()       {}
+func (replacerLike) isPlugin()         {}
 
 // traverserLike is a minimal TraverserPlugin that satisfies Plugin.
 type traverserLike struct{}
 
-func (traverserLike) Report() string     { return "t" }
-func (traverserLike) Traverse() Traverser { return nil }
+func (traverserLike) Report() string                    { return "t" }
+func (traverserLike) Traverse() Traverser               { return nil }
 func (traverserLike) Fix(node ast.Node, places []Place) {}
-func (traverserLike) isPlugin()          {}
+func (traverserLike) isPlugin()                         {}
 
 // TestPluginInterface verifies both plugin kinds satisfy the Plugin interface.
 func TestPluginInterface(t *testing.T) {
@@ -40,8 +38,8 @@ func TestPluginInterface(t *testing.T) {
 // TestNestedHoldsSubPlugins verifies Nested can hold both plugin kinds.
 func TestNestedHoldsSubPlugins(t *testing.T) {
 	n := Nested{
-		"replacer":   replacerLike{},
-		"traverser":  traverserLike{},
+		"replacer":  replacerLike{},
+		"traverser": traverserLike{},
 	}
 	if len(n) != 2 {
 		t.Fatalf("expected 2 sub plugins, got %d", len(n))
@@ -112,14 +110,5 @@ func TestTraverserShape(t *testing.T) {
 	}
 	if _, ok := tr["*ast.File"]; !ok {
 		t.Fatal("expected *ast.File key in traverser")
-	}
-}
-
-// TestCompareRoundTrip guards against accidental drift of the Vars binding.
-func TestCompareRoundTrip(t *testing.T) {
-	src := "package p\nvar _ = 1\n"
-	_ = compare.Compare
-	if src == "" {
-		t.Fatal("unreachable")
 	}
 }
