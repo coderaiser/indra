@@ -85,7 +85,7 @@ func TestRunReportsResults(t *testing.T) {
 import "testing"
 
 func TestFoo(t *testing.T) {
-	t.Skip("skip")
+	t.Equal(1, []int{1})
 }
 `
 	if err := os.WriteFile(srcFile, []byte(src), 0644); err != nil {
