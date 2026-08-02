@@ -16,13 +16,18 @@ var (
 )
 
 func TestConvertEqualToDeepEqual(t *testing.T) {
-	Test(t, "convert-equal-to-deep-equal: report equal with array second arg", func(t *indratest.T) {
+	Test(t, "convert-equal-to-deep-equal: report array second arg", func(t *indratest.T) {
 		t.Report("equal-slice", "Equal: use DeepEqual for slices")
 		t.End()
 	})
 
-	Test(t, "convert-equal-to-deep-equal: transform Equal to DeepEqual", func(t *indratest.T) {
+	Test(t, "convert-equal-to-deep-equal: transform array second arg", func(t *indratest.T) {
 		t.Transform("equal-slice")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-deep-equal: report array first arg", func(t *indratest.T) {
+		t.Report("equal-slice-first", "Equal: use DeepEqual for slices")
 		t.End()
 	})
 
@@ -31,13 +36,8 @@ func TestConvertEqualToDeepEqual(t *testing.T) {
 		t.End()
 	})
 
-	Test(t, "convert-equal-to-deep-equal: no transform for already correct", func(t *indratest.T) {
+	Test(t, "convert-equal-to-deep-equal: no transform for DeepEqual", func(t *indratest.T) {
 		t.NoTransform("deep-equal")
-		t.End()
-	})
-
-	Test(t, "convert-equal-to-deep-equal: report equal with array first arg", func(t *indratest.T) {
-		t.Report("equal-slice-first", "Equal: use DeepEqual for slices")
 		t.End()
 	})
 }
