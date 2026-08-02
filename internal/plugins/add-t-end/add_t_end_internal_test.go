@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"coderaiser/indra/internal/engine"
-	"coderaiser/indra/internal/engine/compare"
+	"coderaiser/indra/compare"
 )
 
 func TestStmtsContainEnd(t *testing.T) {

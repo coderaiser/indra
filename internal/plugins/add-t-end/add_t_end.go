@@ -4,7 +4,7 @@ import (
 	"go/ast"
 
 	"coderaiser/indra/internal/engine"
-	"coderaiser/indra/internal/engine/compare"
+	"coderaiser/indra/compare"
 )
 
 var Plugin = engine.Plugin{

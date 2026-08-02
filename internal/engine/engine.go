@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"coderaiser/indra/internal/engine/compare"
+	"coderaiser/indra/compare"
 )
 
 // Vars is an alias for the compare hole-bindings map.
