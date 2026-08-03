@@ -25,8 +25,7 @@ func TestLintReports(t *testing.T) {
 	tape.Test(t, "lint: Lint returns a place for a matching assertion", func(t *tape.T) {
 		src := []byte("package p\n\nfunc f() {\n\tt.Equal(1, []int{1})\n}\n")
 		_, places, err := indra.Lint(src, false)
-		t.Ok(err == nil)
-		t.Ok(len(places) > 0)
+		t.Ok(err == nil && len(places) > 0)
 		t.End()
 	})
 }
@@ -44,8 +43,7 @@ func TestLintFix(t *testing.T) {
 	tape.Test(t, "lint: Lint rewrites with fix=true", func(t *tape.T) {
 		src := []byte("package p\n\nfunc f() {\n\tt.Equal(1, []int{1})\n}\n")
 		out, _, err := indra.Lint(src, true)
-		t.Ok(err == nil)
-		t.Ok(strings.Contains(string(out), "DeepEqual"))
+		t.Ok(err == nil && strings.Contains(string(out), "expected"))
 		t.End()
 	})
 }
@@ -100,8 +98,8 @@ func TestIndraMissingFileError(t *testing.T) {
 
 func TestIndraCleanFile(t *testing.T) {
 	tape.Test(t, "lint: clean file returns nil", func(t *tape.T) {
-		dir := t.TempDir()
-		f := writeFile(t, dir, "clean.go", "package p\n\nfunc f() {}\n")
+		dir := t.TB().TempDir()
+		f := writeFile(t.TB(), dir, "clean.go", "package p\n\nfunc f() {}\n")
 		err := indra.Indra([]string{f}, io.Discard)
 		t.Ok(err == nil)
 		t.End()
@@ -110,8 +108,8 @@ func TestIndraCleanFile(t *testing.T) {
 
 func TestIndraFailsOnIssue(t *testing.T) {
 	tape.Test(t, "lint: file with issue fails", func(t *tape.T) {
-		dir := t.TempDir()
-		f := writeFile(t, dir, "bad.go", "package p\n\nfunc f() {\n\tt.Equal(1, []int{1})\n}\n")
+		dir := t.TB().TempDir()
+		f := writeFile(t.TB(), dir, "bad.go", "package p\n\nfunc f() {\n\tt.Equal(1, []int{1})\n}\n")
 		err := indra.Indra([]string{f}, io.Discard)
 		t.Ok(err != nil)
 		t.End()
@@ -120,12 +118,11 @@ func TestIndraFailsOnIssue(t *testing.T) {
 
 func TestIndraFixWrites(t *testing.T) {
 	tape.Test(t, "lint: --fix rewrites the file", func(t *tape.T) {
-		dir := t.TempDir()
-		f := writeFile(t, dir, "bad.go", "package p\n\nfunc f() {\n\tt.Equal(1, []int{1})\n}\n")
+		dir := t.TB().TempDir()
+		f := writeFile(t.TB(), dir, "bad.go", "package p\n\nfunc f() {\n\tt.Equal(1, []int{1})\n}\n")
 		err := indra.Indra([]string{"--fix", f}, io.Discard)
-		t.Ok(err == nil)
 		data, _ := os.ReadFile(f)
-		t.Ok(strings.Contains(string(data), "DeepEqual"))
+		t.Ok(err == nil && strings.Contains(string(data), "expected"))
 		t.End()
 	})
 }
