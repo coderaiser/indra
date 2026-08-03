@@ -1,6 +1,12 @@
 package remove_unused_variable
 
-import "testing"
+import (
+	"go/ast"
+	"go/token"
+	"testing"
+
+	"coderaiser/indra/types"
+)
 
 // TestSelfReportMessage verifies the self wrapper forwards the report message,
 // covering the method the engine-loader reflects on.
@@ -22,5 +28,23 @@ func TestSelfTraverseCovered(t *testing.T) {
 func TestTopLevelReportMessage(t *testing.T) {
 	if got := Report(); got != "remove unused variable" {
 		t.Fatalf("unexpected report message: %q", got)
+	}
+}
+
+// TestSelfFixRemovesUnusedVariable covers self.Fix, the method the runner
+// reflects on, by removing an unused variable from a hand-built block.
+func TestSelfFixRemovesUnusedVariable(t *testing.T) {
+	block := &ast.BlockStmt{
+		List: []ast.Stmt{
+			&ast.AssignStmt{
+				Tok: token.DEFINE,
+				Lhs: []ast.Expr{&ast.Ident{Name: "x"}},
+				Rhs: []ast.Expr{&ast.BasicLit{Kind: token.INT, Value: "1"}},
+			},
+		},
+	}
+	Self.Fix(block, []types.Place{{Message: "remove unused variable: x"}})
+	if len(block.List) != 0 {
+		t.Fatalf("expected unused variable statement removed, got %d stmts", len(block.List))
 	}
 }

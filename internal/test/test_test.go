@@ -127,3 +127,30 @@ func TestNoTransform(t *testing.T) {
 		t.End()
 	})
 }
+
+// TestCreateTestRealPlugin covers CreateTest + loadPlugin on a real plugin
+// from the static index, exercising the New + loadPlugin happy path.
+func TestCreateTestRealPlugin(t *testing.T) {
+	dir := writeDir(t, map[string]string{
+		"skip.go": `package fixture
+
+import (
+	Test "github.com/coderaiser/go-tape"
+	"testing"
+)
+
+func TestFoo(t *testing.T) {
+	Test.Skip(t, "foo: something", func(t *Test.T) {
+		t.Equal(1, 1)
+		t.End()
+	})
+}
+`,
+	})
+	Test := indratest.CreateTest("coderaiser/indra/internal/plugins/remove-skip", dir)
+	Test(t, "test: CreateTest real plugin reports", func(t *indratest.T) {
+		t.Report("skip", "remove Test.Skip call")
+		t.End()
+	})
+}
+

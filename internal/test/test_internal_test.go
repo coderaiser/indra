@@ -190,3 +190,14 @@ func TestTransformUpdateHappy(t *testing.T) {
 		tt.End()
 	})
 }
+
+// TestLoadPluginUnknownPanics covers the unknown-plugin panic path of
+// loadPlugin, which CreateTest routes through for real plugin paths.
+func TestLoadPluginUnknownPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic for unknown plugin path")
+		}
+	}()
+	loadPlugin("coderaiser/indra/internal/plugins/does-not-exist")
+}

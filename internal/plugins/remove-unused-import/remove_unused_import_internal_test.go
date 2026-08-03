@@ -4,6 +4,8 @@ import (
 	"go/ast"
 	"go/token"
 	"testing"
+
+	"coderaiser/indra/types"
 )
 
 func TestPluginReportMessage(t *testing.T) {
@@ -49,5 +51,22 @@ func TestCollectImportsSkipsNonImportSpec(t *testing.T) {
 	}
 	if imports[0].path != `"fmt"` {
 		t.Fatalf("unexpected path: %q", imports[0].path)
+	}
+}
+
+// TestSelfFixRemovesUnusedImport covers self.Fix, the method the runner
+// reflects on, by removing an unused import from a hand-built AST.
+func TestSelfFixRemovesUnusedImport(t *testing.T) {
+	file := &ast.File{
+		Decls: []ast.Decl{
+			&ast.GenDecl{
+				Tok:   token.IMPORT,
+				Specs: []ast.Spec{&ast.ImportSpec{Path: &ast.BasicLit{Kind: token.STRING, Value: `"fmt"`}}},
+			},
+		},
+	}
+	Self.Fix(file, []types.Place{{Message: `remove unused import: "fmt"`}})
+	if len(file.Decls) != 0 {
+		t.Fatalf("expected import decl to be removed, got %d decls", len(file.Decls))
 	}
 }
