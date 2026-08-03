@@ -23,12 +23,12 @@ tasks:
   lint:
     deps: [build]
     cmds:
-      - ./indra ./...
+      - ./indra .
 
   fix:lint:
     deps: [build]
     cmds:
-      - ./indra --fix ./...
+      - ./indra --fix .
 
   clean:
     cmds:
