@@ -8,5 +8,6 @@ var Rules = Nested{
 	"remove-skip":                   "coderaiser/indra/internal/plugins/remove-skip",
 	"add-t-end":                     "coderaiser/indra/internal/plugins/add-t-end",
 	"convert-equal-to-deep-equal":   "coderaiser/indra/internal/plugins/convert-equal-to-deep-equal",
+	"convert-equal-to-not-ok":       "coderaiser/indra/internal/plugins/convert-equal-to-not-ok",
 	"extract-result-from-assertion": "coderaiser/indra/internal/plugins/extract-result-from-assertion",
 }

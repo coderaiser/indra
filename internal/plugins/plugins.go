@@ -6,6 +6,7 @@ import (
 	remove_useless_match "coderaiser/indra/internal/plugin-indra/remove-useless-match"
 	"coderaiser/indra/internal/plugins/add-t-end"
 	"coderaiser/indra/internal/plugins/convert-equal-to-deep-equal"
+	"coderaiser/indra/internal/plugins/convert-equal-to-not-ok"
 	"coderaiser/indra/internal/plugins/extract-result-from-assertion"
 	"coderaiser/indra/internal/plugins/remove-skip"
 	"coderaiser/indra/internal/plugins/remove-unused-import"
@@ -30,6 +31,7 @@ var All = []engine_loader.PluginFuncs{
 var Providers = []engine_loader.PluginFuncs{
 	{Name: "remove-skip", Path: "coderaiser/indra/internal/plugins/remove-skip", Report: remove_skip.Report, Replace: remove_skip.Replace},
 	{Name: "convert-equal-to-deep-equal", Path: "coderaiser/indra/internal/plugins/convert-equal-to-deep-equal", Report: convert_equal_to_deep_equal.Report, Match: convert_equal_to_deep_equal.Match, Replace: convert_equal_to_deep_equal.Replace},
+	{Name: "convert-equal-to-not-ok", Path: "coderaiser/indra/internal/plugins/convert-equal-to-not-ok", Report: convert_equal_to_not_ok.Report, Match: convert_equal_to_not_ok.Match, Replace: convert_equal_to_not_ok.Replace},
 	{Name: "add-t-end", Path: "coderaiser/indra/internal/plugins/add-t-end", Report: add_t_end.Report, Match: add_t_end.Match, Replace: add_t_end.Replace},
 	{Name: "extract-result-from-assertion", Path: "coderaiser/indra/internal/plugins/extract-result-from-assertion", Report: extract_result_from_assertion.Report, Match: extract_result_from_assertion.Match, Replace: extract_result_from_assertion.Replace},
 }
