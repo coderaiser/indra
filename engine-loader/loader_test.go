@@ -1,0 +1,298 @@
+package engine_loader
+
+import (
+	"go/ast"
+	"testing"
+
+	"coderaiser/indra/types"
+)
+
+func replacerFuncs(name, path string) PluginFuncs {
+	return PluginFuncs{
+		Name:    name,
+		Path:    path,
+		Report:  func() string { return "r:" + name },
+		Match:   func() types.Matcher { return types.Matcher{"a": nil} },
+		Replace: func() types.Replacer { return types.Replacer{"a": "b"} },
+	}
+}
+
+func traverserFuncs(name, path string) PluginFuncs {
+	return PluginFuncs{
+		Name:     name,
+		Path:     path,
+		Report:   func() string { return "t:" + name },
+		Traverse: func() types.Traverser { return types.Traverser{"*ast.File": fileVisitor} },
+		Fix:      func(node ast.Node, places []types.Place) {},
+	}
+}
+
+func fileVisitor(node ast.Node, vars types.Vars) []types.Place { return nil }
+
+func names(kinds []PluginKind) map[string]bool {
+	m := make(map[string]bool, len(kinds))
+	for _, k := range kinds {
+		m[k.Name()] = true
+	}
+	return m
+}
+
+func TestLoadAllEnabled(t *testing.T) {
+	plugins := []PluginFuncs{
+		replacerFuncs("remove-skip", "p/remove-skip"),
+		traverserFuncs("remove-unused-import", "p/remove-unused-import"),
+	}
+	got := Load(plugins, nil, Config{})
+	if len(got) != 2 {
+		t.Fatalf("expected 2 plugins, got %d", len(got))
+	}
+	if _, ok := got[0].(ReplacerPlugin); !ok {
+		t.Fatalf("expected ReplacerPlugin for first, got %T", got[0])
+	}
+	if _, ok := got[1].(TraverserPlugin); !ok {
+		t.Fatalf("expected TraverserPlugin for second, got %T", got[1])
+	}
+}
+
+func TestLoadExactDisabled(t *testing.T) {
+	plugins := []PluginFuncs{replacerFuncs("skip", "p/skip")}
+	cfg := Config{"skip": {Enabled: false}}
+	got := Load(plugins, nil, cfg)
+	if len(got) != 0 {
+		t.Fatalf("expected 0 plugins, got %d", len(got))
+	}
+}
+
+func TestLoadPrefixDisabled(t *testing.T) {
+	// Both remove-skip and add-t-end exist as top-level rules AND as tape/*
+	// sub-rules. Disabling the "tape" prefix keeps only the top-level rules.
+	plugins := []PluginFuncs{
+		replacerFuncs("remove-skip", "p/remove-skip"),
+		replacerFuncs("add-t-end", "p/add-t-end"),
+	}
+	nested := map[string]types.Nested{
+		"tape": {
+			"remove-skip": "p/remove-skip",
+			"add-t-end":   "p/add-t-end",
+		},
+	}
+	cfg := Config{"tape": {Enabled: false}}
+	got := Load(plugins, nested, cfg)
+	nms := names(got)
+	if !nms["remove-skip"] || !nms["add-t-end"] {
+		t.Fatalf("expected top-level rules kept, got %v", nms)
+	}
+	if nms["tape/remove-skip"] || nms["tape/add-t-end"] {
+		t.Fatalf("expected tape/* rules disabled, got %v", nms)
+	}
+}
+
+func TestLoadOffRespected(t *testing.T) {
+	// The tape/remove-skip sub-rule is Off() by default; only the top-level
+	// remove-skip rule survives.
+	plugins := []PluginFuncs{replacerFuncs("remove-skip", "p/remove-skip")}
+	nested := map[string]types.Nested{
+		"tape": {"remove-skip": types.Off("p/remove-skip")},
+	}
+	got := Load(plugins, nested, Config{})
+	nms := names(got)
+	if nms["tape/remove-skip"] {
+		t.Fatalf("expected Off() tape/remove-skip disabled, got %v", nms)
+	}
+	if !nms["remove-skip"] {
+		t.Fatalf("expected top-level remove-skip enabled, got %v", nms)
+	}
+}
+
+func TestLoadOffOverriddenOn(t *testing.T) {
+	// Config turning tape/remove-skip on overtakes the default Off().
+	plugins := []PluginFuncs{replacerFuncs("remove-skip", "p/remove-skip")}
+	nested := map[string]types.Nested{
+		"tape": {"remove-skip": types.Off("p/remove-skip")},
+	}
+	cfg := Config{"tape/remove-skip": {Enabled: true}}
+	got := Load(plugins, nested, cfg)
+	nms := names(got)
+	if !nms["tape/remove-skip"] {
+		t.Fatalf("expected tape/remove-skip enabled by config, got %v", nms)
+	}
+}
+
+func TestLoadMissingNestedPath(t *testing.T) {
+	// nested path with no matching PluginFuncs is skipped
+	nested := map[string]types.Nested{
+		"tape": {"ghost": "p/ghost"},
+	}
+	got := Load([]PluginFuncs{replacerFuncs("x", "p/x")}, nested, Config{})
+	if len(got) != 1 {
+		t.Fatalf("expected only top-level x, got %d", len(got))
+	}
+	if got[0].Name() != "x" {
+		t.Fatalf("expected x, got %q", got[0].Name())
+	}
+}
+
+func TestLoadWrongSignaturePanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic for wrong signature")
+		}
+	}()
+	bad := PluginFuncs{Name: "bad", Report: "not-a-func"}
+	Load([]PluginFuncs{bad}, nil, Config{})
+}
+
+func TestLoadUnknownKindPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic for unknown kind")
+		}
+	}()
+	bad := PluginFuncs{
+		Name:   "bad",
+		Report: func() string { return "x" },
+		Match:  func() types.Matcher { return nil },
+		// no Replace, no Traverse/Fix
+	}
+	Load([]PluginFuncs{bad}, nil, Config{})
+}
+
+func TestDefaultConfigEmpty(t *testing.T) {
+	if len(DefaultConfig()) != 0 {
+		t.Fatal("expected empty default config")
+	}
+}
+
+// TestReplacerPluginAccessors exercises the resolved replacer's methods.
+func TestReplacerPluginAccessors(t *testing.T) {
+	p := replacerFuncs("rp", "p/rp")
+	k := resolveKind(p, "rp")
+	rp, ok := k.(ReplacerPlugin)
+	if !ok {
+		t.Fatalf("expected ReplacerPlugin, got %T", k)
+	}
+	rp.pluginKind()
+	if rp.Name() != "rp" || rp.Report() != "r:rp" {
+		t.Fatalf("unexpected name/report: %q %q", rp.Name(), rp.Report())
+	}
+	if rp.Match()["a"] != nil || rp.Replace()["a"] != "b" {
+		t.Fatal("unexpected Match/Replace accessors")
+	}
+}
+
+// TestTraverserPluginAccessors exercises the resolved traverser's methods.
+func TestTraverserPluginAccessors(t *testing.T) {
+	p := traverserFuncs("tp", "p/tp")
+	k := resolveKind(p, "tp")
+	tp, ok := k.(TraverserPlugin)
+	if !ok {
+		t.Fatalf("expected TraverserPlugin, got %T", k)
+	}
+	tp.pluginKind()
+	if tp.Name() != "tp" || tp.Report() != "t:tp" {
+		t.Fatalf("unexpected name/report: %q %q", tp.Name(), tp.Report())
+	}
+	if tp.Traverse()["*ast.File"] == nil {
+		t.Fatal("expected Traverse accessor to return visitor")
+	}
+	tp.Fix(nil, nil) // no-op, just exercises the wrapper
+}
+
+// TestMissingReportPanics covers invokeReport's nil-Report guard.
+func TestMissingReportPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic for missing Report")
+		}
+	}()
+	Load([]PluginFuncs{{Name: "bad", Match: func() types.Matcher { return nil }, Replace: func() types.Replacer { return nil }}}, nil, Config{})
+}
+
+// TestNothingReturnPanics covers funcValue's "not a func" guard.
+func TestNothingReturnPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic for non-func field")
+		}
+	}()
+	Load([]PluginFuncs{{Name: "bad", Report: func() string { return "x" }, Match: "no", Replace: "no"}}, nil, Config{})
+}
+
+// TestFixWrongShapePanics covers funcValue's Fix two-arg guard with a bad shape.
+func TestFixWrongShapePanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic for wrong Fix shape")
+		}
+	}()
+	bad := PluginFuncs{
+		Name:     "bad",
+		Report:   func() string { return "x" },
+		Traverse: func() types.Traverser { return nil },
+		Fix:      func() {},
+	}
+	Load([]PluginFuncs{bad}, nil, Config{})
+}
+
+// TestUnknownFieldPanics covers fieldOf's default branch.
+func TestUnknownFieldPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic for unknown field")
+		}
+	}()
+	fieldOf(PluginFuncs{Name: "p"}, "Yolo")
+}
+
+// TestEntryPathUnknown covers entryPath's default branch.
+func TestEntryPathUnknown(t *testing.T) {
+	if entryPath(42) != "" {
+		t.Fatal("expected empty path for unknown value type")
+	}
+}
+
+// TestEntryPathPluginEntry covers entryPath's PluginEntry branch.
+func TestEntryPathPluginEntry(t *testing.T) {
+	if entryPath(types.PluginEntry{Path: "x", Enabled: true}) != "x" {
+		t.Fatal("expected PluginEntry path")
+	}
+}
+
+// TestEntryPathString covers entryPath's string branch.
+func TestEntryPathString(t *testing.T) {
+	if entryPath("y") != "y" {
+		t.Fatal("expected string path")
+	}
+}
+
+// TestMultiReturnPanics covers funcValue's zero-arg multi-return guard.
+func TestMultiReturnPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic for multi-return func")
+		}
+	}()
+	bad := PluginFuncs{
+		Name:    "bad",
+		Report:  func() (string, error) { return "", nil },
+		Match:   func() types.Matcher { return nil },
+		Replace: func() types.Replacer { return nil },
+	}
+	Load([]PluginFuncs{bad}, nil, Config{})
+}
+
+// TestWrongReturnTypePanics covers mustFunc's type-assertion guard.
+func TestWrongReturnTypePanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic for wrong return type")
+		}
+	}()
+	bad := PluginFuncs{
+		Name:    "bad",
+		Report:  func() int { return 1 },
+		Match:   func() types.Matcher { return nil },
+		Replace: func() types.Replacer { return nil },
+	}
+	Load([]PluginFuncs{bad}, nil, Config{})
+}
