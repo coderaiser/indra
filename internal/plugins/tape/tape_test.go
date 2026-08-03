@@ -1,23 +1,22 @@
 package tape_test
 
 import (
+	"runtime"
 	"testing"
 
-	. "coderaiser/indra/internal/plugins/tape"
+	indratest "coderaiser/indra/internal/test"
 )
 
-func TestRulesKeys(t *testing.T) {
-	for _, key := range []string{"remove-skip", "add-t-end"} {
-		if _, ok := Rules[key]; !ok {
-			t.Fatalf("Rules missing key %q", key)
-		}
-	}
-}
+var Test = indratest.CreateTest(runtime.Caller(0))
 
-func TestRulesValues(t *testing.T) {
-	for k, v := range Rules {
-		if v == nil {
-			t.Fatalf("Rules[%q] is nil", k)
-		}
-	}
+func TestTape(t *testing.T) {
+	Test(t, "tape: transform remove-skip", func(t *indratest.T) {
+		t.Transform("remove-skip")
+		t.End()
+	})
+
+	Test(t, "tape: transform add-t-end", func(t *indratest.T) {
+		t.Transform("add-t-end")
+		t.End()
+	})
 }
