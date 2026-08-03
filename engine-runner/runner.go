@@ -115,13 +115,14 @@ func runOnce(p RunParams) []types.Place {
 			if !ok {
 				continue
 			}
-			patterns := rp.Match()
-			for pattern, guard := range patterns {
+			matcher := rp.Match()
+			replacer := rp.Replace()
+			for _, pattern := range replacerPatterns(matcher, replacer) {
 				vars := compare.Compare(stmt, pattern)
 				if vars == nil {
 					continue
 				}
-				if guard != nil && !guard(vars) {
+				if guard, ok := matcher[pattern]; ok && guard != nil && !guard(vars) {
 					continue
 				}
 				msg := rp.Report()
@@ -134,17 +135,19 @@ func runOnce(p RunParams) []types.Place {
 					Pos:     p.Fset.Position(stmt.Pos()),
 				})
 				if p.Fix {
-					if tmpl, ok := rp.Replace()[pattern]; ok {
-						newStmts := substituteAndParse(tmpl, vars)
-						if newStmts == nil {
-							continue
-						}
-						rewrites = append(rewrites, rewrite{
-							block:    block,
-							idx:      idx,
-							newStmts: newStmts,
-						})
+					tmpl, hasReplace := replacer[pattern]
+					if !hasReplace {
+						continue
 					}
+					newStmts := substituteAndParse(tmpl, vars)
+					if newStmts == nil {
+						continue
+					}
+					rewrites = append(rewrites, rewrite{
+						block:    block,
+						idx:      idx,
+						newStmts: newStmts,
+					})
 				}
 			}
 		}
@@ -218,6 +221,26 @@ func applyDeclRewrites(file *ast.File, rewrites []declRewrite) {
 			file.Decls = append(file.Decls[:r.idx], file.Decls[r.idx+1:]...)
 		}
 	}
+}
+
+// replacerPatterns returns the union of Match() and Replace() pattern keys.
+// Report-only plugins keep their patterns in Match(); after Step 9 a replacer
+// may drop Match() and rely on Replace() keys, so both must be considered.
+func replacerPatterns(matcher types.Matcher, replacer types.Replacer) []string {
+	seen := make(map[string]bool, len(matcher)+len(replacer))
+	patterns := make([]string, 0, len(matcher)+len(replacer))
+	for p := range matcher {
+		patterns = append(patterns, p)
+		seen[p] = true
+	}
+	for p := range replacer {
+		if seen[p] {
+			continue
+		}
+		patterns = append(patterns, p)
+		seen[p] = true
+	}
+	return patterns
 }
 
 // walkStmts visits every statement of every block in the file.

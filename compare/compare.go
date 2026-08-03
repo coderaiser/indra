@@ -157,9 +157,15 @@ func matchChildren(pat ast.Node, real ast.Node, vars Vars) bool {
 	for i := 0; i < p.NumField(); i++ {
 		pf := p.Field(i)
 		rf := r.Field(i)
+		ft := pt.Field(i).Type
 
 		// skip token.Pos bookkeeping fields.
-		if pt.Field(i).Type == reflect.TypeOf(token.NoPos) {
+		if ft == reflect.TypeOf(token.NoPos) {
+			continue
+		}
+
+		// skip comment fields — comments don't affect pattern matching.
+		if ft == reflect.TypeOf(&ast.CommentGroup{}) {
 			continue
 		}
 

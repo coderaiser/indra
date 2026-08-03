@@ -429,3 +429,43 @@ func TestApplyDeclRewritesRemovesMultiple(t *testing.T) {
 		t.Fatalf("expected both declarations removed, got %d decls", len(file.Decls))
 	}
 }
+
+func TestRunMatchOnlyFixNoRewrite(t *testing.T) {
+	src := "package p\n\nfunc f() { t.Equal(a, b) }\n"
+	file, fset := parse(t, src)
+	funcs := []loader.PluginFuncs{{
+		Name:    "report-only",
+		Report:  func() string { return "m" },
+		Match:   func() types.Matcher { return types.Matcher{"t.Equal(__a, __b)": nil} },
+		Replace: func() types.Replacer { return types.Replacer{} },
+	}}
+	pl := items(funcs)
+	places := RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
+	if len(places) != 1 {
+		t.Fatalf("expected 1 place from Match-only plugin, got %d", len(places))
+	}
+	out := printFile(t, file, fset)
+	if strings.Contains(out, "DeepEqual") {
+		t.Fatalf("expected no rewrite without a Replace entry:\n%s", out)
+	}
+}
+
+func TestRunReplaceOnlyRewrites(t *testing.T) {
+	src := "package p\n\nfunc f() { t.Equal(a, b) }\n"
+	file, fset := parse(t, src)
+	funcs := []loader.PluginFuncs{{
+		Name:    "replace-only",
+		Report:  func() string { return "m" },
+		Match:   func() types.Matcher { return types.Matcher{} },
+		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"} },
+	}}
+	pl := items(funcs)
+	places := RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
+	if len(places) != 1 {
+		t.Fatalf("expected 1 place from Replace-only plugin, got %d", len(places))
+	}
+	out := printFile(t, file, fset)
+	if !strings.Contains(out, "DeepEqual") {
+		t.Fatalf("expected Replace-only plugin to rewrite:\n%s", out)
+	}
+}

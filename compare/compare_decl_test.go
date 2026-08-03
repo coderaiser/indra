@@ -64,4 +64,16 @@ func TestCompareDecl(t *testing.T) {
 		t.Equal(vars, compare.Vars(nil))
 		t.End()
 	})
+
+	tape.Test(t, "CompareDecl: doc comment on decl is ignored", func(t *tape.T) {
+		f, err := parser.ParseFile(token.NewFileSet(), "", "package p\n\n// Comment above Match.\nfunc Match() Matcher { return Matcher{} }\n", parser.ParseComments)
+		if err != nil || len(f.Decls) == 0 {
+			t.Ok(false)
+			t.End()
+			return
+		}
+		vars := compare.CompareDecl(f.Decls[0], `func Match() Matcher { return Matcher{} }`)
+		t.Ok(vars != nil)
+		t.End()
+	})
 }
