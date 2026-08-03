@@ -26,12 +26,19 @@ func New(tt *tape.T, plugins []runner.PluginItem, dir string) *T {
 	return &T{T: tt, plugins: plugins, dir: dir, fatal: tt.TB().Fatalf, writeFile: os.WriteFile}
 }
 
-// CreateTest returns a typed test runner bound to the plugin at pkgPath.
-// Call once at package level: CreateTest("pkg/path", runtime.Caller).
-// The caller function is invoked with 0 to locate the calling file; the
-// fixture dir is derived as <file>/fixture.
-func CreateTest(pkgPath string, caller func(int) (uintptr, string, int, bool)) func(*testing.T, string, func(*T)) {
-	_, file, _, _ := caller(0)
+// CreateTest returns a typed test runner for the plugin at pkgPath.
+//
+// Call once at package level, passing runtime.Caller(0) directly:
+//
+//	var Test = indratest.CreateTest("pkg/path", func() (uintptr, string, int, bool) {
+//		return runtime.Caller(0)
+//	})
+//
+// runtime.Caller(0) is evaluated lazily when the thunk is invoked, and
+// because the thunk is defined in the plugin test file, file resolves
+// correctly and fixture/ is found next to the test file.
+func CreateTest(pkgPath string, caller func() (uintptr, string, int, bool)) func(*testing.T, string, func(*T)) {
+	_, file, _, _ := caller()
 	dir := filepath.Join(filepath.Dir(file), "fixture")
 	return tape.Extend(func(base *tape.T) *T {
 		return New(base, loadPlugin(pkgPath), dir)

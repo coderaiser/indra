@@ -7,7 +7,9 @@ import (
 	indratest "coderaiser/indra/internal/test"
 )
 
-var Test = indratest.CreateTest("coderaiser/indra/internal/plugins/remove-unused-variable", runtime.Caller)
+var Test = indratest.CreateTest("coderaiser/indra/internal/plugins/remove-unused-variable", func() (uintptr, string, int, bool) {
+	return runtime.Caller(0)
+})
 
 func TestRemoveUnusedVariable(t *testing.T) {
 	Test(t, "remove-unused-variable: report unused var", func(t *indratest.T) {

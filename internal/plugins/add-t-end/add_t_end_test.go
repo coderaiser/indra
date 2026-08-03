@@ -7,7 +7,9 @@ import (
 	indratest "coderaiser/indra/internal/test"
 )
 
-var Test = indratest.CreateTest("coderaiser/indra/internal/plugins/add-t-end", runtime.Caller)
+var Test = indratest.CreateTest("coderaiser/indra/internal/plugins/add-t-end", func() (uintptr, string, int, bool) {
+	return runtime.Caller(0)
+})
 
 func TestAddTEnd(t *testing.T) {
 	Test(t, "add-t-end: report missing End in Test", func(t *indratest.T) {

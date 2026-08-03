@@ -7,7 +7,9 @@ import (
 	indratest "coderaiser/indra/internal/test"
 )
 
-var Test = indratest.CreateTest("coderaiser/indra/internal/plugins/remove-unused-import", runtime.Caller)
+var Test = indratest.CreateTest("coderaiser/indra/internal/plugins/remove-unused-import", func() (uintptr, string, int, bool) {
+	return runtime.Caller(0)
+})
 
 func TestRemoveUnusedImport(t *testing.T) {
 	Test(t, "remove-unused-import: report unused import", func(t *indratest.T) {
