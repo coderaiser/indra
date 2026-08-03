@@ -63,13 +63,21 @@ var modInfo struct {
 
 func init() {
 	_, thisFile, _, _ := runtime.Caller(0)
-	dir := filepath.Dir(thisFile)
+	modInfo.root, modInfo.name = findModInfo(filepath.Dir(thisFile), func(p string) error {
+		_, err := os.Stat(p)
+		return err
+	}, readModuleName)
+}
+
+// findModInfo walks up from startDir looking for a go.mod, returning the
+// module root dir and module name. stat and moduleName are injected so the
+// not-found panic path can be driven from a synthetic filesystem in tests.
+func findModInfo(startDir string, stat func(string) error, moduleName func(string) string) (string, string) {
+	dir := startDir
 	for {
 		candidate := filepath.Join(dir, "go.mod")
-		if _, err := os.Stat(candidate); err == nil {
-			modInfo.root = dir
-			modInfo.name = readModuleName(candidate)
-			return
+		if stat(candidate) == nil {
+			return dir, moduleName(candidate)
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir {

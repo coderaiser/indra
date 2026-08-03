@@ -213,6 +213,15 @@ func TestDerivePackagePath(t *testing.T) {
 	})
 }
 
+func TestDerivePackagePathRelError(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic for relative path")
+		}
+	}()
+	derivePackagePath("relative/x_test.go")
+}
+
 func TestModInfoRoot(t *testing.T) {
 	tape.Test(t, "modinfo: root dir contains go.mod", func(t *tape.T) {
 		_, err := os.Stat(filepath.Join(modInfo.root, "go.mod"))
@@ -228,3 +237,61 @@ func TestReadModuleName(t *testing.T) {
 		t.End()
 	})
 }
+
+func TestReadModuleNameOpenError(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic when go.mod cannot be opened")
+		}
+	}()
+	readModuleName("/nonexistent/does-not-exist/go.mod")
+}
+
+func TestReadModuleNameModuleLineMissing(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic when module line is missing")
+		}
+	}()
+	f := filepath.Join(t.TempDir(), "go.mod")
+	if err := os.WriteFile(f, []byte("// no module line\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	readModuleName(f)
+}
+
+func TestCreateTestHappyPath(t *testing.T) {
+	file := filepath.Join(modInfo.root, "internal/plugins/remove-skip/remove_skip_test.go")
+	run := CreateTest(0, file, 0, false)
+	run(t, "createtest: real plugin path returns working runner", func(tt *T) {
+		tt.Ok(run != nil)
+		tt.End()
+	})
+}
+
+func TestFindModInfoFound(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/foo\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	root, name := findModInfo(dir, func(p string) error {
+		_, err := os.Stat(p)
+		return err
+	}, readModuleName)
+	if root != dir {
+		t.Errorf("root: got %q, want %q", root, dir)
+	}
+	if name != "example.com/foo" {
+		t.Errorf("name: got %q, want %q", name, "example.com/foo")
+	}
+}
+
+func TestFindModInfoNotFound(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic when no go.mod is found walking up")
+		}
+	}()
+	findModInfo("/tmp", func(string) error { return os.ErrNotExist }, readModuleName)
+}
+
