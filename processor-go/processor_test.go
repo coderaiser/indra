@@ -1,6 +1,7 @@
 package processor_go
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,14 +12,20 @@ import (
 	"coderaiser/indra/types"
 )
 
-func pluginItems() []runner.PluginItem {
+func pluginOpts() Options {
 	kinds := loader.Load([]loader.PluginFuncs{{
 		Name:    "eq",
 		Report:  func() string { return "use DeepEqual" },
 		Match:   func() types.Matcher { return types.Matcher{"t.Equal(__a, __b)": nil} },
 		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"} },
 	}}, nil, loader.Config{})
-	return []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}
+	return Opt([]runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}, false)
+}
+
+func pluginOptsFixed() Options {
+	o := pluginOpts()
+	o.fix = true
+	return o
 }
 
 func write(t *testing.T, dir, name, content string) string {
@@ -33,7 +40,7 @@ func write(t *testing.T, dir, name, content string) string {
 func TestProcessFileReturnsPlaces(t *testing.T) {
 	dir := t.TempDir()
 	path := write(t, dir, "a.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
-	places, err := ProcessFile(path, pluginItems(), false)
+	places, err := ProcessFile(path, pluginOpts())
 	if err != nil {
 		t.Fatalf("ProcessFile: %v", err)
 	}
@@ -45,7 +52,7 @@ func TestProcessFileReturnsPlaces(t *testing.T) {
 func TestProcessFileFixRewrites(t *testing.T) {
 	dir := t.TempDir()
 	path := write(t, dir, "a.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
-	_, err := ProcessFile(path, pluginItems(), true)
+	_, err := ProcessFile(path, pluginOptsFixed())
 	if err != nil {
 		t.Fatalf("ProcessFile: %v", err)
 	}
@@ -61,7 +68,7 @@ func TestProcessFileFixRewrites(t *testing.T) {
 func TestProcessFileSkipsBuildIgnore(t *testing.T) {
 	dir := t.TempDir()
 	path := write(t, dir, "a.go", "//go:build ignore\n\npackage p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
-	places, err := ProcessFile(path, pluginItems(), true)
+	places, err := ProcessFile(path, pluginOptsFixed())
 	if err != nil {
 		t.Fatalf("ProcessFile: %v", err)
 	}
@@ -75,7 +82,7 @@ func TestProcessFileSkipsBuildIgnore(t *testing.T) {
 }
 
 func TestProcessFileReadError(t *testing.T) {
-	_, err := ProcessFile(filepath.Join(t.TempDir(), "missing.go"), pluginItems(), false)
+	_, err := ProcessFile(filepath.Join(t.TempDir(), "missing.go"), pluginOpts())
 	if err == nil {
 		t.Fatal("expected read error")
 	}
@@ -84,11 +91,9 @@ func TestProcessFileReadError(t *testing.T) {
 func TestProcessFileWriteError(t *testing.T) {
 	dir := t.TempDir()
 	path := write(t, dir, "a.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
-	if err := os.Chmod(path, 0444); err != nil {
-		t.Fatalf("chmod: %v", err)
-	}
-	defer os.Chmod(path, 0644)
-	_, err := ProcessFile(path, pluginItems(), true)
+	_, err := ProcessFile(path, pluginOptsFixed(), WithWriteFile(func(string, []byte, os.FileMode) error {
+		return errors.New("write error")
+	}))
 	if err == nil {
 		t.Fatal("expected write error")
 	}
@@ -97,7 +102,7 @@ func TestProcessFileWriteError(t *testing.T) {
 func TestProcessFileParseError(t *testing.T) {
 	dir := t.TempDir()
 	path := write(t, dir, "a.go", "package p\nfunc (\n")
-	_, err := ProcessFile(path, pluginItems(), false)
+	_, err := ProcessFile(path, pluginOpts())
 	if err == nil {
 		t.Fatal("expected parse error")
 	}
@@ -111,7 +116,7 @@ func TestProcessDir(t *testing.T) {
 	sub := filepath.Join(dir, "sub")
 	os.Mkdir(sub, 0755)
 	write(t, sub, "d.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
-	places, err := ProcessDir(dir, pluginItems(), false)
+	places, err := ProcessDir(dir, pluginOpts())
 	if err != nil {
 		t.Fatalf("ProcessDir: %v", err)
 	}
@@ -121,7 +126,7 @@ func TestProcessDir(t *testing.T) {
 }
 
 func TestProcessDirReadError(t *testing.T) {
-	_, err := ProcessDir(filepath.Join(t.TempDir(), "nope"), pluginItems(), false)
+	_, err := ProcessDir(filepath.Join(t.TempDir(), "nope"), pluginOpts())
 	if err == nil {
 		t.Fatal("expected read dir error")
 	}
@@ -131,7 +136,7 @@ func TestProcessDirLoopError(t *testing.T) {
 	dir := t.TempDir()
 	write(t, dir, "a.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
 	write(t, dir, "bad.go", "package p\nfunc (\n")
-	_, err := ProcessDir(dir, pluginItems(), false)
+	_, err := ProcessDir(dir, pluginOpts())
 	if err == nil {
 		t.Fatal("expected loop error from invalid .go file")
 	}

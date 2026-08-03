@@ -63,7 +63,7 @@ func Indra(args []string, w io.Writer) error {
 	items := loadPlugins()
 	failed := false
 	for _, filename := range files {
-		places, err := processor_go.ProcessFile(filename, items, fix)
+		places, err := processor_go.ProcessFile(filename, processor_go.Opt(items, fix))
 		if err != nil {
 			fmt.Fprintf(w, "file://%s: %v\n", filename, err)
 			failed = true
