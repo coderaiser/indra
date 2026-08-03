@@ -37,11 +37,17 @@ type RunParams struct {
 	Plugins  []PluginItem
 }
 
+// defaultFixCount is the convergence cap used when the caller leaves FixCount
+// unset. Rules compose across passes (e.g. an Equal-with-array is first
+// upgraded to DeepEqual, then its array is extracted), so the cap must exceed
+// the number of chained transforms to let the fix loop reach a stable state.
+const defaultFixCount = 10
+
 // RunPlugins runs all plugins against File.
 // Loops up to FixCount times while fix=true and places remain.
 func RunPlugins(p RunParams) []types.Place {
 	if p.FixCount == 0 {
-		p.FixCount = 2
+		p.FixCount = defaultFixCount
 	}
 	var places []types.Place
 	for i := 0; i < p.FixCount; i++ {
@@ -110,6 +116,13 @@ func runOnce(p RunParams) []types.Place {
 	// Pattern-based (replacer) plugins run over every statement.
 	var rewrites []rewrite
 	walkStmts(p.File, func(stmt ast.Stmt, block *ast.BlockStmt, idx int) {
+		// At most one rule rewrites a given statement per pass. Applying
+		// several conflicting rewrites to the same statement (e.g. an
+		// Equal-with-array matches both convert-equal-to-deep-equal and
+		// extract-result-from-assertion) produces corrupt output and keeps the
+		// fix loop from converging. The first fix wins; remaining rules still
+		// report their findings for lint-only runs.
+	stmtLoop:
 		for _, item := range p.Plugins {
 			rp, ok := item.Plugin.(loader.ReplacerPlugin)
 			if !ok {
@@ -148,6 +161,7 @@ func runOnce(p RunParams) []types.Place {
 						idx:      idx,
 						newStmts: newStmts,
 					})
+					break stmtLoop
 				}
 			}
 		}
