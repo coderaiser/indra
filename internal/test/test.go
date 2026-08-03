@@ -12,6 +12,7 @@ import (
 	processor "coderaiser/indra/engine-processor"
 	runner "coderaiser/indra/engine-runner"
 	"coderaiser/indra/internal/plugins"
+	"coderaiser/indra/types"
 	tape "github.com/coderaiser/go-tape"
 )
 
@@ -43,18 +44,60 @@ func New(tt *tape.T, plugins []runner.PluginItem, dir string) *T {
 func CreateTest(_ uintptr, file string, _ int, _ bool) func(*testing.T, string, func(*T)) {
 	pkgPath := derivePackagePath(file)
 	dir := filepath.Join(filepath.Dir(file), "fixture")
+	items := createItems(pkgPath)
+	if items == nil {
+		panic("internal/test: unknown plugin " + pkgPath)
+	}
+	return tape.Extend(func(base *tape.T) *T {
+		return New(base, items, dir)
+	})
+}
+
+// createItems returns the runnable PluginItems for the target package path.
+// It handles three cases: a top-level leaf plugin, a top-level nested group,
+// and a plugin that is registered only as a member of a nested group
+// (e.g. a tape sub-rule referenced only inside tape.Rules).
+func createItems(pkgPath string) []runner.PluginItem {
 	for _, pf := range plugins.All {
 		if pf.Path != pkgPath {
 			continue
 		}
-		return tape.Extend(func(base *tape.T) *T {
-			return New(base, loadItems(pf), dir)
-		})
+		return loadItems(pf)
 	}
-	panic("internal/test: unknown plugin " + pkgPath)
+	// nested group member: locate the owning group and return that single rule
+	for _, pf := range plugins.All {
+		if pf.Rules == nil {
+			continue
+		}
+		for rule, v := range pf.Rules {
+			if entryPath(v) != pkgPath {
+				continue
+			}
+			ruleName := pf.Name + "/" + rule
+			for _, k := range loader.Load(plugins.LoadInput(), loader.Config{}) {
+				if k.Name() == ruleName {
+					return []runner.PluginItem{{Rule: ruleName, Plugin: k}}
+				}
+			}
+			return nil
+		}
+	}
+	return nil
 }
 
-// loadItems resolves the runnable PluginItems for a plugin target. A nested
+// entryPath extracts the package path from a Nested value (string or PluginEntry).
+func entryPath(v any) string {
+	switch t := v.(type) {
+	case string:
+		return t
+	case types.PluginEntry:
+		return t.Path
+	default:
+		return ""
+	}
+}
+
+// loadItems resolves the runnable PluginItems for a top-level plugin. A nested
 // (grouping) plugin expands its sub-rules from the full registry into
 // "group/rule" items; a leaf plugin yields a single item matching its name.
 func loadItems(pf loader.PluginFuncs) []runner.PluginItem {
@@ -63,7 +106,7 @@ func loadItems(pf loader.PluginFuncs) []runner.PluginItem {
 		return []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}
 	}
 	prefix := pf.Name + "/"
-	kinds := loader.Load(plugins.All, loader.Config{})
+	kinds := loader.Load(plugins.LoadInput(), loader.Config{})
 	var items []runner.PluginItem
 	for _, k := range kinds {
 		if strings.HasPrefix(k.Name(), prefix) {

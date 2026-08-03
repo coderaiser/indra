@@ -15,13 +15,29 @@ import (
 )
 
 // loadPlugins resolves all enabled plugins into runnable items.
+// Tape sub-rules fire only under their "tape/*" group names; the standalone
+// provider entries are stripped so each rule fires exactly once.
 func loadPlugins() []runner.PluginItem {
-	kinds := loader.Load(plugins.All, loader.DefaultConfig())
-	items := make([]runner.PluginItem, len(kinds))
-	for i, k := range kinds {
-		items[i] = runner.PluginItem{Rule: k.Name(), Plugin: k}
+	kinds := loader.Load(plugins.LoadInput(), loader.DefaultConfig())
+	items := make([]runner.PluginItem, 0, len(kinds))
+	for _, k := range kinds {
+		if isProviderName(k.Name()) {
+			continue
+		}
+		items = append(items, runner.PluginItem{Rule: k.Name(), Plugin: k})
 	}
 	return items
+}
+
+// isProviderName reports whether name is a standalone tape sub-rule that should
+// fire only via its tape group.
+func isProviderName(name string) bool {
+	for _, p := range plugins.Providers {
+		if p.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 // Lint runs all plugins against src.

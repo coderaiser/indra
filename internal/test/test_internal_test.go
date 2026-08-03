@@ -283,34 +283,59 @@ func TestLoadItemsNested(t *testing.T) {
 		t.Fatal("expected tape plugin to carry nested Rules")
 	}
 	items := loadItems(pf)
-	if len(items) != 2 {
-		t.Fatalf("expected 2 tape sub-rules, got %d", len(items))
+	if len(items) != 4 {
+		t.Fatalf("expected 4 tape sub-rules, got %d", len(items))
 	}
 	got := map[string]bool{}
 	for _, it := range items {
 		got[it.Rule] = true
 	}
-	for _, rule := range []string{"tape/remove-skip", "tape/add-t-end"} {
+	for _, rule := range []string{
+		"tape/remove-skip",
+		"tape/add-t-end",
+		"tape/convert-equal-to-deep-equal",
+		"tape/extract-result-from-assertion",
+	} {
 		if !got[rule] {
 			t.Errorf("missing rule %q", rule)
 		}
 	}
 }
 
-// TestLoadItemsLeaf covers the leaf-plugin branch of loadItems.
+// TestCreateItemsNestedMember covers resolving a plugin registered only inside
+// a nested group (remove-skip lives only in tape.Rules, not in All).
+func TestCreateItemsNestedMember(t *testing.T) {
+	items := createItems("coderaiser/indra/internal/plugins/remove-skip")
+	if len(items) != 1 {
+		t.Fatalf("expected single item for nested member, got %d", len(items))
+	}
+	if items[0].Rule != "tape/remove-skip" {
+		t.Fatalf("expected tape/remove-skip item, got %q", items[0].Rule)
+	}
+}
+
+// TestCreateItemsUnknown covers the unknown-plugin return of nil.
+func TestCreateItemsUnknown(t *testing.T) {
+	if items := createItems("coderaiser/indra/nonexistent"); items != nil {
+		t.Fatalf("expected nil for unknown plugin, got %v", items)
+	}
+}
+
+// TestLoadItemsLeaf covers the leaf-plugin branch of loadItems for a plugin
+// registered as a top-level leaf (remove-useless-match is in All directly).
 func TestLoadItemsLeaf(t *testing.T) {
 	var pf loader.PluginFuncs
 	for _, p := range plugins.All {
-		if p.Path == "coderaiser/indra/internal/plugins/remove-skip" {
+		if p.Path == "coderaiser/indra/internal/plugin-indra/remove-useless-match" {
 			pf = p
 		}
 	}
 	if pf.Rules != nil {
-		t.Fatal("expected remove-skip to be a leaf plugin")
+		t.Fatal("expected remove-useless-match to be a leaf plugin")
 	}
 	items := loadItems(pf)
-	if len(items) != 1 || items[0].Rule != "remove-skip" {
-		t.Fatalf("expected single remove-skip item, got %v", items)
+	if len(items) != 1 || items[0].Rule != "remove-useless-match" {
+		t.Fatalf("expected single remove-useless-match item, got %v", items)
 	}
 }
 
