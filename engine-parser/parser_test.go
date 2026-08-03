@@ -21,14 +21,14 @@ func TestParse(t *testing.T) {
 	})
 
 	tape.Test(t, "parse: valid source returns nil error", func(t *tape.T) {
-		_, _, err := parser.Parse([]byte("package p\nfunc f() {}\n"))
-		t.Equal(err, nil)
+		_, _, error := parser.Parse([]byte("package p\nfunc f() {}\n"))
+		t.NotOk(error)
 		t.End()
 	})
 
 	tape.Test(t, "parse: invalid source returns non-nil error", func(t *tape.T) {
-		_, _, err := parser.Parse([]byte("package p\nfunc (\n"))
-		t.Ok(err != nil)
+		_, _, error := parser.Parse([]byte("package p\nfunc (\n"))
+		t.Ok(error)
 		t.End()
 	})
 }
