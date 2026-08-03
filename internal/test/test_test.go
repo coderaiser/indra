@@ -133,7 +133,9 @@ func TestNoTransform(t *testing.T) {
 // from the static index, exercising the New + loadPlugin happy path. The
 // fixture lives in the package's fixture/ dir (derived from runtime.Caller).
 func TestCreateTestRealPlugin(t *testing.T) {
-	Test := indratest.CreateTest("coderaiser/indra/internal/plugins/remove-skip", runtime.Caller)
+	Test := indratest.CreateTest("coderaiser/indra/internal/plugins/remove-skip", func() (uintptr, string, int, bool) {
+		return runtime.Caller(0)
+	})
 	Test(t, "test: CreateTest real plugin reports", func(t *indratest.T) {
 		t.Report("skip", "remove Test.Skip call")
 		t.End()

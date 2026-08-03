@@ -2,6 +2,8 @@ package plugins
 
 import (
 	engine_loader "coderaiser/indra/engine-loader"
+	plugin_indra "coderaiser/indra/internal/plugin-indra"
+	remove_useless_match "coderaiser/indra/internal/plugin-indra/remove-useless-match"
 	"coderaiser/indra/internal/plugins/add-t-end"
 	"coderaiser/indra/internal/plugins/convert-equal-to-deep-equal"
 	"coderaiser/indra/internal/plugins/extract-result-from-assertion"
@@ -23,5 +25,7 @@ var All = []engine_loader.PluginFuncs{
 	{Name: "remove-unused-import", Path: "coderaiser/indra/internal/plugins/remove-unused-import", Report: remove_unused_import.Report, Traverse: remove_unused_import.Traverse, Fix: remove_unused_import.Fix},
 	{Name: "remove-unused-variable", Path: "coderaiser/indra/internal/plugins/remove-unused-variable", Report: remove_unused_variable.Report, Traverse: remove_unused_variable.Traverse, Fix: remove_unused_variable.Fix},
 	{Name: "tape", Path: "coderaiser/indra/internal/plugins/tape", Rules: tape.Rules},
+	{Name: "remove-useless-match", Path: "coderaiser/indra/internal/plugin-indra/remove-useless-match", Report: remove_useless_match.Report, Match: remove_useless_match.Match, Replace: remove_useless_match.Replace},
+	{Name: "indra", Path: "coderaiser/indra/internal/plugin-indra", Rules: plugin_indra.Rules},
 }
 
