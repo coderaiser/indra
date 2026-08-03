@@ -97,3 +97,29 @@ func TestTraverserShape(t *testing.T) {
 		t.Fatal("expected *ast.File key in traverser")
 	}
 }
+
+// TestOff marks a plugin disabled by default.
+func TestOff(t *testing.T) {
+	e := Off("x")
+	if e.Path != "x" || e.Enabled {
+		t.Fatalf("unexpected PluginEntry: %+v", e)
+	}
+}
+
+// TestNestedStringEnabled treats a plain string in Nested as enabled.
+func TestNestedStringEnabled(t *testing.T) {
+	n := Nested{"rule": "coderaiser/indra/pkg"}
+	entry, ok := n["rule"].(string)
+	if !ok || entry == "" {
+		t.Fatalf("expected string value in Nested, got %#v", n["rule"])
+	}
+}
+
+// TestPluginEntryFields verifies PluginEntry carries Path and Enabled.
+func TestPluginEntryFields(t *testing.T) {
+	e := PluginEntry{Path: "p", Enabled: true}
+	if e.Path != "p" || !e.Enabled {
+		t.Fatal("unexpected PluginEntry fields")
+	}
+}
+

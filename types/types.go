@@ -35,5 +35,19 @@ type Place struct {
 	Pos     token.Position
 }
 
-// Nested is a group plugin: maps rule name → sub-plugin Self value.
-type Nested map[string]any
+// PluginEntry is a value in a Nested map.
+// Enabled=true means on by default; false means off by default.
+type PluginEntry struct {
+	Path    string
+	Enabled bool
+}
+
+// Off marks a plugin disabled by default in a Nested map.
+// User can re-enable in config: "group/rule" = "on".
+func Off(path string) PluginEntry {
+	return PluginEntry{Path: path, Enabled: false}
+}
+
+// Nested groups sub-plugins. Values are package path strings (enabled by default)
+// or PluginEntry (to set a non-default state).
+type Nested map[string]any // string | PluginEntry
