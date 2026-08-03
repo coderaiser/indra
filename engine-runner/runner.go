@@ -154,7 +154,70 @@ func runOnce(p RunParams) []types.Place {
 		applyRewrites(rewrites)
 	}
 
+	// Declaration-level (replacer) plugins remove matching top-level decls.
+	var declRewrites []declRewrite
+	for _, item := range p.Plugins {
+		rp, ok := item.Plugin.(loader.ReplacerPlugin)
+		if !ok {
+			continue
+		}
+		matcher := rp.Match()
+		for pattern, tmpl := range rp.Replace() {
+			walkDecls(p.File, func(decl ast.Decl, idx int) {
+				vars := compare.CompareDecl(decl, pattern)
+				if vars == nil {
+					return
+				}
+				if guard, ok := matcher[pattern]; ok && guard != nil && !guard(vars) {
+					return
+				}
+				msg := rp.Report()
+				if item.Msg != "" {
+					msg = item.Msg
+				}
+				places = append(places, types.Place{
+					Rule:    item.Rule,
+					Message: msg,
+					Pos:     p.Fset.Position(decl.Pos()),
+				})
+				if p.Fix {
+					declRewrites = append(declRewrites, declRewrite{idx: idx, tmpl: tmpl, vars: vars})
+				}
+			})
+		}
+	}
+	if p.Fix && len(declRewrites) > 0 {
+		applyDeclRewrites(p.File, declRewrites)
+	}
+
 	return places
+}
+
+// declRewrite is a pending top-level declaration removal.
+type declRewrite struct {
+	idx  int
+	tmpl string // empty = remove; non-empty reserved for future replacement
+	vars compare.Vars
+}
+
+// walkDecls visits every top-level declaration in file with its index.
+func walkDecls(file *ast.File, fn func(decl ast.Decl, idx int)) {
+	for i, decl := range file.Decls {
+		fn(decl, i)
+	}
+}
+
+// applyDeclRewrites removes top-level declarations.
+// Applied in descending index order so earlier indices stay valid.
+func applyDeclRewrites(file *ast.File, rewrites []declRewrite) {
+	sort.Slice(rewrites, func(i, j int) bool {
+		return rewrites[i].idx > rewrites[j].idx
+	})
+	for _, r := range rewrites {
+		if r.tmpl == "" {
+			file.Decls = append(file.Decls[:r.idx], file.Decls[r.idx+1:]...)
+		}
+	}
 }
 
 // walkStmts visits every statement of every block in the file.

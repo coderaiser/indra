@@ -342,3 +342,90 @@ func TestSubstituteAndParseError(t *testing.T) {
 		t.Fatalf("expected nil for unparseable template, got %v", stmts)
 	}
 }
+
+// declFuncs builds a replacer plugin whose Match and Replace carry a
+// top-level declaration pattern (used for decl-level rewrites).
+func declFuncs() []loader.PluginFuncs {
+	return []loader.PluginFuncs{{
+		Name:    "decl",
+		Report:  func() string { return "decl issue" },
+		Match:   func() types.Matcher { return types.Matcher{`func Match() Matcher { return Matcher{__a: nil} }`: nil} },
+		Replace: func() types.Replacer { return types.Replacer{`func Match() Matcher { return Matcher{__a: nil} }`: ""} },
+	}}
+}
+
+func TestRunDeclRewritesReportsPlace(t *testing.T) {
+	src := "package p\n\nfunc Match() Matcher { return Matcher{\"x\": nil} }\n"
+	file, fset := parse(t, src)
+	pl := items(declFuncs())
+	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
+	if len(places) != 1 {
+		t.Fatalf("expected 1 place from decl rewrite, got %d", len(places))
+	}
+}
+
+func TestRunDeclRewritesGuardRejects(t *testing.T) {
+	src := "package p\n\nfunc Match() Matcher { return Matcher{\"x\": nil} }\n"
+	file, fset := parse(t, src)
+	funcs := []loader.PluginFuncs{{
+		Name:   "decl",
+		Report: func() string { return "decl issue" },
+		Match: func() types.Matcher {
+			return types.Matcher{`func Match() Matcher { return Matcher{__a: nil} }`: func(v types.Vars) bool { return false }}
+		},
+		Replace: func() types.Replacer { return types.Replacer{`func Match() Matcher { return Matcher{__a: nil} }`: ""} },
+	}}
+	pl := items(funcs)
+	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
+	if len(places) != 0 {
+		t.Fatalf("expected no places when decl guard rejects, got %d", len(places))
+	}
+}
+
+func TestRunDeclRewritesRemovesDecl(t *testing.T) {
+	src := "package p\n\nfunc Match() Matcher { return Matcher{\"x\": nil} }\n"
+	file, fset := parse(t, src)
+	pl := items(declFuncs())
+	RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
+	out := printFile(t, file, fset)
+	if strings.Contains(out, "func Match") {
+		t.Fatalf("expected declaration removed after fix:\n%s", out)
+	}
+}
+
+func TestRunDeclRewritesNoMatch(t *testing.T) {
+	src := "package p\n\nfunc Other() {}\n"
+	file, fset := parse(t, src)
+	pl := items(declFuncs())
+	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
+	if len(places) != 0 {
+		t.Fatalf("expected no places when decl does not match, got %d", len(places))
+	}
+}
+
+func TestRunDeclRewritesMsgOverride(t *testing.T) {
+	src := "package p\n\nfunc Match() Matcher { return Matcher{\"x\": nil} }\n"
+	file, fset := parse(t, src)
+	kinds := loader.Load(declFuncs(), loader.Config{})
+	pl := []PluginItem{{Rule: "decl", Plugin: kinds[0], Msg: "custom decl"}}
+	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
+	if places[0].Message != "custom decl" {
+		t.Fatalf("expected decl msg override, got %q", places[0].Message)
+	}
+}
+
+func TestApplyDeclRewritesKeepsNonEmptyTmpl(t *testing.T) {
+	file, _ := parse(t, "package p\n\nfunc Match() Matcher { return Matcher{} }\n")
+	applyDeclRewrites(file, []declRewrite{{idx: 0, tmpl: "func Other() {}"}})
+	if len(file.Decls) != 1 {
+		t.Fatalf("expected declaration kept for non-empty tmpl, got %d decls", len(file.Decls))
+	}
+}
+
+func TestApplyDeclRewritesRemovesMultiple(t *testing.T) {
+	file, _ := parse(t, "package p\n\nfunc A() {}\n\nfunc B() {}\n")
+	applyDeclRewrites(file, []declRewrite{{idx: 0, tmpl: ""}, {idx: 1, tmpl: ""}})
+	if len(file.Decls) != 0 {
+		t.Fatalf("expected both declarations removed, got %d decls", len(file.Decls))
+	}
+}
