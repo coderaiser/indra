@@ -8,17 +8,6 @@ import (
 	. "coderaiser/indra/types"
 )
 
-// Self is the plugin value used in engine-loader and Nested maps.
-var Self = self{}
-
-type self struct{}
-
-func (self) Report() string                    { return Report() }
-func (self) Traverse() Traverser               { return Traverse() }
-func (self) Fix(node ast.Node, places []Place) { Fix(node, places) }
-
-// Top-level exported funcs are readable and testable individually.
-
 func Report() string { return "remove unused variable" }
 
 func Traverse() Traverser {
