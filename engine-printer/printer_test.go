@@ -2,44 +2,33 @@ package printer_test
 
 import (
 	"testing"
+
 	engineparser  "coderaiser/indra/engine-parser"
 	engineprinter "coderaiser/indra/engine-printer"
+	tape "github.com/coderaiser/go-tape"
 )
 
-func TestPrintRoundtrip(t *testing.T) {
-	src := []byte("package p\n\nfunc f() {}\n")
-	file, fset, err := engineparser.Parse(src)
-	if err != nil {
-		t.Fatalf("parse: %v", err)
-	}
-	got, err := engineprinter.Print(file, fset)
-	if err != nil {
-		t.Fatalf("print: %v", err)
-	}
-	if string(got) != string(src) {
-		t.Fatalf("roundtrip mismatch:\ngot:  %q\nwant: %q", got, src)
-	}
-}
+func TestPrint(t *testing.T) {
+	tape.Test(t, "printer: roundtrip preserves source", func(t *tape.T) {
+		src := []byte("package p\n\nfunc f() {}\n")
+		file, fset, _ := engineparser.Parse(src)
+		got, _ := engineprinter.Print(file, fset)
+		t.Equal(string(got), string(src))
+		t.End()
+	})
 
-func TestPrintNilFile(t *testing.T) {
-	_, err := engineprinter.Print(nil, nil)
-	if err == nil {
-		t.Fatal("expected error for nil file, got nil")
-	}
-}
+	tape.Test(t, "printer: nil file returns error", func(t *tape.T) {
+		_, error := engineprinter.Print(nil, nil)
+		t.Ok(error)
+		t.End()
+	})
 
-func TestPrintNilFset(t *testing.T) {
-	src := []byte("package p\n\nfunc f() {}\n")
-	file, _, err := engineparser.Parse(src)
-	if err != nil {
-		t.Fatalf("parse: %v", err)
-	}
-	got, err := engineprinter.Print(file, nil)
-	if err != nil {
-		t.Fatalf("print: %v", err)
-	}
-	if len(got) == 0 {
-		t.Fatal("expected non-empty output")
-	}
+	tape.Test(t, "printer: nil fset still prints", func(t *tape.T) {
+		src := []byte("package p\n\nfunc f() {}\n")
+		file, _, _ := engineparser.Parse(src)
+		got, _ := engineprinter.Print(file, nil)
+		t.Ok(len(got) > 0)
+		t.End()
+	})
 }
 
