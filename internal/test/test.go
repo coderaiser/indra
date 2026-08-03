@@ -27,8 +27,12 @@ func New(tt *tape.T, plugins []runner.PluginItem, dir string) *T {
 }
 
 // CreateTest returns a typed test runner bound to the plugin at pkgPath.
-// Call once at package level with the fixture dir relative to the caller file.
-func CreateTest(pkgPath string, dir string) func(*testing.T, string, func(*T)) {
+// Call once at package level: CreateTest("pkg/path", runtime.Caller).
+// The caller function is invoked with 0 to locate the calling file; the
+// fixture dir is derived as <file>/fixture.
+func CreateTest(pkgPath string, caller func(int) (uintptr, string, int, bool)) func(*testing.T, string, func(*T)) {
+	_, file, _, _ := caller(0)
+	dir := filepath.Join(filepath.Dir(file), "fixture")
 	return tape.Extend(func(base *tape.T) *T {
 		return New(base, loadPlugin(pkgPath), dir)
 	})

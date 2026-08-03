@@ -1,18 +1,13 @@
 package remove_unused_variable_test
 
 import (
-	"path/filepath"
 	"runtime"
 	"testing"
 
 	indratest "coderaiser/indra/internal/test"
 )
 
-var (
-	_, _file, _, _ = runtime.Caller(0)
-	_dir           = filepath.Join(filepath.Dir(_file), "fixture")
-	Test           = indratest.CreateTest("coderaiser/indra/internal/plugins/remove-unused-variable", _dir)
-)
+var Test = indratest.CreateTest("coderaiser/indra/internal/plugins/remove-unused-variable", runtime.Caller)
 
 func TestRemoveUnusedVariable(t *testing.T) {
 	Test(t, "remove-unused-variable: report unused var", func(t *indratest.T) {

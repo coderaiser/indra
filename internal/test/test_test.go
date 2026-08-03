@@ -3,6 +3,7 @@ package test_test
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	loader "coderaiser/indra/engine-loader"
@@ -129,25 +130,10 @@ func TestNoTransform(t *testing.T) {
 }
 
 // TestCreateTestRealPlugin covers CreateTest + loadPlugin on a real plugin
-// from the static index, exercising the New + loadPlugin happy path.
+// from the static index, exercising the New + loadPlugin happy path. The
+// fixture lives in the package's fixture/ dir (derived from runtime.Caller).
 func TestCreateTestRealPlugin(t *testing.T) {
-	dir := writeDir(t, map[string]string{
-		"skip.go": `package fixture
-
-import (
-	Test "github.com/coderaiser/go-tape"
-	"testing"
-)
-
-func TestFoo(t *testing.T) {
-	Test.Skip(t, "foo: something", func(t *Test.T) {
-		t.Equal(1, 1)
-		t.End()
-	})
-}
-`,
-	})
-	Test := indratest.CreateTest("coderaiser/indra/internal/plugins/remove-skip", dir)
+	Test := indratest.CreateTest("coderaiser/indra/internal/plugins/remove-skip", runtime.Caller)
 	Test(t, "test: CreateTest real plugin reports", func(t *indratest.T) {
 		t.Report("skip", "remove Test.Skip call")
 		t.End()

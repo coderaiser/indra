@@ -1,18 +1,13 @@
 package add_t_end_test
 
 import (
-	"path/filepath"
 	"runtime"
 	"testing"
 
 	indratest "coderaiser/indra/internal/test"
 )
 
-var (
-	_, _file, _, _ = runtime.Caller(0)
-	_dir           = filepath.Join(filepath.Dir(_file), "fixture")
-	Test           = indratest.CreateTest("coderaiser/indra/internal/plugins/add-t-end", _dir)
-)
+var Test = indratest.CreateTest("coderaiser/indra/internal/plugins/add-t-end", runtime.Caller)
 
 func TestAddTEnd(t *testing.T) {
 	Test(t, "add-t-end: report missing End in Test", func(t *indratest.T) {

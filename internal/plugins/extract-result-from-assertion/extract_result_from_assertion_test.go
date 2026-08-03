@@ -1,18 +1,13 @@
 package extract_result_from_assertion_test
 
 import (
-	"path/filepath"
 	"runtime"
 	"testing"
 
 	indratest "coderaiser/indra/internal/test"
 )
 
-var (
-	_, _file, _, _ = runtime.Caller(0)
-	_dir           = filepath.Join(filepath.Dir(_file), "fixture")
-	Test           = indratest.CreateTest("coderaiser/indra/internal/plugins/extract-result-from-assertion", _dir)
-)
+var Test = indratest.CreateTest("coderaiser/indra/internal/plugins/extract-result-from-assertion", runtime.Caller)
 
 func TestExtractResultFromAssertion(t *testing.T) {
 	Test(t, "extract-result-from-assertion: report inline call", func(t *indratest.T) {

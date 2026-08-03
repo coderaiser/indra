@@ -1,18 +1,13 @@
 package remove_unused_import_test
 
 import (
-	"path/filepath"
 	"runtime"
 	"testing"
 
 	indratest "coderaiser/indra/internal/test"
 )
 
-var (
-	_, _file, _, _ = runtime.Caller(0)
-	_dir           = filepath.Join(filepath.Dir(_file), "fixture")
-	Test           = indratest.CreateTest("coderaiser/indra/internal/plugins/remove-unused-import", _dir)
-)
+var Test = indratest.CreateTest("coderaiser/indra/internal/plugins/remove-unused-import", runtime.Caller)
 
 func TestRemoveUnusedImport(t *testing.T) {
 	Test(t, "remove-unused-import: report unused import", func(t *indratest.T) {
