@@ -1,17 +1,35 @@
 version: "3"
+
+env:
+  GOTOOLCHAIN: local
+  GOPROXY: direct
+  GONOSUMCHECK: "*"
+  GONOSUMDB: "*"
+
 tasks:
   test:
     cmds:
-      - GOTOOLCHAIN=local GOPROXY=off go test ./...
+      - go test $(go list ./... | grep -v "^coderaiser/indra$")
+
+  coverage:
+    cmds:
+      - go test -coverprofile=c.out $(go list ./... | grep -v "^coderaiser/indra$")
+      - go tool cover -func=c.out | grep -v "100.0%" | grep -v "^total"
+
   build:
     cmds:
       - go build -o indra ./cmd/indra
+
   lint:
+    deps: [build]
     cmds:
-      - go run ./cmd/indra ./...
+      - ./indra ./...
+
   fix:lint:
+    deps: [build]
     cmds:
-      - go run ./cmd/indra --fix ./...
+      - ./indra --fix ./...
+
   clean:
     cmds:
       - rm -f indra c.out
