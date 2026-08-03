@@ -5,14 +5,13 @@ import (
 	"runtime"
 	"testing"
 
-	. "coderaiser/indra/internal/plugins/add-t-end"
 	indratest "coderaiser/indra/internal/test"
 )
 
 var (
 	_, _file, _, _ = runtime.Caller(0)
 	_dir           = filepath.Join(filepath.Dir(_file), "fixture")
-	Test           = indratest.CreateTest(Self, _dir)
+	Test           = indratest.CreateTest("coderaiser/indra/internal/plugins/add-t-end", _dir)
 )
 
 func TestAddTEnd(t *testing.T) {

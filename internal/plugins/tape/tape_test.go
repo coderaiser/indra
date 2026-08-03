@@ -3,7 +3,6 @@ package tape_test
 import (
 	"testing"
 
-	. "coderaiser/indra/internal/plugins/tape"
 )
 
 func TestRulesKeys(t *testing.T) {

@@ -5,14 +5,13 @@ import (
 	"runtime"
 	"testing"
 
-	. "coderaiser/indra/internal/plugins/remove-skip"
 	indratest "coderaiser/indra/internal/test"
 )
 
 var (
 	_, _file, _, _ = runtime.Caller(0)
 	_dir           = filepath.Join(filepath.Dir(_file), "fixture")
-	Test           = indratest.CreateTest(Self, _dir)
+	Test           = indratest.CreateTest("coderaiser/indra/internal/plugins/remove-skip", _dir)
 )
 
 func TestRemoveSkip(t *testing.T) {

@@ -5,8 +5,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	loader "coderaiser/indra/engine-loader"
+	runner "coderaiser/indra/engine-runner"
 	indratest "coderaiser/indra/internal/test"
 	"coderaiser/indra/types"
+	tape "github.com/coderaiser/go-tape"
 )
 
 // ── fixture sources ──────────────────────────────────────────────────────────
@@ -39,24 +42,18 @@ func f() {
 }
 `
 
-// ── helper plugins ───────────────────────────────────────────────────────────
-
-type reportPlugin struct{}
-
-func (reportPlugin) Report() string { return "found it" }
-func (reportPlugin) Match() types.Matcher {
-	return types.Matcher{"t.Equal(__a, __b)": nil}
+// items builds runnable PluginItems from synthetic plugin funcs.
+func items(report string, match types.Matcher, replace types.Replacer) []runner.PluginItem {
+	pf := loader.PluginFuncs{Name: "synth", Report: func() string { return report }, Match: func() types.Matcher { return match }, Replace: func() types.Replacer { return replace }}
+	kinds := loader.Load([]loader.PluginFuncs{pf}, nil, loader.Config{})
+	return []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}
 }
-func (reportPlugin) Replace() types.Replacer { return nil }
 
-type replacePlugin struct{}
-
-func (replacePlugin) Report() string { return "found it" }
-func (replacePlugin) Match() types.Matcher {
-	return types.Matcher{"t.Equal(__a, __b)": nil}
-}
-func (replacePlugin) Replace() types.Replacer {
-	return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}
+// testRunner wraps tape.Extend around indratest.New for synthetic plugins.
+func testRunner(plugins []runner.PluginItem, dir string) func(*testing.T, string, func(*indratest.T)) {
+	return tape.Extend(func(base *tape.T) *indratest.T {
+		return indratest.New(base, plugins, dir)
+	})
 }
 
 // ── dir helper ───────────────────────────────────────────────────────────────
@@ -76,7 +73,7 @@ func writeDir(t *testing.T, files map[string]string) string {
 
 func TestReport(t *testing.T) {
 	dir := writeDir(t, map[string]string{"match.go": matchSrc})
-	Test := indratest.CreateTest(reportPlugin{}, dir)
+	Test := testRunner(items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, nil), dir)
 	Test(t, "test: Report correct message", func(t *indratest.T) {
 		t.Report("match", "found it")
 		t.End()
@@ -85,7 +82,7 @@ func TestReport(t *testing.T) {
 
 func TestNoReport(t *testing.T) {
 	dir := writeDir(t, map[string]string{"clean.go": cleanSrc})
-	Test := indratest.CreateTest(reportPlugin{}, dir)
+	Test := testRunner(items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, nil), dir)
 	Test(t, "test: NoReport clean fixture", func(t *indratest.T) {
 		t.NoReport("clean")
 		t.End()
@@ -97,7 +94,7 @@ func TestTransform(t *testing.T) {
 		"replace.go":     replaceSrc,
 		"replace-fix.go": replacedSrc,
 	})
-	Test := indratest.CreateTest(replacePlugin{}, dir)
+	Test := testRunner(items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
 	Test(t, "test: Transform matches fix fixture", func(t *indratest.T) {
 		t.Transform("replace")
 		t.End()
@@ -107,7 +104,7 @@ func TestTransform(t *testing.T) {
 func TestTransformUpdate(t *testing.T) {
 	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
 	t.Setenv("UPDATE", "1")
-	Test := indratest.CreateTest(replacePlugin{}, dir)
+	Test := testRunner(items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
 	Test(t, "test: Transform UPDATE=1 writes fix fixture", func(t *indratest.T) {
 		t.Transform("replace")
 		t.End()
@@ -124,7 +121,7 @@ func TestTransformUpdate(t *testing.T) {
 func TestNoTransform(t *testing.T) {
 	// report-only plugin → no rewrite → src must be unchanged
 	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
-	Test := indratest.CreateTest(reportPlugin{}, dir)
+	Test := testRunner(items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, nil), dir)
 	Test(t, "test: NoTransform unchanged fixture", func(t *indratest.T) {
 		t.NoTransform("replace")
 		t.End()
