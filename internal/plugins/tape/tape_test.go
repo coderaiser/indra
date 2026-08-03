@@ -19,4 +19,19 @@ func TestTape(t *testing.T) {
 		t.Transform("add-t-end")
 		t.End()
 	})
+
+	Test(t, "tape: transform convert-equal-to-not-ok", func(t *indratest.T) {
+		t.Transform("convert-equal-to-not-ok")
+		t.End()
+	})
+
+	Test(t, "tape: transform convert-ok-to-not-ok", func(t *indratest.T) {
+		t.Transform("convert-ok-to-not-ok")
+		t.End()
+	})
+
+	Test(t, "tape: transform remove-useless-condition", func(t *indratest.T) {
+		t.Transform("remove-useless-condition")
+		t.End()
+	})
 }
