@@ -47,12 +47,30 @@ func CreateTest(_ uintptr, file string, _ int, _ bool) func(*testing.T, string, 
 		if pf.Path != pkgPath {
 			continue
 		}
-		kinds := loader.Load([]loader.PluginFuncs{pf}, loader.Config{})
 		return tape.Extend(func(base *tape.T) *T {
-			return New(base, []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}, dir)
+			return New(base, loadItems(pf), dir)
 		})
 	}
 	panic("internal/test: unknown plugin " + pkgPath)
+}
+
+// loadItems resolves the runnable PluginItems for a plugin target. A nested
+// (grouping) plugin expands its sub-rules from the full registry into
+// "group/rule" items; a leaf plugin yields a single item matching its name.
+func loadItems(pf loader.PluginFuncs) []runner.PluginItem {
+	if pf.Rules == nil {
+		kinds := loader.Load([]loader.PluginFuncs{pf}, loader.Config{})
+		return []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}
+	}
+	prefix := pf.Name + "/"
+	kinds := loader.Load(plugins.All, loader.Config{})
+	var items []runner.PluginItem
+	for _, k := range kinds {
+		if strings.HasPrefix(k.Name(), prefix) {
+			items = append(items, runner.PluginItem{Rule: k.Name(), Plugin: k})
+		}
+	}
+	return items
 }
 
 // modInfo caches the module name and root dir, located from go.mod.

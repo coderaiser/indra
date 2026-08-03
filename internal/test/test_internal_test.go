@@ -9,6 +9,7 @@ import (
 
 	loader "coderaiser/indra/engine-loader"
 	runner "coderaiser/indra/engine-runner"
+	"coderaiser/indra/internal/plugins"
 	"coderaiser/indra/types"
 	tape "github.com/coderaiser/go-tape"
 )
@@ -268,6 +269,51 @@ func TestCreateTestHappyPath(t *testing.T) {
 		tt.End()
 	})
 }
+
+// TestLoadItemsNested covers the nested-plugin branch of loadItems: a
+// grouping plugin (tape) must expand to its "group/rule" sub-plugins.
+func TestLoadItemsNested(t *testing.T) {
+	var pf loader.PluginFuncs
+	for _, p := range plugins.All {
+		if p.Path == "coderaiser/indra/internal/plugins/tape" {
+			pf = p
+		}
+	}
+	if pf.Rules == nil {
+		t.Fatal("expected tape plugin to carry nested Rules")
+	}
+	items := loadItems(pf)
+	if len(items) != 2 {
+		t.Fatalf("expected 2 tape sub-rules, got %d", len(items))
+	}
+	got := map[string]bool{}
+	for _, it := range items {
+		got[it.Rule] = true
+	}
+	for _, rule := range []string{"tape/remove-skip", "tape/add-t-end"} {
+		if !got[rule] {
+			t.Errorf("missing rule %q", rule)
+		}
+	}
+}
+
+// TestLoadItemsLeaf covers the leaf-plugin branch of loadItems.
+func TestLoadItemsLeaf(t *testing.T) {
+	var pf loader.PluginFuncs
+	for _, p := range plugins.All {
+		if p.Path == "coderaiser/indra/internal/plugins/remove-skip" {
+			pf = p
+		}
+	}
+	if pf.Rules != nil {
+		t.Fatal("expected remove-skip to be a leaf plugin")
+	}
+	items := loadItems(pf)
+	if len(items) != 1 || items[0].Rule != "remove-skip" {
+		t.Fatalf("expected single remove-skip item, got %v", items)
+	}
+}
+
 
 func TestFindModInfoFound(t *testing.T) {
 	dir := t.TempDir()
