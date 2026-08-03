@@ -2,6 +2,7 @@ package plugins
 
 import (
 	. "coderaiser/indra/types"
+	engine_loader "coderaiser/indra/engine-loader"
 	"coderaiser/indra/internal/plugins/add-t-end"
 	"coderaiser/indra/internal/plugins/convert-equal-to-deep-equal"
 	"coderaiser/indra/internal/plugins/extract-result-from-assertion"
@@ -29,13 +30,14 @@ var NestedPlugins = map[string]Nested{
 	"tape": tape.Rules,
 }
 
-// TODO: temporary shim deleted when internal/lint is rewritten in the
-// engine-loader/engine-runner/engine-processor refactor.
-var All = []any{
-	remove_skip.Self,
-	convert_equal_to_deep_equal.Self,
-	add_t_end.Self,
-	extract_result_from_assertion.Self,
-	remove_unused_import.Self,
-	remove_unused_variable.Self,
+// All is the static plugin index used by engine-loader. Each entry statically
+// imports the plugin's exported funcs so the loader can reflect on them.
+var All = []engine_loader.PluginFuncs{
+	{Name: "remove-skip", Path: "coderaiser/indra/internal/plugins/remove-skip", Report: remove_skip.Report, Match: remove_skip.Match, Replace: remove_skip.Replace},
+	{Name: "convert-equal-to-deep-equal", Path: "coderaiser/indra/internal/plugins/convert-equal-to-deep-equal", Report: convert_equal_to_deep_equal.Report, Match: convert_equal_to_deep_equal.Match, Replace: convert_equal_to_deep_equal.Replace},
+	{Name: "add-t-end", Path: "coderaiser/indra/internal/plugins/add-t-end", Report: add_t_end.Report, Match: add_t_end.Match, Replace: add_t_end.Replace},
+	{Name: "extract-result-from-assertion", Path: "coderaiser/indra/internal/plugins/extract-result-from-assertion", Report: extract_result_from_assertion.Report, Match: extract_result_from_assertion.Match, Replace: extract_result_from_assertion.Replace},
+	{Name: "remove-unused-import", Path: "coderaiser/indra/internal/plugins/remove-unused-import", Report: remove_unused_import.Report, Traverse: remove_unused_import.Traverse, Fix: remove_unused_import.Fix},
+	{Name: "remove-unused-variable", Path: "coderaiser/indra/internal/plugins/remove-unused-variable", Report: remove_unused_variable.Report, Traverse: remove_unused_variable.Traverse, Fix: remove_unused_variable.Fix},
 }
+
