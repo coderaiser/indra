@@ -18,7 +18,7 @@ func pluginItems() []runner.PluginItem {
 		Report:  func() string { return "use DeepEqual" },
 		Match:   func() types.Matcher { return types.Matcher{"t.Equal(__a, __b)": nil} },
 		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"} },
-	}}, nil, loader.Config{})
+	}}, loader.Config{})
 	return []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}
 }
 

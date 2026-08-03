@@ -40,7 +40,7 @@ func loadPlugin(pkgPath string) []runner.PluginItem {
 		if pf.Path != pkgPath {
 			continue
 		}
-		kinds := loader.Load([]loader.PluginFuncs{pf}, nil, loader.Config{})
+		kinds := loader.Load([]loader.PluginFuncs{pf}, loader.Config{})
 		return []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}
 	}
 	panic("internal/test: unknown plugin " + pkgPath)

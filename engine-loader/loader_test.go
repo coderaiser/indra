@@ -42,7 +42,7 @@ func TestLoadAllEnabled(t *testing.T) {
 		replacerFuncs("remove-skip", "p/remove-skip"),
 		traverserFuncs("remove-unused-import", "p/remove-unused-import"),
 	}
-	got := Load(plugins, nil, Config{})
+	got := Load(plugins, Config{})
 	if len(got) != 2 {
 		t.Fatalf("expected 2 plugins, got %d", len(got))
 	}
@@ -57,10 +57,15 @@ func TestLoadAllEnabled(t *testing.T) {
 func TestLoadExactDisabled(t *testing.T) {
 	plugins := []PluginFuncs{replacerFuncs("skip", "p/skip")}
 	cfg := Config{"skip": {Enabled: false}}
-	got := Load(plugins, nil, cfg)
+	got := Load(plugins, cfg)
 	if len(got) != 0 {
 		t.Fatalf("expected 0 plugins, got %d", len(got))
 	}
+}
+
+// nestedFuncs builds a nested (grouping) plugin whose Rules reference path.
+func nestedFuncs(name, path string, rules types.Nested) PluginFuncs {
+	return PluginFuncs{Name: name, Path: path, Rules: rules}
 }
 
 func TestLoadPrefixDisabled(t *testing.T) {
@@ -69,15 +74,13 @@ func TestLoadPrefixDisabled(t *testing.T) {
 	plugins := []PluginFuncs{
 		replacerFuncs("remove-skip", "p/remove-skip"),
 		replacerFuncs("add-t-end", "p/add-t-end"),
-	}
-	nested := map[string]types.Nested{
-		"tape": {
+		nestedFuncs("tape", "p/tape", types.Nested{
 			"remove-skip": "p/remove-skip",
 			"add-t-end":   "p/add-t-end",
-		},
+		}),
 	}
 	cfg := Config{"tape": {Enabled: false}}
-	got := Load(plugins, nested, cfg)
+	got := Load(plugins, cfg)
 	nms := names(got)
 	if !nms["remove-skip"] || !nms["add-t-end"] {
 		t.Fatalf("expected top-level rules kept, got %v", nms)
@@ -90,11 +93,11 @@ func TestLoadPrefixDisabled(t *testing.T) {
 func TestLoadOffRespected(t *testing.T) {
 	// The tape/remove-skip sub-rule is Off() by default; only the top-level
 	// remove-skip rule survives.
-	plugins := []PluginFuncs{replacerFuncs("remove-skip", "p/remove-skip")}
-	nested := map[string]types.Nested{
-		"tape": {"remove-skip": types.Off("p/remove-skip")},
+	plugins := []PluginFuncs{
+		replacerFuncs("remove-skip", "p/remove-skip"),
+		nestedFuncs("tape", "p/tape", types.Nested{"remove-skip": types.Off("p/remove-skip")}),
 	}
-	got := Load(plugins, nested, Config{})
+	got := Load(plugins, Config{})
 	nms := names(got)
 	if nms["tape/remove-skip"] {
 		t.Fatalf("expected Off() tape/remove-skip disabled, got %v", nms)
@@ -106,12 +109,12 @@ func TestLoadOffRespected(t *testing.T) {
 
 func TestLoadOffOverriddenOn(t *testing.T) {
 	// Config turning tape/remove-skip on overtakes the default Off().
-	plugins := []PluginFuncs{replacerFuncs("remove-skip", "p/remove-skip")}
-	nested := map[string]types.Nested{
-		"tape": {"remove-skip": types.Off("p/remove-skip")},
+	plugins := []PluginFuncs{
+		replacerFuncs("remove-skip", "p/remove-skip"),
+		nestedFuncs("tape", "p/tape", types.Nested{"remove-skip": types.Off("p/remove-skip")}),
 	}
 	cfg := Config{"tape/remove-skip": {Enabled: true}}
-	got := Load(plugins, nested, cfg)
+	got := Load(plugins, cfg)
 	nms := names(got)
 	if !nms["tape/remove-skip"] {
 		t.Fatalf("expected tape/remove-skip enabled by config, got %v", nms)
@@ -120,10 +123,11 @@ func TestLoadOffOverriddenOn(t *testing.T) {
 
 func TestLoadMissingNestedPath(t *testing.T) {
 	// nested path with no matching PluginFuncs is skipped
-	nested := map[string]types.Nested{
-		"tape": {"ghost": "p/ghost"},
+	plugins := []PluginFuncs{
+		replacerFuncs("x", "p/x"),
+		nestedFuncs("tape", "p/tape", types.Nested{"ghost": "p/ghost"}),
 	}
-	got := Load([]PluginFuncs{replacerFuncs("x", "p/x")}, nested, Config{})
+	got := Load(plugins, Config{})
 	if len(got) != 1 {
 		t.Fatalf("expected only top-level x, got %d", len(got))
 	}
@@ -139,7 +143,7 @@ func TestLoadWrongSignaturePanics(t *testing.T) {
 		}
 	}()
 	bad := PluginFuncs{Name: "bad", Report: "not-a-func"}
-	Load([]PluginFuncs{bad}, nil, Config{})
+	Load([]PluginFuncs{bad}, Config{})
 }
 
 func TestLoadUnknownKindPanics(t *testing.T) {
@@ -154,7 +158,7 @@ func TestLoadUnknownKindPanics(t *testing.T) {
 		Match:  func() types.Matcher { return nil },
 		// no Replace, no Traverse/Fix
 	}
-	Load([]PluginFuncs{bad}, nil, Config{})
+	Load([]PluginFuncs{bad}, Config{})
 }
 
 func TestDefaultConfigEmpty(t *testing.T) {
@@ -205,7 +209,7 @@ func TestMissingReportPanics(t *testing.T) {
 			t.Fatal("expected panic for missing Report")
 		}
 	}()
-	Load([]PluginFuncs{{Name: "bad", Match: func() types.Matcher { return nil }, Replace: func() types.Replacer { return nil }}}, nil, Config{})
+	Load([]PluginFuncs{{Name: "bad", Match: func() types.Matcher { return nil }, Replace: func() types.Replacer { return nil }}}, Config{})
 }
 
 // TestNothingReturnPanics covers funcValue's "not a func" guard.
@@ -215,7 +219,7 @@ func TestNothingReturnPanics(t *testing.T) {
 			t.Fatal("expected panic for non-func field")
 		}
 	}()
-	Load([]PluginFuncs{{Name: "bad", Report: func() string { return "x" }, Match: "no", Replace: "no"}}, nil, Config{})
+	Load([]PluginFuncs{{Name: "bad", Report: func() string { return "x" }, Match: "no", Replace: "no"}}, Config{})
 }
 
 // TestFixWrongShapePanics covers funcValue's Fix two-arg guard with a bad shape.
@@ -231,7 +235,7 @@ func TestFixWrongShapePanics(t *testing.T) {
 		Traverse: func() types.Traverser { return nil },
 		Fix:      func() {},
 	}
-	Load([]PluginFuncs{bad}, nil, Config{})
+	Load([]PluginFuncs{bad}, Config{})
 }
 
 // TestUnknownFieldPanics covers fieldOf's default branch.
@@ -278,7 +282,7 @@ func TestMultiReturnPanics(t *testing.T) {
 		Match:   func() types.Matcher { return nil },
 		Replace: func() types.Replacer { return nil },
 	}
-	Load([]PluginFuncs{bad}, nil, Config{})
+	Load([]PluginFuncs{bad}, Config{})
 }
 
 // TestWrongReturnTypePanics covers mustFunc's type-assertion guard.
@@ -294,5 +298,5 @@ func TestWrongReturnTypePanics(t *testing.T) {
 		Match:   func() types.Matcher { return nil },
 		Replace: func() types.Replacer { return nil },
 	}
-	Load([]PluginFuncs{bad}, nil, Config{})
+	Load([]PluginFuncs{bad}, Config{})
 }

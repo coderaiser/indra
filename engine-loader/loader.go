@@ -11,16 +11,24 @@ import (
 
 // PluginFuncs is a set of exported funcs from one plugin package.
 // It is passed by plugins.go which imports the packages statically.
+// A nested plugin carries Rules instead of Report/Match/Replace/Traverse/Fix.
 type PluginFuncs struct {
-	// Name is the rule name (e.g. "remove-skip").
+	// Name is the rule or group name (e.g. "remove-skip", "tape").
 	Name string
 	// Path is the package import path (used to expand Nested entries).
-	Path     string
-	Report   any // func() string
-	Match    any // func() types.Matcher — nil for traversers
-	Replace  any // func() types.Replacer — nil for traversers
-	Traverse any // func() types.Traverser — nil for replacers
-	Fix      any // func(ast.Node, []types.Place) — nil for replacers
+	Path string
+	// Report is func() string — nil for nested plugins.
+	Report any
+	// Match is func() types.Matcher — nil for traversers and nested plugins.
+	Match any
+	// Replace is func() types.Replacer — nil for traversers and nested plugins.
+	Replace any
+	// Traverse is func() types.Traverser — nil for replacers and nested plugins.
+	Traverse any
+	// Fix is func(ast.Node, []types.Place) — nil for replacers and nested plugins.
+	Fix any
+	// Rules is types.Nested — non-nil only for nested (grouping) plugins.
+	Rules types.Nested
 }
 
 // PluginKind is a resolved, runnable plugin.
@@ -74,26 +82,31 @@ type candidate struct {
 // Load resolves top-level plugins and nested sub-plugins into runnable kinds,
 // then filters them by cfg.
 //
+// A plugin entry whose Rules field is non-nil is a nested group: Load expands
+// each of its sub-paths into "group/rule" candidates. Top-level entries keep
+// their own rule name.
+//
 // Filtering priority:
 //  1. exact config match: "tape/remove-skip" disabled → rule disabled
 //  2. prefix config match: "tape" disabled → all "tape/*" disabled
 //  3. PluginEntry.Enabled=false (Off() in Nested) → disabled unless config says on
 //  4. default: enabled
-func Load(plugins []PluginFuncs, nested map[string]types.Nested, cfg Config) []PluginKind {
+func Load(plugins []PluginFuncs, cfg Config) []PluginKind {
 	var cands []candidate
 	for _, p := range plugins {
-		cands = append(cands, candidate{rule: p.Name, kind: resolveKind(p, p.Name), enabled: true})
-	}
-	for group, rules := range nested {
-		for name, v := range rules {
-			path := entryPath(v)
-			pf, ok := findPluginFuncs(plugins, path)
-			if !ok {
-				continue
+		if p.Rules != nil {
+			for name, v := range p.Rules {
+				path := entryPath(v)
+				pf, ok := findPluginFuncs(plugins, path)
+				if !ok {
+					continue
+				}
+				rule := p.Name + "/" + name
+				cands = append(cands, candidate{rule: rule, kind: resolveKind(pf, rule), enabled: isEntryEnabled(v)})
 			}
-			rule := group + "/" + name
-			cands = append(cands, candidate{rule: rule, kind: resolveKind(pf, rule), enabled: isEntryEnabled(v)})
+			continue
 		}
+		cands = append(cands, candidate{rule: p.Name, kind: resolveKind(p, p.Name), enabled: true})
 	}
 
 	out := make([]PluginKind, 0, len(cands))

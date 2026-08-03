@@ -58,7 +58,7 @@ func (replacePlugin) Replace() types.Replacer {
 // items builds runnable PluginItems from synthetic plugin funcs.
 func items(report string, match types.Matcher, replace types.Replacer) []runner.PluginItem {
 	pf := loader.PluginFuncs{Name: "synth", Report: func() string { return report }, Match: func() types.Matcher { return match }, Replace: func() types.Replacer { return replace }}
-	kinds := loader.Load([]loader.PluginFuncs{pf}, nil, loader.Config{})
+	kinds := loader.Load([]loader.PluginFuncs{pf}, loader.Config{})
 	return []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}
 }
 

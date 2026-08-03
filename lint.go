@@ -16,7 +16,7 @@ import (
 
 // loadPlugins resolves all enabled plugins into runnable items.
 func loadPlugins() []runner.PluginItem {
-	kinds := loader.Load(plugins.All, plugins.NestedPlugins, loader.DefaultConfig())
+	kinds := loader.Load(plugins.All, loader.DefaultConfig())
 	items := make([]runner.PluginItem, len(kinds))
 	for i, k := range kinds {
 		items[i] = runner.PluginItem{Rule: k.Name(), Plugin: k}

@@ -24,7 +24,7 @@ func parse(t *testing.T, src string) (*ast.File, *token.FileSet) {
 }
 
 func items(plugins []loader.PluginFuncs) []PluginItem {
-	kinds := loader.Load(plugins, nil, loader.Config{})
+	kinds := loader.Load(plugins, loader.Config{})
 	out := make([]PluginItem, len(kinds))
 	for i, k := range kinds {
 		out[i] = PluginItem{Rule: k.Name(), Plugin: k}
@@ -95,7 +95,7 @@ func TestRunReplacerFixRewrites(t *testing.T) {
 func TestRunMsgOverridesReport(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n"
 	file, fset := parse(t, src)
-	kinds := loader.Load(replacerItem(), nil, loader.Config{})
+	kinds := loader.Load(replacerItem(), loader.Config{})
 	pl := []PluginItem{{Rule: "eq", Plugin: kinds[0], Msg: "custom"}}
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
 	if places[0].Message != "custom" {
@@ -204,7 +204,7 @@ func TestRunTraverserBlockFix(t *testing.T) {
 func TestRunTraverserMsgOverride(t *testing.T) {
 	src := "package p\n\nfunc f() {}\n"
 	file, fset := parse(t, src)
-	kinds := loader.Load([]loader.PluginFuncs{traverserFuncs("file", "*ast.File")}, nil, loader.Config{})
+	kinds := loader.Load([]loader.PluginFuncs{traverserFuncs("file", "*ast.File")}, loader.Config{})
 	pl := []PluginItem{{Rule: "file", Plugin: kinds[0], Msg: "override"}}
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
 	if places[0].Message != "override" {
@@ -329,7 +329,7 @@ func TestRunUnparseableReplace(t *testing.T) {
 func TestRunTraverserBlockMsgOverride(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tx := 1\n}\n"
 	file, fset := parse(t, src)
-	kinds := loader.Load([]loader.PluginFuncs{traverserFuncs("block", "*ast.BlockStmt")}, nil, loader.Config{})
+	kinds := loader.Load([]loader.PluginFuncs{traverserFuncs("block", "*ast.BlockStmt")}, loader.Config{})
 	pl := []PluginItem{{Rule: "block", Plugin: kinds[0], Msg: "blockmsg"}}
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
 	if places[0].Message != "blockmsg" {

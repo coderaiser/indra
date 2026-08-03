@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	. "coderaiser/indra/types"
 	engine_loader "coderaiser/indra/engine-loader"
 	"coderaiser/indra/internal/plugins/add-t-end"
 	"coderaiser/indra/internal/plugins/convert-equal-to-deep-equal"
@@ -12,26 +11,10 @@ import (
 	"coderaiser/indra/internal/plugins/tape"
 )
 
-// Plugins is the ordered list of top-level plugin package paths.
+// All is the single, ordered plugin registry.
 // Order matters: convert-equal-to-deep-equal before extract-result-from-assertion.
-// engine-loader loads each via go/packages at init and detects kind by exported funcs.
-var Plugins = []string{
-	"coderaiser/indra/internal/plugins/remove-skip",
-	"coderaiser/indra/internal/plugins/convert-equal-to-deep-equal",
-	"coderaiser/indra/internal/plugins/add-t-end",
-	"coderaiser/indra/internal/plugins/extract-result-from-assertion",
-	"coderaiser/indra/internal/plugins/remove-unused-import",
-	"coderaiser/indra/internal/plugins/remove-unused-variable",
-}
-
-// NestedPlugins maps group name → Nested rules map.
-// engine-loader expands each into "group/rule" entries.
-var NestedPlugins = map[string]Nested{
-	"tape": tape.Rules,
-}
-
-// All is the static plugin index used by engine-loader. Each entry statically
-// imports the plugin's exported funcs so the loader can reflect on them.
+// Nested plugins (tape) carry their Rules map; the loader expands them into
+// "group/rule" entries at load time.
 var All = []engine_loader.PluginFuncs{
 	{Name: "remove-skip", Path: "coderaiser/indra/internal/plugins/remove-skip", Report: remove_skip.Report, Match: remove_skip.Match, Replace: remove_skip.Replace},
 	{Name: "convert-equal-to-deep-equal", Path: "coderaiser/indra/internal/plugins/convert-equal-to-deep-equal", Report: convert_equal_to_deep_equal.Report, Match: convert_equal_to_deep_equal.Match, Replace: convert_equal_to_deep_equal.Replace},
@@ -39,5 +22,6 @@ var All = []engine_loader.PluginFuncs{
 	{Name: "extract-result-from-assertion", Path: "coderaiser/indra/internal/plugins/extract-result-from-assertion", Report: extract_result_from_assertion.Report, Match: extract_result_from_assertion.Match, Replace: extract_result_from_assertion.Replace},
 	{Name: "remove-unused-import", Path: "coderaiser/indra/internal/plugins/remove-unused-import", Report: remove_unused_import.Report, Traverse: remove_unused_import.Traverse, Fix: remove_unused_import.Fix},
 	{Name: "remove-unused-variable", Path: "coderaiser/indra/internal/plugins/remove-unused-variable", Report: remove_unused_variable.Report, Traverse: remove_unused_variable.Traverse, Fix: remove_unused_variable.Fix},
+	{Name: "tape", Path: "coderaiser/indra/internal/plugins/tape", Rules: tape.Rules},
 }
 
