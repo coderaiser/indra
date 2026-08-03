@@ -11,4 +11,5 @@ var Rules = Nested{
 	"convert-equal-to-not-ok":       "coderaiser/indra/internal/plugins/convert-equal-to-not-ok",
 	"convert-ok-to-not-ok":          "coderaiser/indra/internal/plugins/convert-ok-to-not-ok",
 	"extract-result-from-assertion": "coderaiser/indra/internal/plugins/extract-result-from-assertion",
+	"remove-useless-condition":      "coderaiser/indra/internal/plugins/remove-useless-condition",
 }

@@ -283,8 +283,8 @@ func TestLoadItemsNested(t *testing.T) {
 		t.Fatal("expected tape plugin to carry nested Rules")
 	}
 	items := loadItems(pf)
-	if len(items) != 6 {
-		t.Fatalf("expected 6 tape sub-rules, got %d", len(items))
+	if len(items) != 7 {
+		t.Fatalf("expected 7 tape sub-rules, got %d", len(items))
 	}
 	got := map[string]bool{}
 	for _, it := range items {
@@ -296,6 +296,7 @@ func TestLoadItemsNested(t *testing.T) {
 		"tape/convert-equal-to-deep-equal",
 		"tape/convert-equal-to-not-ok",
 		"tape/convert-ok-to-not-ok",
+		"tape/remove-useless-condition",
 		"tape/extract-result-from-assertion",
 	} {
 		if !got[rule] {
