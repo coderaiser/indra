@@ -11,6 +11,7 @@ import (
 
 	loader "coderaiser/indra/engine-loader"
 	"coderaiser/indra/types"
+	tape "github.com/coderaiser/go-tape"
 )
 
 func parse(t *testing.T, src string) (*ast.File, *token.FileSet) {
@@ -73,12 +74,21 @@ func TestRunReplacerReturnsPlaces(t *testing.T) {
 	file, fset := parse(t, src)
 	pl := items(replacerItem())
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
-	if len(places) != 1 {
-		t.Fatalf("expected 1 place, got %d", len(places))
-	}
-	if places[0].Rule != "eq" || places[0].Message != "use DeepEqual" {
-		t.Fatalf("unexpected place: %+v", places[0])
-	}
+
+	tape.Test(t, "runner: replacer returns 1 place", func(t *tape.T) {
+		t.Equal(len(places), 1)
+		t.End()
+	})
+
+	tape.Test(t, "runner: replacer place has correct rule", func(t *tape.T) {
+		t.Equal(places[0].Rule, "eq")
+		t.End()
+	})
+
+	tape.Test(t, "runner: replacer place has correct message", func(t *tape.T) {
+		t.Equal(places[0].Message, "use DeepEqual")
+		t.End()
+	})
 }
 
 func TestRunReplacerFixRewrites(t *testing.T) {
@@ -87,9 +97,11 @@ func TestRunReplacerFixRewrites(t *testing.T) {
 	pl := items(replacerItem())
 	RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
 	out := printFile(t, file, fset)
-	if !strings.Contains(out, "t.DeepEqual(a, b)") {
-		t.Fatalf("expected DeepEqual after fix:\n%s", out)
-	}
+
+	tape.Test(t, "runner: replacer fix rewrites to DeepEqual", func(t *tape.T) {
+		t.Ok(strings.Contains(out, "t.DeepEqual(a, b)"))
+		t.End()
+	})
 }
 
 func TestRunMsgOverridesReport(t *testing.T) {
@@ -98,9 +110,11 @@ func TestRunMsgOverridesReport(t *testing.T) {
 	kinds := loader.Load(replacerItem(), loader.Config{})
 	pl := []PluginItem{{Rule: "eq", Plugin: kinds[0], Msg: "custom"}}
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
-	if places[0].Message != "custom" {
-		t.Fatalf("expected custom message, got %q", places[0].Message)
-	}
+
+	tape.Test(t, "runner: msg overrides report", func(t *tape.T) {
+		t.Equal(places[0].Message, "custom")
+		t.End()
+	})
 }
 
 func TestRunTraverserReturnsPlaces(t *testing.T) {
@@ -108,9 +122,11 @@ func TestRunTraverserReturnsPlaces(t *testing.T) {
 	file, fset := parse(t, src)
 	pl := items([]loader.PluginFuncs{traverserFuncs("file", "*ast.File")})
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
-	if len(places) != 1 {
-		t.Fatalf("expected 1 place from traverser, got %d", len(places))
-	}
+
+	tape.Test(t, "runner: traverser returns 1 place", func(t *tape.T) {
+		t.Equal(len(places), 1)
+		t.End()
+	})
 }
 
 func TestRunTraverserFixCallsFix(t *testing.T) {
@@ -133,9 +149,11 @@ func TestRunTraverserFixCallsFix(t *testing.T) {
 	}
 	pl := items([]loader.PluginFuncs{funcs})
 	RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
-	if file.Name.Name != "q" {
-		t.Fatalf("expected Fix to rename package to q, got %q", file.Name.Name)
-	}
+
+	tape.Test(t, "runner: traverser fix renames package", func(t *tape.T) {
+		t.Equal(file.Name.Name, "q")
+		t.End()
+	})
 }
 
 func TestRunTraverserBlockVisitor(t *testing.T) {
@@ -143,18 +161,22 @@ func TestRunTraverserBlockVisitor(t *testing.T) {
 	file, fset := parse(t, src)
 	pl := items([]loader.PluginFuncs{traverserFuncs("block", "*ast.BlockStmt")})
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
-	if len(places) != 1 {
-		t.Fatalf("expected 1 place from block traverser, got %d", len(places))
-	}
+
+	tape.Test(t, "runner: block traverser returns 1 place", func(t *tape.T) {
+		t.Equal(len(places), 1)
+		t.End()
+	})
 }
 
 func TestRunEmptyPlugins(t *testing.T) {
 	src := "package p\n\nfunc f() {}\n"
 	file, fset := parse(t, src)
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: nil})
-	if len(places) != 0 {
-		t.Fatalf("expected no places with empty plugins, got %d", len(places))
-	}
+
+	tape.Test(t, "runner: empty plugins return no places", func(t *tape.T) {
+		t.Equal(len(places), 0)
+		t.End()
+	})
 }
 
 func TestRunGuardRejects(t *testing.T) {
@@ -170,9 +192,11 @@ func TestRunGuardRejects(t *testing.T) {
 	}
 	pl := items([]loader.PluginFuncs{funcs})
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
-	if len(places) != 0 {
-		t.Fatalf("expected no places when guard rejects, got %d", len(places))
-	}
+
+	tape.Test(t, "runner: guard rejecting match yields no places", func(t *tape.T) {
+		t.Equal(len(places), 0)
+		t.End()
+	})
 }
 
 func TestRunTraverserBlockFix(t *testing.T) {
@@ -196,10 +220,13 @@ func TestRunTraverserBlockFix(t *testing.T) {
 	pl := items([]loader.PluginFuncs{funcs})
 	RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
 	fileBlock := file.Decls[0].(*ast.FuncDecl).Body
-	if len(fileBlock.List) != 0 {
-		t.Fatalf("expected block fix to empty list, got %d", len(fileBlock.List))
-	}
+
+	tape.Test(t, "runner: block fix empties stmt list", func(t *tape.T) {
+		t.Equal(len(fileBlock.List), 0)
+		t.End()
+	})
 }
+
 
 func TestRunTraverserMsgOverride(t *testing.T) {
 	src := "package p\n\nfunc f() {}\n"
@@ -207,9 +234,11 @@ func TestRunTraverserMsgOverride(t *testing.T) {
 	kinds := loader.Load([]loader.PluginFuncs{traverserFuncs("file", "*ast.File")}, loader.Config{})
 	pl := []PluginItem{{Rule: "file", Plugin: kinds[0], Msg: "override"}}
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
-	if places[0].Message != "override" {
-		t.Fatalf("expected traverser msg override, got %q", places[0].Message)
-	}
+
+	tape.Test(t, "runner: traverser msg override", func(t *tape.T) {
+		t.Equal(places[0].Message, "override")
+		t.End()
+	})
 }
 
 func TestRunFixCountLoops(t *testing.T) {
@@ -218,9 +247,11 @@ func TestRunFixCountLoops(t *testing.T) {
 	pl := items(replacerItem())
 	RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 3, Plugins: pl})
 	out := printFile(t, file, fset)
-	if strings.Count(out, "DeepEqual") != 2 {
-		t.Fatalf("expected both statements converted via loop:\n%s", out)
-	}
+
+	tape.Test(t, "runner: fix count loops converts both", func(t *tape.T) {
+		t.Equal(strings.Count(out, "DeepEqual"), 2)
+		t.End()
+	})
 }
 
 func TestRunNoFixNoRewrite(t *testing.T) {
@@ -229,16 +260,20 @@ func TestRunNoFixNoRewrite(t *testing.T) {
 	pl := items(replacerItem())
 	RunPlugins(RunParams{File: file, Fset: fset, Fix: false, Plugins: pl})
 	out := printFile(t, file, fset)
-	if strings.Contains(out, "DeepEqual") {
-		t.Fatalf("expected no rewrite without fix:\n%s", out)
-	}
+
+	tape.Test(t, "runner: no fix means no rewrite", func(t *tape.T) {
+		t.NotOk(strings.Contains(out, "DeepEqual"))
+		t.End()
+	})
 }
 
 func TestSubstituteUnmatchedHole(t *testing.T) {
 	got := substitute("hello __nope", Vars{})
-	if got != "hello __nope" {
-		t.Fatalf("expected hole preserved, got %q", got)
-	}
+
+	tape.Test(t, "runner: unmatched hole preserved", func(t *tape.T) {
+		t.Equal(got, "hello __nope")
+		t.End()
+	})
 }
 
 func TestSubstituteMatchedHole(t *testing.T) {
@@ -246,9 +281,11 @@ func TestSubstituteMatchedHole(t *testing.T) {
 	file, _ := parse(t, src)
 	stmt := file.Decls[0].(*ast.FuncDecl).Body.List[0]
 	got := substitute("a = __x", Vars{"__x": stmt})
-	if !strings.Contains(got, "x := 1") {
-		t.Fatalf("expected substituted source, got %q", got)
-	}
+
+	tape.Test(t, "runner: matched hole substituted", func(t *tape.T) {
+		t.Ok(strings.Contains(got, "x := 1"))
+		t.End()
+	})
 }
 
 func TestRunRenderArgSlice(t *testing.T) {
@@ -263,9 +300,11 @@ func TestRunRenderArgSlice(t *testing.T) {
 	pl := items(funcs)
 	RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
 	out := printFile(t, file, fset)
-	if !strings.Contains(out, "wrap(f, g)") {
-		t.Fatalf("expected wrapped arg slice:\n%s", out)
-	}
+
+	tape.Test(t, "runner: renders wrapped arg slice", func(t *tape.T) {
+		t.Ok(strings.Contains(out, "wrap(f, g)"))
+		t.End()
+	})
 }
 
 func TestRunRenderBodySlice(t *testing.T) {
@@ -282,15 +321,20 @@ func TestRunRenderBodySlice(t *testing.T) {
 	pl := items(funcs)
 	RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
 	out := printFile(t, file, fset)
-	if !strings.Contains(out, ".End()") {
-		t.Fatalf("expected End() added to body:\n%s", out)
-	}
+
+	tape.Test(t, "runner: renders body with End added", func(t *tape.T) {
+		t.Ok(strings.Contains(out, ".End()"))
+		t.End()
+	})
 }
 
 func TestPrintNodeNil(t *testing.T) {
-	if got := printNode(nil); got != "" {
-		t.Fatalf("expected empty string for nil node, got %q", got)
-	}
+	got := printNode(nil)
+
+	tape.Test(t, "runner: nil node prints empty", func(t *tape.T) {
+		t.Equal(got, "")
+		t.End()
+	})
 }
 
 func TestApplyRewritesMultipleInBlock(t *testing.T) {
@@ -305,10 +349,13 @@ func TestApplyRewritesMultipleInBlock(t *testing.T) {
 	pl := items(funcs)
 	RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
 	out := printFile(t, file, fset)
-	if strings.Count(out, "v := ") != 2 {
-		t.Fatalf("expected two rewrites in block:\n%s", out)
-	}
+
+	tape.Test(t, "runner: two rewrites in block", func(t *tape.T) {
+		t.Equal(strings.Count(out, "v := "), 2)
+		t.End()
+	})
 }
+
 
 func TestRunUnparseableReplace(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n"
@@ -321,9 +368,11 @@ func TestRunUnparseableReplace(t *testing.T) {
 	}}
 	pl := items(funcs)
 	places := RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
-	if len(places) != 1 {
-		t.Fatalf("expected 1 place even with unparseable replace, got %d", len(places))
-	}
+
+	tape.Test(t, "runner: unparseable replace still reports place", func(t *tape.T) {
+		t.Equal(len(places), 1)
+		t.End()
+	})
 }
 
 func TestRunTraverserBlockMsgOverride(t *testing.T) {
@@ -332,15 +381,20 @@ func TestRunTraverserBlockMsgOverride(t *testing.T) {
 	kinds := loader.Load([]loader.PluginFuncs{traverserFuncs("block", "*ast.BlockStmt")}, loader.Config{})
 	pl := []PluginItem{{Rule: "block", Plugin: kinds[0], Msg: "blockmsg"}}
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
-	if places[0].Message != "blockmsg" {
-		t.Fatalf("expected block traverser msg override, got %q", places[0].Message)
-	}
+
+	tape.Test(t, "runner: block traverser msg override", func(t *tape.T) {
+		t.Equal(places[0].Message, "blockmsg")
+		t.End()
+	})
 }
 
 func TestSubstituteAndParseError(t *testing.T) {
-	if stmts := substituteAndParse("func (", Vars{}); stmts != nil {
-		t.Fatalf("expected nil for unparseable template, got %v", stmts)
-	}
+	stmts := substituteAndParse("func (", Vars{})
+
+	tape.Test(t, "runner: unparseable template returns nil", func(t *tape.T) {
+		t.Ok(stmts == nil)
+		t.End()
+	})
 }
 
 // declFuncs builds a replacer plugin whose Match and Replace carry a
@@ -359,9 +413,11 @@ func TestRunDeclRewritesReportsPlace(t *testing.T) {
 	file, fset := parse(t, src)
 	pl := items(declFuncs())
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
-	if len(places) != 1 {
-		t.Fatalf("expected 1 place from decl rewrite, got %d", len(places))
-	}
+
+	tape.Test(t, "runner: decl rewrite reports 1 place", func(t *tape.T) {
+		t.Equal(len(places), 1)
+		t.End()
+	})
 }
 
 func TestRunDeclRewritesGuardRejects(t *testing.T) {
@@ -377,9 +433,11 @@ func TestRunDeclRewritesGuardRejects(t *testing.T) {
 	}}
 	pl := items(funcs)
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
-	if len(places) != 0 {
-		t.Fatalf("expected no places when decl guard rejects, got %d", len(places))
-	}
+
+	tape.Test(t, "runner: decl guard rejecting yields no places", func(t *tape.T) {
+		t.Equal(len(places), 0)
+		t.End()
+	})
 }
 
 func TestRunDeclRewritesRemovesDecl(t *testing.T) {
@@ -388,9 +446,11 @@ func TestRunDeclRewritesRemovesDecl(t *testing.T) {
 	pl := items(declFuncs())
 	RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
 	out := printFile(t, file, fset)
-	if strings.Contains(out, "func Match") {
-		t.Fatalf("expected declaration removed after fix:\n%s", out)
-	}
+
+	tape.Test(t, "runner: decl rewrite removes declaration", func(t *tape.T) {
+		t.NotOk(strings.Contains(out, "func Match"))
+		t.End()
+	})
 }
 
 func TestRunDeclRewritesNoMatch(t *testing.T) {
@@ -398,9 +458,11 @@ func TestRunDeclRewritesNoMatch(t *testing.T) {
 	file, fset := parse(t, src)
 	pl := items(declFuncs())
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
-	if len(places) != 0 {
-		t.Fatalf("expected no places when decl does not match, got %d", len(places))
-	}
+
+	tape.Test(t, "runner: decl non-match yields no places", func(t *tape.T) {
+		t.Equal(len(places), 0)
+		t.End()
+	})
 }
 
 func TestRunDeclRewritesMsgOverride(t *testing.T) {
@@ -409,26 +471,33 @@ func TestRunDeclRewritesMsgOverride(t *testing.T) {
 	kinds := loader.Load(declFuncs(), loader.Config{})
 	pl := []PluginItem{{Rule: "decl", Plugin: kinds[0], Msg: "custom decl"}}
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
-	if places[0].Message != "custom decl" {
-		t.Fatalf("expected decl msg override, got %q", places[0].Message)
-	}
+
+	tape.Test(t, "runner: decl msg override", func(t *tape.T) {
+		t.Equal(places[0].Message, "custom decl")
+		t.End()
+	})
 }
 
 func TestApplyDeclRewritesKeepsNonEmptyTmpl(t *testing.T) {
 	file, _ := parse(t, "package p\n\nfunc Match() Matcher { return Matcher{} }\n")
 	applyDeclRewrites(file, []declRewrite{{idx: 0, tmpl: "func Other() {}"}})
-	if len(file.Decls) != 1 {
-		t.Fatalf("expected declaration kept for non-empty tmpl, got %d decls", len(file.Decls))
-	}
+
+	tape.Test(t, "runner: non-empty decl template kept", func(t *tape.T) {
+		t.Equal(len(file.Decls), 1)
+		t.End()
+	})
 }
 
 func TestApplyDeclRewritesRemovesMultiple(t *testing.T) {
 	file, _ := parse(t, "package p\n\nfunc A() {}\n\nfunc B() {}\n")
 	applyDeclRewrites(file, []declRewrite{{idx: 0, tmpl: ""}, {idx: 1, tmpl: ""}})
-	if len(file.Decls) != 0 {
-		t.Fatalf("expected both declarations removed, got %d decls", len(file.Decls))
-	}
+
+	tape.Test(t, "runner: multiple empty templates removed", func(t *tape.T) {
+		t.Equal(len(file.Decls), 0)
+		t.End()
+	})
 }
+
 
 func TestRunMatchOnlyFixNoRewrite(t *testing.T) {
 	src := "package p\n\nfunc f() { t.Equal(a, b) }\n"
@@ -441,13 +510,17 @@ func TestRunMatchOnlyFixNoRewrite(t *testing.T) {
 	}}
 	pl := items(funcs)
 	places := RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
-	if len(places) != 1 {
-		t.Fatalf("expected 1 place from Match-only plugin, got %d", len(places))
-	}
 	out := printFile(t, file, fset)
-	if strings.Contains(out, "DeepEqual") {
-		t.Fatalf("expected no rewrite without a Replace entry:\n%s", out)
-	}
+
+	tape.Test(t, "runner: match-only reports place", func(t *tape.T) {
+		t.Equal(len(places), 1)
+		t.End()
+	})
+
+	tape.Test(t, "runner: match-only does not rewrite", func(t *tape.T) {
+		t.NotOk(strings.Contains(out, "DeepEqual"))
+		t.End()
+	})
 }
 
 func TestRunReplaceOnlyRewrites(t *testing.T) {
@@ -461,11 +534,16 @@ func TestRunReplaceOnlyRewrites(t *testing.T) {
 	}}
 	pl := items(funcs)
 	places := RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
-	if len(places) != 1 {
-		t.Fatalf("expected 1 place from Replace-only plugin, got %d", len(places))
-	}
 	out := printFile(t, file, fset)
-	if !strings.Contains(out, "DeepEqual") {
-		t.Fatalf("expected Replace-only plugin to rewrite:\n%s", out)
-	}
+
+	tape.Test(t, "runner: replace-only reports place", func(t *tape.T) {
+		t.Equal(len(places), 1)
+		t.End()
+	})
+
+	tape.Test(t, "runner: replace-only rewrites", func(t *tape.T) {
+		t.Ok(strings.Contains(out, "DeepEqual"))
+		t.End()
+	})
 }
+
