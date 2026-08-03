@@ -145,11 +145,11 @@ func (p TraverserPlugin) Fix(node ast.Node, places []types.Place) { p.fix(node, 
 // and panics on a malformed shape at init time.
 func resolveKind(p PluginFuncs, rule string) PluginKind {
 	report := invokeReport(p)
-	if p.Match != nil && p.Replace != nil {
+	if p.Replace != nil {
 		return ReplacerPlugin{
 			rule:    rule,
 			report:  report,
-			match:   mustFunc[func() types.Matcher](p, "Match"),
+			match:   matchFuncOrEmpty(p),
 			replace: mustFunc[func() types.Replacer](p, "Replace"),
 		}
 	}
@@ -162,6 +162,15 @@ func resolveKind(p PluginFuncs, rule string) PluginKind {
 		}
 	}
 	panic("engine-loader: " + p.Name + ": unknown plugin kind (need Match+Replace or Traverse+Fix)")
+}
+
+// matchFuncOrEmpty returns the Match func if present, else a func returning
+// an empty Matcher (the guard for a replacer without Match is a no-op).
+func matchFuncOrEmpty(p PluginFuncs) func() types.Matcher {
+	if p.Match == nil {
+		return func() types.Matcher { return types.Matcher{} }
+	}
+	return mustFunc[func() types.Matcher](p, "Match")
 }
 
 // invokeReport extracts the func() string Report value.

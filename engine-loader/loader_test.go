@@ -285,18 +285,56 @@ func TestMultiReturnPanics(t *testing.T) {
 	Load([]PluginFuncs{bad}, Config{})
 }
 
-// TestWrongReturnTypePanics covers mustFunc's type-assertion guard.
-func TestWrongReturnTypePanics(t *testing.T) {
+
+// TestResolveKindReplacerWithoutMatch covers a replacer whose Match is nil.
+func TestResolveKindReplacerWithoutMatch(t *testing.T) {
+	pf := PluginFuncs{
+		Name:    "no-match",
+		Path:    "p/no-match",
+		Report:  func() string { return "r" },
+		Replace: func() types.Replacer { return types.Replacer{"a": "b"} },
+		// Match intentionally nil
+	}
+	kinds := Load([]PluginFuncs{pf}, Config{})
+	if len(kinds) != 1 {
+		t.Fatalf("expected 1 kind, got %d", len(kinds))
+	}
+	if _, ok := kinds[0].(ReplacerPlugin); !ok {
+		t.Fatalf("expected ReplacerPlugin, got %T", kinds[0])
+	}
+}
+
+// TestReplacerPluginMatchNilReturnsEmpty covers a replacer without Match
+// returning an empty Matcher.
+func TestReplacerPluginMatchNilReturnsEmpty(t *testing.T) {
+	pf := PluginFuncs{
+		Name:    "no-match",
+		Path:    "p/no-match",
+		Report:  func() string { return "r" },
+		Replace: func() types.Replacer { return types.Replacer{"a": "b"} },
+	}
+	kinds := Load([]PluginFuncs{pf}, Config{})
+	rp := kinds[0].(ReplacerPlugin)
+	result := rp.Match()
+	if len(result) != 0 {
+		t.Fatalf("expected empty Matcher, got %d entries", len(result))
+	}
+}
+
+// TestMatchWrongReturnPanics covers mustFunc's type-assertion guard when Match
+// is a func with the right arity but the wrong return type.
+func TestMatchWrongReturnPanics(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
-			t.Fatal("expected panic for wrong return type")
+			t.Fatal("expected panic for wrong Match return type")
 		}
 	}()
 	bad := PluginFuncs{
 		Name:    "bad",
-		Report:  func() int { return 1 },
-		Match:   func() types.Matcher { return nil },
+		Report:  func() string { return "x" },
+		Match:   func() int { return 1 },
 		Replace: func() types.Replacer { return nil },
 	}
 	Load([]PluginFuncs{bad}, Config{})
 }
+
