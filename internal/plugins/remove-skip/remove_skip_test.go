@@ -7,9 +7,7 @@ import (
 	indratest "coderaiser/indra/internal/test"
 )
 
-var Test = indratest.CreateTest("coderaiser/indra/internal/plugins/remove-skip", func() (uintptr, string, int, bool) {
-	return runtime.Caller(0)
-})
+var Test = indratest.CreateTest(runtime.Caller(0))
 
 func TestRemoveSkip(t *testing.T) {
 	Test(t, "remove-skip: report Test.Skip call", func(t *indratest.T) {

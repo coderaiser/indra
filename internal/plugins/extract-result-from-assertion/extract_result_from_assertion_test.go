@@ -7,9 +7,7 @@ import (
 	indratest "coderaiser/indra/internal/test"
 )
 
-var Test = indratest.CreateTest("coderaiser/indra/internal/plugins/extract-result-from-assertion", func() (uintptr, string, int, bool) {
-	return runtime.Caller(0)
-})
+var Test = indratest.CreateTest(runtime.Caller(0))
 
 func TestExtractResultFromAssertion(t *testing.T) {
 	Test(t, "extract-result-from-assertion: report inline call", func(t *indratest.T) {

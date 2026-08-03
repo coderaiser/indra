@@ -7,9 +7,7 @@ import (
 	indratest "coderaiser/indra/internal/test"
 )
 
-var Test = indratest.CreateTest("coderaiser/indra/internal/plugin-indra/remove-useless-match", func() (uintptr, string, int, bool) {
-	return runtime.Caller(0)
-})
+var Test = indratest.CreateTest(runtime.Caller(0))
 
 func TestRemoveUselessMatch(t *testing.T) {
 	Test(t, "remove-useless-match: report nil guard entry", func(t *indratest.T) {

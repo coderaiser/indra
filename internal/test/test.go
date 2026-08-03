@@ -1,8 +1,11 @@
 package test
 
 import (
+	"bufio"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
 	loader "coderaiser/indra/engine-loader"
@@ -26,35 +29,80 @@ func New(tt *tape.T, plugins []runner.PluginItem, dir string) *T {
 	return &T{T: tt, plugins: plugins, dir: dir, fatal: tt.TB().Fatalf, writeFile: os.WriteFile}
 }
 
-// CreateTest returns a typed test runner for the plugin at pkgPath.
+// CreateTest returns a typed test runner for the plugin at the caller's
+// package path.
 //
 // Call once at package level, passing runtime.Caller(0) directly:
 //
-//	var Test = indratest.CreateTest("pkg/path", func() (uintptr, string, int, bool) {
-//		return runtime.Caller(0)
-//	})
+//	var Test = indratest.CreateTest(runtime.Caller(0))
 //
-// runtime.Caller(0) is evaluated lazily when the thunk is invoked, and
-// because the thunk is defined in the plugin test file, file resolves
-// correctly and fixture/ is found next to the test file.
-func CreateTest(pkgPath string, caller func() (uintptr, string, int, bool)) func(*testing.T, string, func(*T)) {
-	_, file, _, _ := caller()
+// runtime.Caller(0) expands its four return values directly into the
+// parameters, so no thunk or path string is needed. file resolves to the
+// plugin test file, the package path is derived from go.mod, and fixture/
+// is found next to the test file.
+func CreateTest(_ uintptr, file string, _ int, _ bool) func(*testing.T, string, func(*T)) {
+	pkgPath := derivePackagePath(file)
 	dir := filepath.Join(filepath.Dir(file), "fixture")
-	return tape.Extend(func(base *tape.T) *T {
-		return New(base, loadPlugin(pkgPath), dir)
-	})
-}
-
-// loadPlugin resolves the plugin for pkgPath from the static plugin index.
-func loadPlugin(pkgPath string) []runner.PluginItem {
 	for _, pf := range plugins.All {
 		if pf.Path != pkgPath {
 			continue
 		}
 		kinds := loader.Load([]loader.PluginFuncs{pf}, loader.Config{})
-		return []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}
+		return tape.Extend(func(base *tape.T) *T {
+			return New(base, []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}, dir)
+		})
 	}
 	panic("internal/test: unknown plugin " + pkgPath)
+}
+
+// modInfo caches the module name and root dir, located from go.mod.
+var modInfo struct {
+	name string // e.g. "coderaiser/indra"
+	root string // abs path of module root dir
+}
+
+func init() {
+	_, thisFile, _, _ := runtime.Caller(0)
+	dir := filepath.Dir(thisFile)
+	for {
+		candidate := filepath.Join(dir, "go.mod")
+		if _, err := os.Stat(candidate); err == nil {
+			modInfo.root = dir
+			modInfo.name = readModuleName(candidate)
+			return
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			panic("internal/test: go.mod not found")
+		}
+		dir = parent
+	}
+}
+
+// readModuleName returns the module directive from a go.mod file.
+func readModuleName(gomod string) string {
+	f, err := os.Open(gomod)
+	if err != nil {
+		panic("internal/test: cannot open go.mod: " + err.Error())
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(line, "module ") {
+			return strings.TrimPrefix(line, "module ")
+		}
+	}
+	panic("internal/test: module line not found in go.mod")
+}
+
+// derivePackagePath maps a test file path to its package import path.
+func derivePackagePath(file string) string {
+	rel, err := filepath.Rel(modInfo.root, filepath.Dir(file))
+	if err != nil {
+		panic("internal/test: cannot relativize path: " + err.Error())
+	}
+	return modInfo.name + "/" + filepath.ToSlash(rel)
 }
 
 // Report asserts the plugin emits exactly ≥1 place whose first Message equals

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	loader "coderaiser/indra/engine-loader"
@@ -191,13 +192,39 @@ func TestTransformUpdateHappy(t *testing.T) {
 	})
 }
 
-// TestLoadPluginUnknownPanics covers the unknown-plugin panic path of
-// loadPlugin, which CreateTest routes through for real plugin paths.
-func TestLoadPluginUnknownPanics(t *testing.T) {
+// TestCreateTestUnknownPluginPanics covers the unknown-plugin panic path of
+// CreateTest, which is reached for a file path that does not resolve to a
+// registered plugin.
+func TestCreateTestUnknownPluginPanics(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("expected panic for unknown plugin path")
 		}
 	}()
-	loadPlugin("coderaiser/indra/internal/plugins/does-not-exist")
+	CreateTest(0, "/nonexistent/does-not-exist/fake_test.go", 0, false)
+}
+
+func TestDerivePackagePath(t *testing.T) {
+	tape.Test(t, "derivePackagePath: resolves this package correctly", func(t *tape.T) {
+		_, file, _, _ := runtime.Caller(0)
+		got := derivePackagePath(file)
+		t.Equal(got, "coderaiser/indra/internal/test")
+		t.End()
+	})
+}
+
+func TestModInfoRoot(t *testing.T) {
+	tape.Test(t, "modinfo: root dir contains go.mod", func(t *tape.T) {
+		_, err := os.Stat(filepath.Join(modInfo.root, "go.mod"))
+		t.Equal(err, nil)
+		t.End()
+	})
+}
+
+func TestReadModuleName(t *testing.T) {
+	tape.Test(t, "readModuleName: returns module name", func(t *tape.T) {
+		name := readModuleName(filepath.Join(modInfo.root, "go.mod"))
+		t.Equal(name, "coderaiser/indra")
+		t.End()
+	})
 }
