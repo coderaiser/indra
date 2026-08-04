@@ -21,6 +21,9 @@ func visitFile(node ast.Node, _ Vars) []Place {
 	if alias == "" {
 		return nil
 	}
+	if hasLocalCollision(file, alias) {
+		return nil
+	}
 	return []Place{{Message: Report()}}
 }
 
@@ -48,8 +51,62 @@ func Fix(node ast.Node, _ []Place) {
 	if alias == "" {
 		return
 	}
+	if hasLocalCollision(file, alias) {
+		return
+	}
 	spec.Name = &ast.Ident{Name: ".", NamePos: spec.Name.NamePos}
 	replaceSelectors(reflect.ValueOf(file), alias)
+}
+
+// hasLocalCollision reports whether removing the alias prefix from any
+// alias.X selector would introduce an identifier that collides with a
+// locally declared (package-level) name. Skipping such files avoids emitting
+// broken code where the unqualified name would now resolve to a local decl.
+func hasLocalCollision(file *ast.File, alias string) bool {
+	declared := declaredNames(file)
+	collision := false
+	ast.Inspect(file, func(n ast.Node) bool {
+		sel, ok := n.(*ast.SelectorExpr)
+		if !ok {
+			return true
+		}
+		if !selMatchesAlias(sel, alias) {
+			return true
+		}
+		if declared[sel.Sel.Name] {
+			collision = true
+			return false
+		}
+		return true
+	})
+	return collision
+}
+
+// declaredNames returns the set of package-level declared identifiers.
+func declaredNames(file *ast.File) map[string]bool {
+	names := make(map[string]bool)
+	for _, decl := range file.Decls {
+		switch d := decl.(type) {
+		case *ast.FuncDecl:
+			if d.Name != nil {
+				names[d.Name.Name] = true
+			}
+		case *ast.GenDecl:
+			for _, spec := range d.Specs {
+				switch s := spec.(type) {
+				case *ast.TypeSpec:
+					if s.Name != nil {
+						names[s.Name.Name] = true
+					}
+				case *ast.ValueSpec:
+					for _, n := range s.Names {
+						names[n.Name] = true
+					}
+				}
+			}
+		}
+	}
+	return names
 }
 
 // typed variants used to prune the semantic (non-syntactic) parts of the tree,

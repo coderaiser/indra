@@ -207,3 +207,25 @@ func TestFixAppliesAcrossNestedCall(t *testing.T) {
 		t.End()
 	})
 }
+
+// TestFixCollisionSkips covers the Fix early-return when removing the prefix
+// would collide with a locally declared identifier.
+func TestFixCollisionSkips(t *testing.T) {
+	tape.Test(t, "Fix: collision leaves alias import unchanged", func(t *tape.T) {
+		file := parseFile(t, "package p\n\nimport z \"github.com/coderaiser/go-tape\"\n\ntype T struct{ inner *z.T }\n")
+		Fix(file, nil)
+		t.Ok(file.Imports[0].Name != nil && file.Imports[0].Name.Name == "z")
+		t.End()
+	})
+}
+
+// TestDeclaredNamesValueSpec covers the *ast.ValueSpec (var/const) branch.
+func TestDeclaredNamesValueSpec(t *testing.T) {
+	tape.Test(t, "declaredNames: includes var and const names", func(t *tape.T) {
+		file := parseFile(t, "package p\n\nvar version = \"1.0\"\nconst max = 10\n")
+		names := declaredNames(file)
+		t.Ok(names["version"] && names["max"])
+		t.End()
+	})
+}
+

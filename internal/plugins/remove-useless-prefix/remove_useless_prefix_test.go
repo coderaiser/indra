@@ -34,4 +34,14 @@ func TestRemoveUselessPrefix(t *testing.T) {
 		t.NoTransform("no-prefix")
 		t.End()
 	})
+
+	Test(t, "remove-useless-prefix: no report when prefix collides with local decl", func(t *indratest.T) {
+		t.NoReport("local-collision")
+		t.End()
+	})
+
+	Test(t, "remove-useless-prefix: no transform when prefix collides with local decl", func(t *indratest.T) {
+		t.NoTransform("local-collision")
+		t.End()
+	})
 }
