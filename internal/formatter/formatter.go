@@ -1,0 +1,35 @@
+// Package formatter selects the active output formatter based on the
+// environment.
+package formatter
+
+import (
+	"os"
+
+	dump "coderaiser/indra/internal/formatter_dump"
+	jsonlines "coderaiser/indra/internal/formatter_json_lines"
+	pb "coderaiser/indra/internal/formatter_progress_bar"
+	"coderaiser/indra/types"
+)
+
+// Func is called once per file with running totals.
+// index is 0-based. count is total number of files.
+// filesWithIssues and errorsCount are running totals before this call.
+// Detects last file via index == count-1.
+// Returns the string to write to output (empty = nothing to write yet).
+type Func func(name string, places []types.Place, index, count, filesWithIssues, errorsCount int) string
+
+// Choose returns the active formatter based on environment.
+// CI=true → dump. INDRA_FORMATTER=json-lines|dump → that one. Default: progress-bar.
+func Choose() Func {
+	if os.Getenv("CI") == "true" {
+		return dump.Format
+	}
+	switch os.Getenv("INDRA_FORMATTER") {
+	case "json-lines":
+		return jsonlines.Format
+	case "dump":
+		return dump.Format
+	default:
+		return pb.Format
+	}
+}
