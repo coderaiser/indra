@@ -17,7 +17,8 @@ type PluginFuncs struct {
 	Name string
 	// Path is the package import path (used to expand Nested entries).
 	Path string
-	// Report is func() string — nil for nested plugins.
+	// Report is func() string for replacers, func(ast.Node) string for
+	// traversers — nil for nested plugins.
 	Report any
 	// Match is func() types.Matcher — nil for traversers and nested plugins.
 	Match any
@@ -25,7 +26,7 @@ type PluginFuncs struct {
 	Replace any
 	// Traverse is func() types.Traverser — nil for replacers and nested plugins.
 	Traverse any
-	// Fix is func(ast.Node, []types.Place) — nil for replacers and nested plugins.
+	// Fix is func(ast.Node, map[string]any) — nil for replacers and nested plugins.
 	Fix any
 	// Rules is types.Nested — non-nil only for nested (grouping) plugins.
 	Rules types.Nested
@@ -54,9 +55,9 @@ func (p ReplacerPlugin) Replace() types.Replacer { return p.replace() }
 // TraverserPlugin is a resolved AST-walk plugin.
 type TraverserPlugin struct {
 	rule     string
-	report   func() string
+	report   types.ReportFn
 	traverse func() types.Traverser
-	fix      func(ast.Node, []types.Place)
+	fix      types.FixFn
 }
 
 // RuleState is the enabled/disabled state of a rule from config.
@@ -137,18 +138,17 @@ func isEnabled(c candidate, cfg Config) bool {
 
 func (p TraverserPlugin) Name() string                            { return p.rule }
 func (TraverserPlugin) pluginKind()                               { _ = "traverser" }
-func (p TraverserPlugin) Report() string                          { return p.report() }
+func (p TraverserPlugin) Report(node ast.Node) string             { return p.report(node) }
 func (p TraverserPlugin) Traverse() types.Traverser               { return p.traverse() }
-func (p TraverserPlugin) Fix(node ast.Node, places []types.Place) { p.fix(node, places) }
+func (p TraverserPlugin) Fix(node ast.Node, opts map[string]any)  { p.fix(node, opts) }
 
 // resolveKind detects a plugin's kind from its func fields, naming it rule,
 // and panics on a malformed shape at init time.
 func resolveKind(p PluginFuncs, rule string) PluginKind {
-	report := invokeReport(p)
 	if p.Replace != nil {
 		return ReplacerPlugin{
 			rule:    rule,
-			report:  report,
+			report:  invokeReport(p),
 			match:   matchFuncOrEmpty(p),
 			replace: mustFunc[func() types.Replacer](p, "Replace"),
 		}
@@ -156,9 +156,9 @@ func resolveKind(p PluginFuncs, rule string) PluginKind {
 	if p.Traverse != nil && p.Fix != nil {
 		return TraverserPlugin{
 			rule:     rule,
-			report:   report,
+			report:   invokeTraverserReport(p),
 			traverse: mustFunc[func() types.Traverser](p, "Traverse"),
-			fix:      mustFunc[func(ast.Node, []types.Place)](p, "Fix"),
+			fix:      mustFunc[types.FixFn](p, "Fix"),
 		}
 	}
 	panic("engine-loader: " + p.Name + ": unknown plugin kind (need Match+Replace or Traverse+Fix)")
@@ -173,7 +173,7 @@ func matchFuncOrEmpty(p PluginFuncs) func() types.Matcher {
 	return mustFunc[func() types.Matcher](p, "Match")
 }
 
-// invokeReport extracts the func() string Report value.
+// invokeReport extracts the func() string Report value (Replacer plugins).
 func invokeReport(p PluginFuncs) func() string {
 	if p.Report == nil {
 		panic("engine-loader: " + p.Name + ": missing Report func")
@@ -181,21 +181,41 @@ func invokeReport(p PluginFuncs) func() string {
 	return mustFunc[func() string](p, "Report")
 }
 
+// invokeTraverserReport extracts the func(ast.Node) string Report value
+// (Traverser plugins).
+func invokeTraverserReport(p PluginFuncs) types.ReportFn {
+	if p.Report == nil {
+		panic("engine-loader: " + p.Name + ": missing Report func")
+	}
+	return mustFunc[types.ReportFn](p, "Report")
+}
+
 // funcValue validates the named field is a non-nil func with an expected shape.
-// Report/Match/Replace/Traverse are zero-arg single-return; Fix is two-arg.
+// Match/Replace/Traverse are zero-arg single-return. Fix is func(ast.Node,
+// map[string]any). Report is func() string for replacers or func(ast.Node)
+// string for traversers.
 func funcValue(p PluginFuncs, field string) reflect.Value {
 	raw := reflect.ValueOf(fieldOf(p, field))
 	if raw.Kind() != reflect.Func {
 		panic("engine-loader: " + p.Name + ": " + field + " is not a func")
 	}
-	if field == "Fix" {
+	switch field {
+	case "Fix":
 		if raw.Type().NumIn() != 2 || raw.Type().NumOut() != 0 {
-			panic("engine-loader: " + p.Name + ": Fix must be func(ast.Node, []types.Place)")
+			panic("engine-loader: " + p.Name + ": Fix must be func(ast.Node, map[string]any)")
 		}
-		return raw
-	}
-	if raw.Type().NumIn() != 0 || raw.Type().NumOut() != 1 {
-		panic("engine-loader: " + p.Name + ": " + field + " must be func() single-return")
+	case "Report":
+		// Traverser Report is func(ast.Node) string; Replacer Report is func() string.
+		if raw.Type().NumOut() != 1 {
+			panic("engine-loader: " + p.Name + ": Report must return string")
+		}
+		if raw.Type().NumIn() != 0 && raw.Type().NumIn() != 1 {
+			panic("engine-loader: " + p.Name + ": Report must be func() string or func(ast.Node) string")
+		}
+	default:
+		if raw.Type().NumIn() != 0 || raw.Type().NumOut() != 1 {
+			panic("engine-loader: " + p.Name + ": " + field + " must be func() single-return")
+		}
 	}
 	return raw
 }

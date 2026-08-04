@@ -21,13 +21,13 @@ func traverserFuncs(name, path string) PluginFuncs {
 	return PluginFuncs{
 		Name:     name,
 		Path:     path,
-		Report:   func() string { return "t:" + name },
+		Report:   func(node ast.Node) string { return "t:" + name },
 		Traverse: func() types.Traverser { return types.Traverser{"*ast.File": fileVisitor} },
-		Fix:      func(node ast.Node, places []types.Place) {},
+		Fix:      func(node ast.Node, opts map[string]any) {},
 	}
 }
 
-func fileVisitor(node ast.Node, vars types.Vars) []types.Place { return nil }
+func fileVisitor(node ast.Node, push func(ast.Node)) {}
 
 func names(kinds []PluginKind) map[string]bool {
 	m := make(map[string]bool, len(kinds))
@@ -193,8 +193,8 @@ func TestTraverserPluginAccessors(t *testing.T) {
 		t.Fatalf("expected TraverserPlugin, got %T", k)
 	}
 	tp.pluginKind()
-	if tp.Name() != "tp" || tp.Report() != "t:tp" {
-		t.Fatalf("unexpected name/report: %q %q", tp.Name(), tp.Report())
+	if tp.Name() != "tp" || tp.Report(nil) != "t:tp" {
+		t.Fatalf("unexpected name/report: %q %q", tp.Name(), tp.Report(nil))
 	}
 	if tp.Traverse()["*ast.File"] == nil {
 		t.Fatal("expected Traverse accessor to return visitor")
@@ -319,6 +319,89 @@ func TestReplacerPluginMatchNilReturnsEmpty(t *testing.T) {
 	if len(result) != 0 {
 		t.Fatalf("expected empty Matcher, got %d entries", len(result))
 	}
+}
+
+// TestMissingTraverserReportPanics covers invokeTraverserReport's nil guard.
+func TestMissingTraverserReportPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic for missing Report")
+		}
+	}()
+	bad := PluginFuncs{
+		Name:     "bad",
+		Traverse: func() types.Traverser { return nil },
+		Fix:      func(node ast.Node, opts map[string]any) {},
+	}
+	Load([]PluginFuncs{bad}, Config{})
+}
+
+// TestTraverserReportWrongReturnPanics covers funcValue's Report single-return
+// guard for a traverser Report that returns two values.
+func TestTraverserReportWrongReturnPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic for wrong Report return count")
+		}
+	}()
+	bad := PluginFuncs{
+		Name:     "bad",
+		Report:   func(node ast.Node) (string, error) { return "", nil },
+		Traverse: func() types.Traverser { return nil },
+		Fix:      func(node ast.Node, opts map[string]any) {},
+	}
+	Load([]PluginFuncs{bad}, Config{})
+}
+
+// TestTraverserReportTooManyArgsPanics covers funcValue's Report arity guard
+// for a traverser Report that takes two arguments.
+func TestTraverserReportTooManyArgsPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic for Report with two args")
+		}
+	}()
+	bad := PluginFuncs{
+		Name:     "bad",
+		Report:   func(a, b ast.Node) string { return "" },
+		Traverse: func() types.Traverser { return nil },
+		Fix:      func(node ast.Node, opts map[string]any) {},
+	}
+	Load([]PluginFuncs{bad}, Config{})
+}
+
+// TestFixWrongOutputPanics covers funcValue's Fix output-count guard when Fix
+// has the right two inputs but returns a value.
+func TestFixWrongOutputPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic for Fix with a return value")
+		}
+	}()
+	bad := PluginFuncs{
+		Name:     "bad",
+		Report:   func(node ast.Node) string { return "x" },
+		Traverse: func() types.Traverser { return nil },
+		Fix:      func(node ast.Node, opts map[string]any) string { return "" },
+	}
+	Load([]PluginFuncs{bad}, Config{})
+}
+
+// TestTraverseMultiReturnPanics covers funcValue's default guard for a
+// Traverse field that returns multiple values.
+func TestTraverseMultiReturnPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic for multi-return Traverse")
+		}
+	}()
+	bad := PluginFuncs{
+		Name:     "bad",
+		Report:   func(node ast.Node) string { return "x" },
+		Traverse: func() (types.Traverser, error) { return nil, nil },
+		Fix:      func(node ast.Node, opts map[string]any) {},
+	}
+	Load([]PluginFuncs{bad}, Config{})
 }
 
 // TestMatchWrongReturnPanics covers mustFunc's type-assertion guard when Match
