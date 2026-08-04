@@ -170,6 +170,21 @@ func TestProcessDirSkipsHidden(t *testing.T) {
 	}
 }
 
+func TestProcessDirRootHiddenDir(t *testing.T) {
+	// Walking a dot-prefixed dir directly must still descend into it.
+	dir := t.TempDir()
+	hidden := filepath.Join(dir, ".hidden")
+	os.Mkdir(hidden, 0755)
+	write(t, hidden, "a.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
+	places, err := ProcessDir(hidden, pluginOpts(), nil)
+	if err != nil {
+		t.Fatalf("ProcessDir: %v", err)
+	}
+	if len(places) != 1 {
+		t.Fatalf("expected 1 place (root hidden dir descended), got %d", len(places))
+	}
+}
+
 func TestProcessDirSkipsTestdata(t *testing.T) {
 	dir := t.TempDir()
 	td := filepath.Join(dir, "testdata")
@@ -287,5 +302,30 @@ func TestCollectFilesWalkError(t *testing.T) {
 	all := CollectFiles(nil, []string{filepath.Join(t.TempDir(), "missing")}, nil)
 	if len(all) != 0 {
 		t.Fatalf("expected 0 files, got %d", len(all))
+	}
+}
+
+func TestCollectFilesRootHiddenDir(t *testing.T) {
+	// Walking a dot-prefixed dir directly must still descend into it.
+	dir := t.TempDir()
+	hidden := filepath.Join(dir, ".hidden")
+	os.Mkdir(hidden, 0755)
+	write(t, hidden, "a.go", "package p\n")
+	all := CollectFiles(nil, []string{hidden}, nil)
+	if len(all) != 1 {
+		t.Fatalf("expected 1 file (root hidden dir descended), got %d", len(all))
+	}
+}
+
+func TestCollectFilesNormalSubdir(t *testing.T) {
+	// A plain subdirectory is descended into and its files collected.
+	dir := t.TempDir()
+	write(t, dir, "a.go", "package p\n")
+	sub := filepath.Join(dir, "sub")
+	os.Mkdir(sub, 0755)
+	write(t, sub, "b.go", "package p\n")
+	all := CollectFiles(nil, []string{dir}, nil)
+	if len(all) != 2 {
+		t.Fatalf("expected 2 files (root + normal subdir), got %d", len(all))
 	}
 }
