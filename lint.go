@@ -10,6 +10,7 @@ import (
 	processor "coderaiser/indra/engine-processor"
 	runner "coderaiser/indra/engine-runner"
 	"coderaiser/indra/internal/config"
+	"coderaiser/indra/internal/formatter"
 	"coderaiser/indra/internal/plugins"
 	processor_go "coderaiser/indra/processor-go"
 	"coderaiser/indra/types"
@@ -87,22 +88,27 @@ func Indra(args []string, w io.Writer) error {
 		return nil
 	}
 
+	format := formatter.Choose()
 	failed := false
-	for _, filename := range allFiles {
+	filesWithIssues := 0
+	errorsCount := 0
+	total := len(allFiles)
+
+	for i, filename := range allFiles {
 		places, err := processor_go.ProcessFile(filename, processor_go.Opt(items, fix))
 		if err != nil {
 			fmt.Fprintf(w, "file://%s: %v\n", filename, err)
 			failed = true
 			continue
 		}
-		for _, pl := range places {
+		if len(places) > 0 {
+			filesWithIssues++
+			errorsCount += len(places)
 			failed = true
-			fmt.Fprintf(w, "file://%s:%d:%d: %s\n",
-				filename,
-				pl.Position.Line,
-				pl.Position.Column,
-				pl.Message,
-			)
+		}
+		out := format(filename, places, i, total, filesWithIssues, errorsCount)
+		if out != "" {
+			fmt.Fprint(w, out)
 		}
 	}
 

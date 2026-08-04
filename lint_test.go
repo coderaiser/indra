@@ -168,3 +168,66 @@ func TestIndraFixWrites(t *testing.T) {
 	})
 }
 
+func TestIndraDumpFormatterReports(t *testing.T) {
+	tape.Test(t, "lint: Indra dir with dump formatter reports findings", func(t *tape.T) {
+		dir := t.TB().TempDir()
+		writeFile(t.TB(), dir, "bad.go", matchSrc)
+		t.TB().Setenv("INDRA_FORMATTER", "dump")
+		t.TB().Setenv("CI", "")
+		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
+		var buf bytes.Buffer
+		error := indra.Indra([]string{dir}, &buf)
+		t.Ok(error != nil && buf.Len() > 0)
+		t.End()
+	})
+
+	tape.Test(t, "lint: Indra dump formatter output names file", func(t *tape.T) {
+		dir := t.TB().TempDir()
+		writeFile(t.TB(), dir, "bad.go", matchSrc)
+		t.TB().Setenv("INDRA_FORMATTER", "dump")
+		t.TB().Setenv("CI", "")
+		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
+		var buf bytes.Buffer
+		indra.Indra([]string{dir}, &buf)
+		t.Ok(strings.Contains(buf.String(), "bad.go"))
+		t.End()
+	})
+}
+
+func TestIndraJsonLinesFormatter(t *testing.T) {
+	tape.Test(t, "lint: Indra dir with json-lines formatter outputs JSON", func(t *tape.T) {
+		dir := t.TB().TempDir()
+		writeFile(t.TB(), dir, "bad.go", matchSrc)
+		t.TB().Setenv("INDRA_FORMATTER", "json-lines")
+		t.TB().Setenv("CI", "")
+		var buf bytes.Buffer
+		indra.Indra([]string{dir}, &buf)
+		t.Ok(strings.Contains(buf.String(), `"name"`))
+		t.End()
+	})
+}
+
+func TestIndraDumpFormatterClean(t *testing.T) {
+	tape.Test(t, "lint: Indra dir with clean files outputs nothing for dump", func(t *tape.T) {
+		dir := t.TB().TempDir()
+		writeFile(t.TB(), dir, "clean.go", cleanSrc)
+		t.TB().Setenv("INDRA_FORMATTER", "dump")
+		t.TB().Setenv("CI", "")
+		var buf bytes.Buffer
+		error := indra.Indra([]string{dir}, &buf)
+		t.Ok(error == nil && buf.Len() == 0)
+		t.End()
+	})
+}
+
+func TestIndraNoGoFiles(t *testing.T) {
+	tape.Test(t, "lint: Indra dir with no go files returns nil", func(t *tape.T) {
+		dir := t.TB().TempDir()
+		writeFile(t.TB(), dir, "readme.txt", "hello")
+		var buf bytes.Buffer
+		error := indra.Indra([]string{dir}, &buf)
+		t.Ok(error == nil && buf.Len() == 0)
+		t.End()
+	})
+}
+
