@@ -73,7 +73,7 @@ func writeDir(t *testing.T, files map[string]string) string {
 
 func TestReport(t *testing.T) {
 	dir := writeDir(t, map[string]string{"match.go": matchSrc})
-	Test := testRunner(items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, nil), dir)
+	Test := testRunner(items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, nil), dir)
 	Test(t, "test: Report correct message", func(t *indratest.T) {
 		t.Report("match", "found it")
 		t.End()
@@ -82,7 +82,7 @@ func TestReport(t *testing.T) {
 
 func TestNoReport(t *testing.T) {
 	dir := writeDir(t, map[string]string{"clean.go": cleanSrc})
-	Test := testRunner(items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, nil), dir)
+	Test := testRunner(items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, nil), dir)
 	Test(t, "test: NoReport clean fixture", func(t *indratest.T) {
 		t.NoReport("clean")
 		t.End()
@@ -94,7 +94,7 @@ func TestTransform(t *testing.T) {
 		"replace.go":     replaceSrc,
 		"replace-fix.go": replacedSrc,
 	})
-	Test := testRunner(items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
+	Test := testRunner(items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
 	Test(t, "test: Transform matches fix fixture", func(t *indratest.T) {
 		t.Transform("replace")
 		t.End()
@@ -104,7 +104,7 @@ func TestTransform(t *testing.T) {
 func TestTransformUpdate(t *testing.T) {
 	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
 	t.Setenv("UPDATE", "1")
-	Test := testRunner(items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
+	Test := testRunner(items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
 	Test(t, "test: Transform UPDATE=1 writes fix fixture", func(t *indratest.T) {
 		t.Transform("replace")
 		t.End()
@@ -121,7 +121,7 @@ func TestTransformUpdate(t *testing.T) {
 func TestNoTransform(t *testing.T) {
 	// report-only plugin → no rewrite → src must be unchanged
 	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
-	Test := testRunner(items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, nil), dir)
+	Test := testRunner(items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, nil), dir)
 	Test(t, "test: NoTransform unchanged fixture", func(t *indratest.T) {
 		t.NoTransform("replace")
 		t.End()

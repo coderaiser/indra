@@ -133,7 +133,7 @@ func runOnce(p RunParams) []types.Place {
 				if vars == nil {
 					continue
 				}
-				if guard, ok := matcher[pattern]; ok && guard != nil && !guard(vars) {
+				if guard, ok := matcher[pattern]; ok && !guard(vars) {
 					continue
 				}
 				msg := rp.Report()
@@ -184,7 +184,7 @@ func runOnce(p RunParams) []types.Place {
 				if vars == nil {
 					return
 				}
-				if guard, ok := matcher[pattern]; ok && guard != nil && !guard(vars) {
+				if guard, ok := matcher[pattern]; ok && !guard(vars) {
 					return
 				}
 				msg := rp.Report()

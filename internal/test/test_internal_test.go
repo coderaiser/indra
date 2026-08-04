@@ -43,7 +43,7 @@ type reportPlugin struct{}
 
 func (reportPlugin) Report() string { return "found it" }
 func (reportPlugin) Match() types.Matcher {
-	return types.Matcher{"t.Equal(__a, __b)": nil}
+	return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}
 }
 func (reportPlugin) Replace() types.Replacer { return nil }
 
@@ -51,7 +51,7 @@ type replacePlugin struct{}
 
 func (replacePlugin) Report() string { return "found it" }
 func (replacePlugin) Match() types.Matcher {
-	return types.Matcher{"t.Equal(__a, __b)": nil}
+	return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}
 }
 func (replacePlugin) Replace() types.Replacer {
 	return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}
@@ -99,7 +99,7 @@ func assertFatal(t *testing.T, calls []string) {
 func TestReportParseError(t *testing.T) {
 	dir := writeDir(t, map[string]string{"bad.go": badSrc})
 	tape.Test(t, "test: Report parse error", func(tt *tape.T) {
-		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, nil), dir)
+		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, nil), dir)
 		tr.Report("bad", "found it")
 		assertFatal(tt.TB(), *calls)
 		tt.End()
@@ -109,7 +109,7 @@ func TestReportParseError(t *testing.T) {
 func TestReportZeroPlaces(t *testing.T) {
 	dir := writeDir(t, map[string]string{"clean.go": cleanSrc})
 	tape.Test(t, "test: Report zero places", func(tt *tape.T) {
-		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, nil), dir)
+		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, nil), dir)
 		tr.Report("clean", "found it")
 		assertFatal(tt.TB(), *calls)
 		tt.End()
@@ -119,7 +119,7 @@ func TestReportZeroPlaces(t *testing.T) {
 func TestNoReportParseError(t *testing.T) {
 	dir := writeDir(t, map[string]string{"bad.go": badSrc})
 	tape.Test(t, "test: NoReport parse error", func(tt *tape.T) {
-		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, nil), dir)
+		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, nil), dir)
 		tr.NoReport("bad")
 		assertFatal(tt.TB(), *calls)
 		tt.End()
@@ -129,7 +129,7 @@ func TestNoReportParseError(t *testing.T) {
 func TestNoReportHasPlaces(t *testing.T) {
 	dir := writeDir(t, map[string]string{"match.go": matchSrc})
 	tape.Test(t, "test: NoReport with places", func(tt *tape.T) {
-		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, nil), dir)
+		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, nil), dir)
 		tr.NoReport("match")
 		assertFatal(tt.TB(), *calls)
 		tt.End()
@@ -139,7 +139,7 @@ func TestNoReportHasPlaces(t *testing.T) {
 func TestTransformParseError(t *testing.T) {
 	dir := writeDir(t, map[string]string{"bad.go": badSrc})
 	tape.Test(t, "test: Transform parse error", func(tt *tape.T) {
-		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
+		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
 		tr.Transform("bad")
 		assertFatal(tt.TB(), *calls)
 		tt.End()
@@ -149,7 +149,7 @@ func TestTransformParseError(t *testing.T) {
 func TestNoTransformParseError(t *testing.T) {
 	dir := writeDir(t, map[string]string{"bad.go": badSrc})
 	tape.Test(t, "test: NoTransform parse error", func(tt *tape.T) {
-		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
+		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
 		tr.NoTransform("bad")
 		assertFatal(tt.TB(), *calls)
 		tt.End()
@@ -159,7 +159,7 @@ func TestNoTransformParseError(t *testing.T) {
 func TestReadMissingFile(t *testing.T) {
 	dir := writeDir(t, map[string]string{})
 	tape.Test(t, "test: read missing file", func(tt *tape.T) {
-		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, nil), dir)
+		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, nil), dir)
 		tr.Report("nonexistent", "found it")
 		assertFatal(tt.TB(), *calls)
 		tt.End()
@@ -170,7 +170,7 @@ func TestTransformUpdateWriteError(t *testing.T) {
 	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
 	t.Setenv("UPDATE", "1")
 	tape.Test(t, "test: Transform UPDATE write error", func(tt *tape.T) {
-		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
+		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
 		tr.writeFile = func(_ string, _ []byte, _ os.FileMode) error {
 			return os.ErrPermission
 		}
@@ -184,7 +184,7 @@ func TestTransformUpdateHappy(t *testing.T) {
 	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
 	t.Setenv("UPDATE", "1")
 	tape.Test(t, "test: Transform UPDATE writes fixture", func(tt *tape.T) {
-		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": nil}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
+		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
 		tr.Transform("replace")
 		if len(*calls) != 0 {
 			t.Error("expected no fatal for happy update")
@@ -331,7 +331,7 @@ func TestCreateItemsFromTopLevelLeaf(t *testing.T) {
 				Name:    "fake-leaf",
 				Path:    "coderaiser/indra/fake/leaf",
 				Report:  func() string { return "fake" },
-				Match:   func() types.Matcher { return types.Matcher{"f()": nil} },
+				Match:   func() types.Matcher { return types.Matcher{"f()": func(v types.Vars) bool { return true }} },
 				Replace: func() types.Replacer { return types.Replacer{"f()": "g()"} },
 			},
 		}

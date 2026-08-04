@@ -6,15 +6,6 @@ import . "coderaiser/indra/types"
 
 func Report() string { return "extract inline expression from assertion" }
 
-func Match() Matcher {
-	return Matcher{
-		"__a.Equal(__b(__args), __c)":     nil,
-		"__a.DeepEqual(__b(__args), __c)": nil,
-		"__a.Equal(__b, __array)":         nil,
-		"__a.DeepEqual(__b, __array)":     nil,
-	}
-}
-
 func Replace() Replacer {
 	return Replacer{
 		"__a.Equal(__b(__args), __c)":     "result := __b(__args)\n__a.Equal(result, __c)",

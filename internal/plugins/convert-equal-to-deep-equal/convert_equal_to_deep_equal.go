@@ -6,13 +6,6 @@ import . "coderaiser/indra/types"
 
 func Report() string { return "Equal: use DeepEqual for slices" }
 
-func Match() Matcher {
-	return Matcher{
-		"__a.Equal(__b, __array)": nil,
-		"__a.Equal(__array, __b)": nil,
-	}
-}
-
 func Replace() Replacer {
 	return Replacer{
 		"__a.Equal(__b, __array)": "__a.DeepEqual(__b, __array)",

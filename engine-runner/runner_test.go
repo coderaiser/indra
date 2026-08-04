@@ -37,7 +37,7 @@ func replacerItem() []loader.PluginFuncs {
 	return []loader.PluginFuncs{{
 		Name:    "eq",
 		Report:  func() string { return "use DeepEqual" },
-		Match:   func() types.Matcher { return types.Matcher{"t.Equal(__a, __b)": nil} },
+		Match:   func() types.Matcher { return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }} },
 		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"} },
 	}}
 }
@@ -199,6 +199,24 @@ func TestRunGuardRejects(t *testing.T) {
 	})
 }
 
+func TestRunNilGuardPanics(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n"
+	file, fset := parse(t, src)
+	funcs := []loader.PluginFuncs{{
+		Name:    "nilguard",
+		Report:  func() string { return "m" },
+		Match:   func() types.Matcher { return types.Matcher{"t.Equal(__a, __b)": nil} },
+		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "x"} },
+	}}
+	pl := items(funcs)
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic for nil guard")
+		}
+	}()
+	RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
+}
+
 func TestRunTraverserBlockFix(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tx := 1\n}\n"
 	file, fset := parse(t, src)
@@ -294,7 +312,7 @@ func TestRunRenderArgSlice(t *testing.T) {
 	funcs := []loader.PluginFuncs{{
 		Name:    "args",
 		Report:  func() string { return "m" },
-		Match:   func() types.Matcher { return types.Matcher{"use(__args)": nil} },
+		Match:   func() types.Matcher { return types.Matcher{"use(__args)": func(v types.Vars) bool { return true }} },
 		Replace: func() types.Replacer { return types.Replacer{"use(__args)": "wrap(__args)"} },
 	}}
 	pl := items(funcs)
@@ -313,7 +331,7 @@ func TestRunRenderBodySlice(t *testing.T) {
 	funcs := []loader.PluginFuncs{{
 		Name:   "body",
 		Report: func() string { return "m" },
-		Match:  func() types.Matcher { return types.Matcher{"Test(__a, __b, func(__r *T) { __body })": nil} },
+		Match:  func() types.Matcher { return types.Matcher{"Test(__a, __b, func(__r *T) { __body })": func(v types.Vars) bool { return true }} },
 		Replace: func() types.Replacer {
 			return types.Replacer{"Test(__a, __b, func(__r *T) { __body })": "Test(__a, __b, func(__r *T) {\n__body\n__r.End()\n})"}
 		},
@@ -343,7 +361,7 @@ func TestApplyRewritesMultipleInBlock(t *testing.T) {
 	funcs := []loader.PluginFuncs{{
 		Name:    "multi",
 		Report:  func() string { return "m" },
-		Match:   func() types.Matcher { return types.Matcher{"makeSlices(__x)": nil} },
+		Match:   func() types.Matcher { return types.Matcher{"makeSlices(__x)": func(v types.Vars) bool { return true }} },
 		Replace: func() types.Replacer { return types.Replacer{"makeSlices(__x)": "v := __x"} },
 	}}
 	pl := items(funcs)
@@ -363,7 +381,7 @@ func TestRunUnparseableReplace(t *testing.T) {
 	funcs := []loader.PluginFuncs{{
 		Name:    "badreplace",
 		Report:  func() string { return "m" },
-		Match:   func() types.Matcher { return types.Matcher{"t.Equal(__a, __b)": nil} },
+		Match:   func() types.Matcher { return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }} },
 		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "func ("} },
 	}}
 	pl := items(funcs)
@@ -403,7 +421,7 @@ func declFuncs() []loader.PluginFuncs {
 	return []loader.PluginFuncs{{
 		Name:    "decl",
 		Report:  func() string { return "decl issue" },
-		Match:   func() types.Matcher { return types.Matcher{`func Match() Matcher { return Matcher{__a: nil} }`: nil} },
+		Match:   func() types.Matcher { return types.Matcher{`func Match() Matcher { return Matcher{__a: nil} }`: func(v types.Vars) bool { return true }} },
 		Replace: func() types.Replacer { return types.Replacer{`func Match() Matcher { return Matcher{__a: nil} }`: ""} },
 	}}
 }
@@ -505,7 +523,7 @@ func TestRunMatchOnlyFixNoRewrite(t *testing.T) {
 	funcs := []loader.PluginFuncs{{
 		Name:    "report-only",
 		Report:  func() string { return "m" },
-		Match:   func() types.Matcher { return types.Matcher{"t.Equal(__a, __b)": nil} },
+		Match:   func() types.Matcher { return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }} },
 		Replace: func() types.Replacer { return types.Replacer{} },
 	}}
 	pl := items(funcs)
