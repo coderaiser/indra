@@ -1,0 +1,136 @@
+// Package formatter_progress_bar renders lint findings as a live progress bar
+// on stderr, falling back to the dump format on the final file.
+package formatter_progress_bar
+
+import (
+	"fmt"
+	"os"
+	"regexp"
+	"strconv"
+	"strings"
+
+	dump "coderaiser/indra/internal/formatter-dump"
+	"coderaiser/indra/types"
+)
+
+const (
+	barWidth     = 40
+	barComplete  = '█'
+	barEmpty     = '░'
+	defaultColor = "#6fbdf1"
+	defaultMin   = 10
+)
+
+// Format is the progress-bar formatter. It writes a live bar to stderr
+// mid-run and returns the dump output on the last file.
+func Format(name string, places []types.Place, index, count, filesWithIssues, errorsCount int) string {
+	result := dump.Format(name, places, index, count, filesWithIssues, errorsCount)
+
+	if !ShouldShow(count) {
+		return result
+	}
+
+	errStr := "👌"
+	if errorsCount > 0 {
+		errStr = fmt.Sprintf("\033[31m%d\033[0m", errorsCount)
+	}
+
+	bar := RenderBar(index+1, count, defaultColor)
+	pct := 0
+	if count > 0 {
+		pct = (index + 1) * 100 / count
+	}
+	line := fmt.Sprintf("%s %d%% | %s | %d/%d | %s",
+		bar, pct, errStr, index+1, count, Truncate(name, 40))
+	width := TermWidth()
+	if VisibleLen(line) > width {
+		line = TruncateANSI(line, width)
+	}
+	fmt.Fprintf(os.Stderr, "\r%s", line)
+
+	if index == count-1 {
+		fmt.Fprintf(os.Stderr, "\r\033[2K")
+		return result
+	}
+	return ""
+}
+
+// ShouldShow returns true if the progress bar should be displayed.
+func ShouldShow(count int) bool {
+	switch os.Getenv("INDRA_PROGRESS_BAR") {
+	case "1":
+		return true
+	case "0":
+		return false
+	}
+	min := defaultMin
+	if v := os.Getenv("INDRA_PROGRESS_BAR_MIN"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			min = n
+		}
+	}
+	return count >= min
+}
+
+// RenderBar renders a Unicode block progress bar. Exported for testing.
+func RenderBar(done, total int, color string) string {
+	ansi := hexToANSI(color)
+	if total == 0 {
+		return fmt.Sprintf("%s%s\033[0m", ansi, strings.Repeat(string(barEmpty), barWidth))
+	}
+	filled := done * barWidth / total
+	if filled > barWidth {
+		filled = barWidth
+	}
+	bar := strings.Repeat(string(barComplete), filled) +
+		strings.Repeat(string(barEmpty), barWidth-filled)
+	return fmt.Sprintf("%s%s\033[0m", ansi, bar)
+}
+
+func hexToANSI(color string) string {
+	if len(color) != 7 || color[0] != '#' {
+		return color
+	}
+	parse := func(s string) int {
+		n := 0
+		for _, c := range s {
+			n <<= 4
+			switch {
+			case c >= '0' && c <= '9':
+				n |= int(c - '0')
+			case c >= 'a' && c <= 'f':
+				n |= int(c-'a') + 10
+			case c >= 'A' && c <= 'F':
+				n |= int(c-'A') + 10
+			}
+		}
+		return n
+	}
+	r, g, b := parse(color[1:3]), parse(color[3:5]), parse(color[5:7])
+	return fmt.Sprintf("\033[38;2;%d;%d;%dm", r, g, b)
+}
+
+var ansiEscape = regexp.MustCompile("\x1b\\[[0-9;]*m")
+
+// VisibleLen returns the visible character length excluding ANSI escapes.
+func VisibleLen(s string) int {
+	return len([]rune(ansiEscape.ReplaceAllString(s, "")))
+}
+
+// TruncateANSI truncates s to n visible characters, preserving ANSI codes.
+func TruncateANSI(s string, n int) string {
+	plain := ansiEscape.ReplaceAllString(s, "")
+	if len([]rune(plain)) <= n {
+		return s
+	}
+	return string([]rune(plain)[:n])
+}
+
+// Truncate truncates s to n runes, adding "..." if truncated.
+func Truncate(s string, n int) string {
+	r := []rune(s)
+	if len(r) <= n {
+		return s
+	}
+	return string(r[:n-3]) + "..."
+}
