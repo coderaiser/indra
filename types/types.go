@@ -11,7 +11,8 @@ import (
 // Vars is the hole-bindings map from compare.
 type Vars = compare.Vars
 
-// MatchFn is an optional guard run after pattern match.
+// MatchFn is a guard run after pattern match. Every Matcher entry must supply
+// a non-nil MatchFn. To express "no guard", omit the key from Match() entirely.
 type MatchFn = func(Vars) bool
 
 // Matcher maps pattern string → optional guard. Returned by Match().
@@ -20,12 +21,19 @@ type Matcher map[string]MatchFn
 // Replacer maps pattern string → replacement template. Returned by Replace().
 type Replacer map[string]string
 
-// VisitFn visits a matched AST node and returns findings.
-type VisitFn = func(node ast.Node, vars Vars) []Place
+// FindFn is called by the engine for each traversed node. It calls push once
+// per finding with the node the engine should pass to Fix and Report.
+type FindFn = func(node ast.Node, push func(ast.Node))
 
-// Traverser maps AST node type key → visitor. Returned by Traverse().
+// ReportFn produces the lint message for a found node.
+type ReportFn = func(node ast.Node) string
+
+// FixFn fixes one found node. options is per-plugin config from PluginItem.Options.
+type FixFn = func(node ast.Node, options map[string]any)
+
+// Traverser maps AST node type key → finder. Returned by Traverse().
 // Keys: "*ast.File", "*ast.BlockStmt"
-type Traverser map[string]VisitFn
+type Traverser map[string]FindFn
 
 // Position is a source location — line and column only, matching putout's shape.
 type Position struct {

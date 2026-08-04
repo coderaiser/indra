@@ -15,9 +15,9 @@ func (replacerLike) Replace() Replacer { return nil }
 // traverserLike is a minimal plugin exposing the traverser method set.
 type traverserLike struct{}
 
-func (traverserLike) Report() string                    { return "t" }
-func (traverserLike) Traverse() Traverser               { return nil }
-func (traverserLike) Fix(node ast.Node, places []Place) {}
+func (traverserLike) Report() string                 { return "t" }
+func (traverserLike) Traverse() Traverser            { return nil }
+func (traverserLike) Fix(node ast.Node, opts map[string]any) {}
 
 // TestNestedHoldsSubPlugins verifies Nested can hold any plugin value.
 func TestNestedHoldsSubPlugins(t *testing.T) {
@@ -33,15 +33,30 @@ func TestNestedHoldsSubPlugins(t *testing.T) {
 	}
 }
 
-// TestVisitFnShape verifies VisitFn has the required signature.
-func TestVisitFnShape(t *testing.T) {
-	var fn VisitFn = func(node ast.Node, vars Vars) []Place {
-		return nil
+// TestFindFnShape verifies FindFn is assignable from a node+push callback.
+func TestFindFnShape(t *testing.T) {
+	var fn FindFn = func(node ast.Node, push func(ast.Node)) {
+		push(node)
 	}
-	places := fn(nil, Vars{})
-	if len(places) != 0 {
-		t.Fatalf("expected no places, got %d", len(places))
+	var got ast.Node
+	fn(&ast.File{}, func(n ast.Node) { got = n })
+	if got == nil {
+		t.Fatal("expected push to be called with the node")
 	}
+}
+
+// TestReportFnShape verifies ReportFn has the required signature.
+func TestReportFnShape(t *testing.T) {
+	var fn ReportFn = func(node ast.Node) string { return "msg" }
+	if fn(nil) != "msg" {
+		t.Fatal("unexpected report result")
+	}
+}
+
+// TestFixFnShape verifies FixFn has the required signature.
+func TestFixFnShape(t *testing.T) {
+	var fn FixFn = func(node ast.Node, options map[string]any) {}
+	fn(nil, nil)
 }
 
 // TestVarsAlias verifies Vars aliases compare.Vars.
@@ -87,10 +102,10 @@ func TestMatcherShape(t *testing.T) {
 	}
 }
 
-// TestTraverserShape verifies Traverser maps keys to visitors.
+// TestTraverserShape verifies Traverser maps keys to finders.
 func TestTraverserShape(t *testing.T) {
 	tr := Traverser{
-		"*ast.File": func(node ast.Node, vars Vars) []Place { return nil },
+		"*ast.File": func(node ast.Node, push func(ast.Node)) {},
 	}
 	if _, ok := tr["*ast.File"]; !ok {
 		t.Fatal("expected *ast.File key in traverser")
