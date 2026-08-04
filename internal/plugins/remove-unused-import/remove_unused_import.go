@@ -105,7 +105,10 @@ func collectImports(file *ast.File) []importInfo {
 				}
 			} else {
 				raw := strings.Trim(importSpec.Path.Value, `"`)
-				info.localName = filepath.Base(raw)
+				// Go derives the implicit local name from the package's declared
+				// name. Path basenames containing hyphens (e.g. add-t-end) are
+				// declared as underscore names (add_t_end), so match that form.
+				info.localName = strings.ReplaceAll(filepath.Base(raw), "-", "_")
 			}
 			imports = append(imports, info)
 		}

@@ -54,4 +54,14 @@ func TestRemoveUnusedImport(t *testing.T) {
 		t.Transform("mixed-imports")
 		t.End()
 	})
+
+	Test(t, "remove-unused-import: no report for used hyphenated path import", func(t *indratest.T) {
+		t.NoReport("hyphen-import")
+		t.End()
+	})
+
+	Test(t, "remove-unused-import: fix keeps used hyphenated path import", func(t *indratest.T) {
+		t.Transform("hyphen-import")
+		t.End()
+	})
 }
