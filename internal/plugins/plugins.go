@@ -11,8 +11,9 @@ import (
 	"coderaiser/indra/internal/plugins/extract-result-from-assertion"
 	"coderaiser/indra/internal/plugins/remove-skip"
 	"coderaiser/indra/internal/plugins/remove-unused-import"
-	"coderaiser/indra/internal/plugins/remove-useless-condition"
 	"coderaiser/indra/internal/plugins/remove-unused-variable"
+	"coderaiser/indra/internal/plugins/remove-useless-condition"
+	"coderaiser/indra/internal/plugins/remove-useless-prefix"
 	"coderaiser/indra/internal/plugins/tape"
 )
 
@@ -38,6 +39,7 @@ var Providers = []engine_loader.PluginFuncs{
 	{Name: "add-t-end", Path: "coderaiser/indra/internal/plugins/add-t-end", Report: add_t_end.Report, Match: add_t_end.Match, Replace: add_t_end.Replace},
 	{Name: "extract-result-from-assertion", Path: "coderaiser/indra/internal/plugins/extract-result-from-assertion", Report: extract_result_from_assertion.Report, Match: extract_result_from_assertion.Match, Replace: extract_result_from_assertion.Replace},
 	{Name: "remove-useless-condition", Path: "coderaiser/indra/internal/plugins/remove-useless-condition", Report: remove_useless_condition.Report, Match: remove_useless_condition.Match, Replace: remove_useless_condition.Replace},
+	{Name: "remove-useless-prefix", Path: "coderaiser/indra/internal/plugins/remove-useless-prefix", Report: remove_useless_prefix.Report, Traverse: remove_useless_prefix.Traverse, Fix: remove_useless_prefix.Fix},
 }
 
 // LoadInput is the slice loader.Load needs to resolve top-level rules and the
@@ -46,5 +48,3 @@ var Providers = []engine_loader.PluginFuncs{
 func LoadInput() []engine_loader.PluginFuncs {
 	return append(append([]engine_loader.PluginFuncs{}, All...), Providers...)
 }
-
-
