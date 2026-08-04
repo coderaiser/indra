@@ -270,6 +270,77 @@ func TestCreateTestHappyPath(t *testing.T) {
 	})
 }
 
+// TestEntryPathUnknownType covers the default branch of entryPath, where the
+// Nested value is neither a string nor a PluginEntry.
+func TestEntryPathUnknownType(t *testing.T) {
+	t.Parallel()
+	tape.Test(t, "entryPath: unknown type returns empty string", func(t *tape.T) {
+		result := entryPath(42)
+		t.Equal(result, "")
+		t.End()
+	})
+}
+
+// TestEntryPathString covers the string branch of entryPath.
+func TestEntryPathString(t *testing.T) {
+	t.Parallel()
+	tape.Test(t, "entryPath: string returns itself", func(t *tape.T) {
+		result := entryPath("coderaiser/indra/fake/path")
+		t.Equal(result, "coderaiser/indra/fake/path")
+		t.End()
+	})
+}
+
+// TestEntryPathPluginEntry covers the PluginEntry branch of entryPath.
+func TestEntryPathPluginEntry(t *testing.T) {
+	t.Parallel()
+	tape.Test(t, "entryPath: PluginEntry returns its Path", func(t *tape.T) {
+		result := entryPath(types.PluginEntry{Path: "coderaiser/indra/fake/path", Enabled: true})
+		t.Equal(result, "coderaiser/indra/fake/path")
+		t.End()
+	})
+}
+
+// TestCreateItemsFromNestedNotInLoader covers the inner return nil in
+// createItemsFrom: a nested entry whose rule path matches a Rules value but
+// whose rule name is not returned by loader.Load against the injected input.
+func TestCreateItemsFromNestedNotInLoader(t *testing.T) {
+	t.Parallel()
+	tape.Test(t, "createItemsFrom: nested member not in loader output returns nil", func(t *tape.T) {
+		fakeNested := types.Nested{
+			"fake-rule": "coderaiser/indra/fake/path",
+		}
+		fakeAll := []loader.PluginFuncs{
+			{Name: "fake-group", Path: "coderaiser/indra/fake/group", Rules: fakeNested},
+		}
+		// loader.Load with an empty input returns nothing, so the inner loop
+		// finds no matching rule name and returns nil.
+		result := createItemsFrom("coderaiser/indra/fake/path", fakeAll, nil)
+		t.Equal(result == nil, true)
+		t.End()
+	})
+}
+
+// TestCreateItemsFromTopLevelLeaf covers the first-loop branch of
+// createItemsFrom where the pkgPath matches a top-level leaf entry in all.
+func TestCreateItemsFromTopLevelLeaf(t *testing.T) {
+	t.Parallel()
+	tape.Test(t, "createItemsFrom: top-level leaf returns loadItems", func(t *tape.T) {
+		fakeAll := []loader.PluginFuncs{
+			{
+				Name:    "fake-leaf",
+				Path:    "coderaiser/indra/fake/leaf",
+				Report:  func() string { return "fake" },
+				Match:   func() types.Matcher { return types.Matcher{"f()": nil} },
+				Replace: func() types.Replacer { return types.Replacer{"f()": "g()"} },
+			},
+		}
+		result := createItemsFrom("coderaiser/indra/fake/leaf", fakeAll, fakeAll)
+		t.Ok(len(result) == 1 && result[0].Rule == "fake-leaf")
+		t.End()
+	})
+}
+
 // TestLoadItemsNested covers the nested-plugin branch of loadItems: a
 // grouping plugin (tape) must expand to its "group/rule" sub-plugins.
 func TestLoadItemsNested(t *testing.T) {
@@ -342,7 +413,6 @@ func TestLoadItemsLeaf(t *testing.T) {
 	}
 }
 
-
 func TestFindModInfoFound(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/foo\n"), 0644); err != nil {
@@ -368,4 +438,3 @@ func TestFindModInfoNotFound(t *testing.T) {
 	}()
 	findModInfo("/tmp", func(string) error { return os.ErrNotExist }, readModuleName)
 }
-

@@ -54,18 +54,24 @@ func CreateTest(_ uintptr, file string, _ int, _ bool) func(*testing.T, string, 
 }
 
 // createItems returns the runnable PluginItems for the target package path.
-// It handles three cases: a top-level leaf plugin, a top-level nested group,
-// and a plugin that is registered only as a member of a nested group
-// (e.g. a tape sub-rule referenced only inside tape.Rules).
 func createItems(pkgPath string) []runner.PluginItem {
-	for _, pf := range plugins.All {
+	return createItemsFrom(pkgPath, plugins.All, plugins.LoadInput())
+}
+
+// createItemsFrom is the testable core of createItems. It handles three cases:
+// a top-level leaf plugin, a top-level nested group, and a plugin that is
+// registered only as a member of a nested group (e.g. a tape sub-rule
+// referenced only inside tape.Rules). The registry and loader input are
+// injected so the error paths can be driven from synthetic data.
+func createItemsFrom(pkgPath string, all []loader.PluginFuncs, input []loader.PluginFuncs) []runner.PluginItem {
+	for _, pf := range all {
 		if pf.Path != pkgPath {
 			continue
 		}
 		return loadItems(pf)
 	}
 	// nested group member: locate the owning group and return that single rule
-	for _, pf := range plugins.All {
+	for _, pf := range all {
 		if pf.Rules == nil {
 			continue
 		}
@@ -74,7 +80,7 @@ func createItems(pkgPath string) []runner.PluginItem {
 				continue
 			}
 			ruleName := pf.Name + "/" + rule
-			for _, k := range loader.Load(plugins.LoadInput(), loader.Config{}) {
+			for _, k := range loader.Load(input, loader.Config{}) {
 				if k.Name() == ruleName {
 					return []runner.PluginItem{{Rule: ruleName, Plugin: k}}
 				}
@@ -254,4 +260,3 @@ func (t *T) read(name string) []byte {
 	}
 	return data
 }
-
