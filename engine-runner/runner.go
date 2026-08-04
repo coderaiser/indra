@@ -142,10 +142,11 @@ func runOnce(p RunParams) []types.Place {
 				if item.Msg != "" {
 					msg = item.Msg
 				}
+				pos := p.Fset.Position(stmt.Pos())
 				places = append(places, types.Place{
-					Rule:    item.Rule,
-					Message: msg,
-					Pos:     p.Fset.Position(stmt.Pos()),
+					Rule:     item.Rule,
+					Message:  msg,
+					Position: types.Position{Line: pos.Line, Column: pos.Column},
 				})
 				if p.Fix {
 					tmpl, hasReplace := replacer[pattern]
@@ -192,10 +193,11 @@ func runOnce(p RunParams) []types.Place {
 				if item.Msg != "" {
 					msg = item.Msg
 				}
+				pos := p.Fset.Position(decl.Pos())
 				places = append(places, types.Place{
-					Rule:    item.Rule,
-					Message: msg,
-					Pos:     p.Fset.Position(decl.Pos()),
+					Rule:     item.Rule,
+					Message:  msg,
+					Position: types.Position{Line: pos.Line, Column: pos.Column},
 				})
 				if p.Fix {
 					declRewrites = append(declRewrites, declRewrite{idx: idx, tmpl: tmpl, vars: vars})

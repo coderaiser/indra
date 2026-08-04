@@ -2,7 +2,6 @@ package types
 
 import (
 	"go/ast"
-	"go/token"
 	"testing"
 )
 
@@ -58,14 +57,14 @@ func TestVarsAlias(t *testing.T) {
 // TestPlaceFields verifies Place carries rule, message and position.
 func TestPlaceFields(t *testing.T) {
 	p := Place{
-		Rule:    "rule",
-		Message: "msg",
-		Pos:     token.Position{Line: 1, Column: 2},
+		Rule:     "rule",
+		Message:  "msg",
+		Position: Position{Line: 1, Column: 2},
 	}
 	if p.Rule != "rule" || p.Message != "msg" {
 		t.Fatal("unexpected Place content")
 	}
-	if p.Pos.Line != 1 || p.Pos.Column != 2 {
+	if p.Position.Line != 1 || p.Position.Column != 2 {
 		t.Fatal("unexpected Place position")
 	}
 }
@@ -122,4 +121,3 @@ func TestPluginEntryFields(t *testing.T) {
 		t.Fatal("unexpected PluginEntry fields")
 	}
 }
-

@@ -89,8 +89,8 @@ func Indra(args []string, w io.Writer) error {
 			failed = true
 			fmt.Fprintf(w, "file://%s:%d:%d: %s\n",
 				filename,
-				pl.Pos.Line,
-				pl.Pos.Column,
+				pl.Position.Line,
+				pl.Position.Column,
 				pl.Message,
 			)
 		}

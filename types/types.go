@@ -4,7 +4,6 @@ package types
 
 import (
 	"go/ast"
-	"go/token"
 
 	"coderaiser/indra/compare"
 )
@@ -28,11 +27,17 @@ type VisitFn = func(node ast.Node, vars Vars) []Place
 // Keys: "*ast.File", "*ast.BlockStmt"
 type Traverser map[string]VisitFn
 
+// Position is a source location — line and column only, matching putout's shape.
+type Position struct {
+	Line   int
+	Column int
+}
+
 // Place is a single lint finding.
 type Place struct {
-	Rule    string
-	Message string
-	Pos     token.Position
+	Rule     string
+	Message  string
+	Position Position
 }
 
 // PluginEntry is a value in a Nested map.
