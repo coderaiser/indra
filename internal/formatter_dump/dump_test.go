@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	dump "coderaiser/indra/internal/formatter-dump"
+	dump "coderaiser/indra/internal/formatter_dump"
 	"coderaiser/indra/types"
 	tape "github.com/coderaiser/go-tape"
 )

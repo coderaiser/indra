@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	dump "coderaiser/indra/internal/formatter-dump"
+	dump "coderaiser/indra/internal/formatter_dump"
 	"coderaiser/indra/types"
 )
 
