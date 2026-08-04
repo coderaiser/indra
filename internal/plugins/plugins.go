@@ -25,7 +25,7 @@ var All = []engine_loader.PluginFuncs{
 	{Name: "tape", Path: "coderaiser/indra/internal/plugins/tape", Rules: tape.Rules},
 	{Name: "remove-unused-import", Path: "coderaiser/indra/internal/plugins/remove-unused-import", Report: remove_unused_import.Report, Traverse: remove_unused_import.Traverse, Fix: remove_unused_import.Fix},
 	{Name: "remove-unused-variable", Path: "coderaiser/indra/internal/plugins/remove-unused-variable", Report: remove_unused_variable.Report, Traverse: remove_unused_variable.Traverse, Fix: remove_unused_variable.Fix},
-	{Name: "remove-useless-match", Path: "coderaiser/indra/internal/plugin-indra/remove-useless-match", Report: remove_useless_match.Report, Replace: remove_useless_match.Replace},
+	{Name: "remove-useless-match", Path: "coderaiser/indra/internal/plugin-indra/remove-useless-match", Report: remove_useless_match.Report, Traverse: remove_useless_match.Traverse, Fix: remove_useless_match.Fix},
 	{Name: "indra", Path: "coderaiser/indra/internal/plugin-indra", Rules: plugin_indra.Rules},
 }
 

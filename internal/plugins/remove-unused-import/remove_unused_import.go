@@ -1,7 +1,6 @@
 package remove_unused_import
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
 	"path/filepath"
@@ -10,41 +9,67 @@ import (
 	. "coderaiser/indra/types"
 )
 
-func Report() string { return "remove unused import" }
-
-func Traverse() Traverser {
-	return Traverser{
-		"*ast.File": visitFile,
+func Report(node ast.Node) string {
+	if node == nil {
+		return "remove unused import"
 	}
-}
-
-func visitFile(node ast.Node, _ Vars) []Place {
 	file := node.(*ast.File)
 	imports := collectImports(file)
 	used := countIdentUses(file)
-
-	var places []Place
 	for _, imp := range imports {
 		if imp.blank || imp.dot {
 			continue
 		}
 		if used[imp.localName] == 0 {
-			places = append(places, Place{
-				Message: fmt.Sprintf("remove unused import: %s", imp.path),
-			})
+			return "remove unused import: " + imp.path
 		}
 	}
-	return places
+	return "remove unused import"
+}
+
+func Traverse() Traverser {
+	return Traverser{
+		"*ast.File": findUnusedImports,
+	}
+}
+
+func findUnusedImports(node ast.Node, push func(ast.Node)) {
+	file := node.(*ast.File)
+	imports := collectImports(file)
+	used := countIdentUses(file)
+
+	hasUnused := false
+	for _, imp := range imports {
+		if imp.blank || imp.dot {
+			continue
+		}
+		if used[imp.localName] == 0 {
+			hasUnused = true
+			break
+		}
+	}
+	if hasUnused {
+		push(file)
+	}
 }
 
 // Fix removes unused imports from the AST in place.
-// node is *ast.File. places contains findings from Traverse.
-func Fix(node ast.Node, places []Place) {
+// node is *ast.File; options is unused.
+func Fix(node ast.Node, _ map[string]any) {
 	file := node.(*ast.File)
-	unused := make(map[string]bool, len(places))
-	for _, p := range places {
-		unused[strings.TrimPrefix(p.Message, "remove unused import: ")] = true
+	imports := collectImports(file)
+	used := countIdentUses(file)
+
+	unused := make(map[string]bool)
+	for _, imp := range imports {
+		if imp.blank || imp.dot {
+			continue
+		}
+		if used[imp.localName] == 0 {
+			unused[imp.path] = true
+		}
 	}
+
 	for _, decl := range file.Decls {
 		genDecl, ok := decl.(*ast.GenDecl)
 		if !ok || genDecl.Tok != token.IMPORT {
@@ -123,7 +148,9 @@ func countIdentUses(file *ast.File) map[string]int {
 			return false
 		}
 		ident, ok := n.(*ast.Ident)
-		if !ok {
+		// A hand-built *ast.File may have a typed-nil Name (ast.Walk visits
+		// File.Name unconditionally), so guard against a nil Ident.
+		if !ok || ident == nil {
 			return true
 		}
 		used[ident.Name]++

@@ -3,22 +3,37 @@ package remove_unused_variable
 import (
 	"go/ast"
 	"go/token"
-	"strings"
 
 	. "coderaiser/indra/types"
 )
 
-func Report() string { return "remove unused variable" }
+func Report(node ast.Node) string {
+	if node == nil {
+		return "remove unused variable"
+	}
+	unused := unusedVarNames(node.(*ast.BlockStmt))
+	if len(unused) == 0 {
+		return "remove unused variable"
+	}
+	return "remove unused variable: " + unused[0]
+}
 
 func Traverse() Traverser {
 	return Traverser{
-		"*ast.BlockStmt": visitBlock,
+		"*ast.BlockStmt": findUnusedVars,
 	}
 }
 
-func visitBlock(node ast.Node, _ Vars) []Place {
+func findUnusedVars(node ast.Node, push func(ast.Node)) {
 	block := node.(*ast.BlockStmt)
+	if len(unusedVarNames(block)) > 0 {
+		push(block)
+	}
+}
 
+// unusedVarNames returns the names declared via `:=` in block that are never
+// read afterwards.
+func unusedVarNames(block *ast.BlockStmt) []string {
 	var decls []string
 	seen := map[string]bool{}
 
@@ -55,24 +70,22 @@ func visitBlock(node ast.Node, _ Vars) []Place {
 		countIdents(stmt, reads)
 	}
 
-	var places []Place
+	var unused []string
 	for _, d := range decls {
 		if reads[d] == 0 {
-			places = append(places, Place{
-				Message: "remove unused variable: " + d,
-			})
+			unused = append(unused, d)
 		}
 	}
-	return places
+	return unused
 }
 
 // Fix removes unused variables from a block in place.
-// node is *ast.BlockStmt. places contains findings from Traverse (one per var).
-func Fix(node ast.Node, places []Place) {
+// node is *ast.BlockStmt; options is unused.
+func Fix(node ast.Node, _ map[string]any) {
 	block := node.(*ast.BlockStmt)
-	unused := make(map[string]bool, len(places))
-	for _, p := range places {
-		unused[strings.TrimPrefix(p.Message, "remove unused variable: ")] = true
+	unused := make(map[string]bool, len(unusedVarNames(block)))
+	for _, n := range unusedVarNames(block) {
+		unused[n] = true
 	}
 	kept := block.List[:0]
 	for _, stmt := range block.List {

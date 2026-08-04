@@ -45,15 +45,15 @@ func replacerItem() []loader.PluginFuncs {
 func traverserFuncs(name, key string) loader.PluginFuncs {
 	return loader.PluginFuncs{
 		Name:   name,
-		Report: func() string { return "issue" },
+		Report: func(node ast.Node) string { return "issue" },
 		Traverse: func() types.Traverser {
 			return types.Traverser{
-				key: func(node ast.Node, vars types.Vars) []types.Place {
-					return []types.Place{{Message: "issue"}}
+				key: func(node ast.Node, push func(ast.Node)) {
+					push(node)
 				},
 			}
 		},
-		Fix: func(node ast.Node, places []types.Place) {},
+		Fix: func(node ast.Node, opts map[string]any) {},
 	}
 }
 
@@ -134,15 +134,15 @@ func TestRunTraverserFixCallsFix(t *testing.T) {
 	file, fset := parse(t, src)
 	funcs := loader.PluginFuncs{
 		Name:   "file",
-		Report: func() string { return "file issue" },
+		Report: func(node ast.Node) string { return "file issue" },
 		Traverse: func() types.Traverser {
 			return types.Traverser{
-				"*ast.File": func(node ast.Node, vars types.Vars) []types.Place {
-					return []types.Place{{Message: "file issue"}}
+				"*ast.File": func(node ast.Node, push func(ast.Node)) {
+					push(node)
 				},
 			}
 		},
-		Fix: func(node ast.Node, places []types.Place) {
+		Fix: func(node ast.Node, opts map[string]any) {
 			f := node.(*ast.File)
 			f.Name.Name = "q"
 		},
@@ -204,15 +204,15 @@ func TestRunTraverserBlockFix(t *testing.T) {
 	file, fset := parse(t, src)
 	funcs := loader.PluginFuncs{
 		Name:   "block",
-		Report: func() string { return "block" },
+		Report: func(node ast.Node) string { return "block" },
 		Traverse: func() types.Traverser {
 			return types.Traverser{
-				"*ast.BlockStmt": func(node ast.Node, vars types.Vars) []types.Place {
-					return []types.Place{{Message: "block"}}
+				"*ast.BlockStmt": func(node ast.Node, push func(ast.Node)) {
+					push(node)
 				},
 			}
 		},
-		Fix: func(node ast.Node, places []types.Place) {
+		Fix: func(node ast.Node, opts map[string]any) {
 			block := node.(*ast.BlockStmt)
 			block.List = nil
 		},

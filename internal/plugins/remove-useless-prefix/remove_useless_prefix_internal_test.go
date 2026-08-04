@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"testing"
 
-	"coderaiser/indra/types"
 	tape "github.com/coderaiser/go-tape"
 )
 
@@ -22,10 +21,11 @@ func parseFile(t *tape.T, src string) *ast.File {
 }
 
 func TestVisitNoTapeImport(t *testing.T) {
-	tape.Test(t, "visitFile: no tape import returns no places", func(t *tape.T) {
+	tape.Test(t, "findUselessPrefix: no tape import pushes nothing", func(t *tape.T) {
 		file := parseFile(t, "package p\nfunc f() {}\n")
-		places := visitFile(file, types.Vars{})
-		t.Equal(len(places), 0)
+		pushed := false
+		findUselessPrefix(file, func(n ast.Node) { pushed = true })
+		t.Ok(!pushed)
 		t.End()
 	})
 }
@@ -193,14 +193,14 @@ func TestMaybeReplaceSelNilInterface(t *testing.T) {
 func TestFixAppliesAcrossNestedCall(t *testing.T) {
 	tape.Test(t, "Fix: rewrite nested selector in call arguments", func(t *tape.T) {
 		file := parseFile(t, "package p\n\nimport z \"github.com/coderaiser/go-tape\"\n\nfunc f() {\n\tz.Equal(1, z.T{})\n}\n")
-		found := visitFile(file, types.Vars{})
-		t.Ok(len(found) == 1)
+		pushed := 0
+		findUselessPrefix(file, func(n ast.Node) { pushed++ })
+		t.Equal(pushed, 1)
 		t.End()
 	})
 
 	tape.Test(t, "Fix: selectors rewritten and import dotted", func(t *tape.T) {
 		file := parseFile(t, "package p\n\nimport z \"github.com/coderaiser/go-tape\"\n\nfunc f() {\n\tz.Equal(1, z.T{})\n}\n")
-		visitFile(file, types.Vars{})
 		Fix(file, nil)
 		imp := file.Imports[0]
 		t.Ok(imp.Name != nil && imp.Name.Name == ".")

@@ -9,22 +9,22 @@ import (
 
 const goTapePath = `"github.com/coderaiser/go-tape"`
 
-func Report() string { return "remove useless tape prefix" }
+func Report(_ ast.Node) string { return "remove useless tape prefix" }
 
 func Traverse() Traverser {
-	return Traverser{"*ast.File": visitFile}
+	return Traverser{"*ast.File": findUselessPrefix}
 }
 
-func visitFile(node ast.Node, _ Vars) []Place {
+func findUselessPrefix(node ast.Node, push func(ast.Node)) {
 	file := node.(*ast.File)
 	alias, _ := findTapeImport(file)
 	if alias == "" {
-		return nil
+		return
 	}
 	if hasLocalCollision(file, alias) {
-		return nil
+		return
 	}
-	return []Place{{Message: Report()}}
+	push(node)
 }
 
 // findTapeImport returns the local alias (and its import spec) for a named
@@ -45,7 +45,7 @@ func findTapeImport(file *ast.File) (string, *ast.ImportSpec) {
 
 // Fix rewrites a named go-tape import to a dot import and drops the alias
 // prefix from every selector use (tape.X → X).
-func Fix(node ast.Node, _ []Place) {
+func Fix(node ast.Node, _ map[string]any) {
 	file := node.(*ast.File)
 	alias, spec := findTapeImport(file)
 	if alias == "" {

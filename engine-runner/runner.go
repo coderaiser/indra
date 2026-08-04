@@ -70,43 +70,41 @@ type rewrite struct {
 func runOnce(p RunParams) []types.Place {
 	var places []types.Place
 
-	// Traverser plugins own whole-file analysis and may fix in place.
+	// Traverser plugins own whole-file analysis and may fix in place. Each
+	// visitor calls push once per finding; the engine reports and fixes the
+	// pushed node immediately (putout per-item model).
 	for _, item := range p.Plugins {
 		tp, ok := item.Plugin.(loader.TraverserPlugin)
 		if !ok {
 			continue
 		}
+		// reportFound builds the Place for a found node and fixes it if enabled.
+		reportFound := func(found ast.Node) {
+			msg := tp.Report(found)
+			if item.Msg != "" {
+				msg = item.Msg
+			}
+			pos := p.Fset.Position(found.Pos())
+			places = append(places, types.Place{
+				Rule:     item.Rule,
+				Message:  msg,
+				Position: types.Position{Line: pos.Line, Column: pos.Column},
+			})
+			if p.Fix {
+				tp.Fix(found, item.Options)
+			}
+		}
 		for key, visitor := range tp.Traverse() {
 			switch key {
 			case "*ast.File":
-				findings := visitor(p.File, Vars{})
-				if p.Fix && len(findings) > 0 {
-					tp.Fix(p.File, findings)
-				}
-				for _, pl := range findings {
-					pl.Rule = item.Rule
-					if item.Msg != "" {
-						pl.Message = item.Msg
-					}
-					places = append(places, pl)
-				}
+				visitor(p.File, reportFound)
 			case "*ast.BlockStmt":
 				ast.Inspect(p.File, func(n ast.Node) bool {
 					block, ok := n.(*ast.BlockStmt)
 					if !ok {
 						return true
 					}
-					findings := visitor(block, Vars{})
-					if p.Fix && len(findings) > 0 {
-						tp.Fix(block, findings)
-					}
-					for _, pl := range findings {
-						pl.Rule = item.Rule
-						if item.Msg != "" {
-							pl.Message = item.Msg
-						}
-						places = append(places, pl)
-					}
+					visitor(block, reportFound)
 					return true
 				})
 			}
