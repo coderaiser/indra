@@ -9,6 +9,7 @@ import (
 	loader "coderaiser/indra/engine-loader"
 	processor "coderaiser/indra/engine-processor"
 	runner "coderaiser/indra/engine-runner"
+	"coderaiser/indra/internal/config"
 	"coderaiser/indra/internal/plugins"
 	processor_go "coderaiser/indra/processor-go"
 	"coderaiser/indra/types"
@@ -76,9 +77,18 @@ func Indra(args []string, w io.Writer) error {
 		return nil
 	}
 
+	cfg, _ := config.Load(".")
+	ignore := cfg.Ignore.Patterns
+
+	rawFiles, dirs := processor_go.ResolveArgs(files)
 	items := loadPlugins()
+	allFiles := processor_go.CollectFiles(rawFiles, dirs, ignore)
+	if len(allFiles) == 0 {
+		return nil
+	}
+
 	failed := false
-	for _, filename := range files {
+	for _, filename := range allFiles {
 		places, err := processor_go.ProcessFile(filename, processor_go.Opt(items, fix))
 		if err != nil {
 			fmt.Fprintf(w, "file://%s: %v\n", filename, err)

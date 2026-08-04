@@ -108,7 +108,7 @@ func TestProcessFileParseError(t *testing.T) {
 	}
 }
 
-func TestProcessDir(t *testing.T) {
+func TestProcessDirRecursive(t *testing.T) {
 	dir := t.TempDir()
 	write(t, dir, "a.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
 	write(t, dir, "b.go", "package p\n\nfunc f() {\n\tt.Equal(c, d)\n}\n")
@@ -116,17 +116,17 @@ func TestProcessDir(t *testing.T) {
 	sub := filepath.Join(dir, "sub")
 	os.Mkdir(sub, 0755)
 	write(t, sub, "d.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
-	places, err := ProcessDir(dir, pluginOpts())
+	places, err := ProcessDir(dir, pluginOpts(), nil)
 	if err != nil {
 		t.Fatalf("ProcessDir: %v", err)
 	}
-	if len(places) != 2 {
-		t.Fatalf("expected 2 places (non-recursive), got %d", len(places))
+	if len(places) != 3 {
+		t.Fatalf("expected 3 places (recursive), got %d", len(places))
 	}
 }
 
 func TestProcessDirReadError(t *testing.T) {
-	_, err := ProcessDir(filepath.Join(t.TempDir(), "nope"), pluginOpts())
+	_, err := ProcessDir(filepath.Join(t.TempDir(), "nope"), pluginOpts(), nil)
 	if err == nil {
 		t.Fatal("expected read dir error")
 	}
@@ -136,8 +136,156 @@ func TestProcessDirLoopError(t *testing.T) {
 	dir := t.TempDir()
 	write(t, dir, "a.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
 	write(t, dir, "bad.go", "package p\nfunc (\n")
-	_, err := ProcessDir(dir, pluginOpts())
+	_, err := ProcessDir(dir, pluginOpts(), nil)
 	if err == nil {
 		t.Fatal("expected loop error from invalid .go file")
+	}
+}
+
+func TestProcessDirSkipsVendor(t *testing.T) {
+	dir := t.TempDir()
+	vendor := filepath.Join(dir, "vendor")
+	os.Mkdir(vendor, 0755)
+	write(t, vendor, "a.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
+	places, err := ProcessDir(dir, pluginOpts(), nil)
+	if err != nil {
+		t.Fatalf("ProcessDir: %v", err)
+	}
+	if len(places) != 0 {
+		t.Fatalf("expected 0 places (vendor skipped), got %d", len(places))
+	}
+}
+
+func TestProcessDirSkipsHidden(t *testing.T) {
+	dir := t.TempDir()
+	hidden := filepath.Join(dir, ".hidden")
+	os.Mkdir(hidden, 0755)
+	write(t, hidden, "a.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
+	places, err := ProcessDir(dir, pluginOpts(), nil)
+	if err != nil {
+		t.Fatalf("ProcessDir: %v", err)
+	}
+	if len(places) != 0 {
+		t.Fatalf("expected 0 places (hidden dir skipped), got %d", len(places))
+	}
+}
+
+func TestProcessDirSkipsTestdata(t *testing.T) {
+	dir := t.TempDir()
+	td := filepath.Join(dir, "testdata")
+	os.Mkdir(td, 0755)
+	write(t, td, "a.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
+	places, err := ProcessDir(dir, pluginOpts(), nil)
+	if err != nil {
+		t.Fatalf("ProcessDir: %v", err)
+	}
+	if len(places) != 0 {
+		t.Fatalf("expected 0 places (testdata skipped), got %d", len(places))
+	}
+}
+
+func TestProcessDirIgnorePattern(t *testing.T) {
+	dir := t.TempDir()
+	write(t, dir, "a_test.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
+	places, err := ProcessDir(dir, pluginOpts(), []string{"**/*_test.go"})
+	if err != nil {
+		t.Fatalf("ProcessDir: %v", err)
+	}
+	if len(places) != 0 {
+		t.Fatalf("expected 0 places (ignored), got %d", len(places))
+	}
+}
+
+func TestResolveArgs(t *testing.T) {
+	dir := t.TempDir()
+	f := write(t, dir, "a.go", "package p\n")
+	files, dirs := ResolveArgs([]string{f, dir, "./..."})
+	if len(files) != 1 || files[0] != f {
+		t.Fatalf("expected 1 file, got %v", files)
+	}
+	if len(dirs) != 2 {
+		t.Fatalf("expected 2 dirs, got %v", dirs)
+	}
+}
+
+func TestResolveArgsSuffixes(t *testing.T) {
+	files, dirs := ResolveArgs([]string{"pkg/...", "..."})
+	if len(files) != 0 {
+		t.Fatalf("expected 0 files, got %v", files)
+	}
+	if len(dirs) != 2 {
+		t.Fatalf("expected 2 dirs, got %v", dirs)
+	}
+}
+
+func TestResolveArgsBareDotDotDot(t *testing.T) {
+	// "/..." trims to empty dir which must become "."
+	files, dirs := ResolveArgs([]string{"/..."})
+	if len(files) != 0 {
+		t.Fatalf("expected 0 files, got %v", files)
+	}
+	if len(dirs) != 1 || dirs[0] != "." {
+		t.Fatalf("expected [.] dir, got %v", dirs)
+	}
+}
+
+func TestResolveArgsBareEllipsis(t *testing.T) {
+	// "pkg..." matches the bare ... suffix branch
+	files, dirs := ResolveArgs([]string{"pkg..."})
+	if len(files) != 0 {
+		t.Fatalf("expected 0 files, got %v", files)
+	}
+	if len(dirs) != 1 || dirs[0] != "pkg" {
+		t.Fatalf("expected [pkg] dir, got %v", dirs)
+	}
+}
+
+func TestCollectFiles(t *testing.T) {
+	dir := t.TempDir()
+	write(t, dir, "a.go", "package p\n")
+	write(t, dir, "b.go", "package p\n")
+	all := CollectFiles(nil, []string{dir}, nil)
+	if len(all) != 2 {
+		t.Fatalf("expected 2 files, got %d", len(all))
+	}
+}
+
+func TestCollectFilesPreservesExplicit(t *testing.T) {
+	dir := t.TempDir()
+	explicit := write(t, dir, "a.go", "package p\n")
+	write(t, dir, "b.go", "package p\n")
+	all := CollectFiles([]string{explicit}, []string{dir}, nil)
+	if len(all) != 3 {
+		t.Fatalf("expected 3 files (1 explicit + 2 in dir), got %d", len(all))
+	}
+}
+
+func TestCollectFilesSkipsNonGoAndVendor(t *testing.T) {
+	dir := t.TempDir()
+	write(t, dir, "a.go", "package p\n")
+	write(t, dir, "note.txt", "text")
+	vendor := filepath.Join(dir, "vendor")
+	os.Mkdir(vendor, 0755)
+	write(t, vendor, "v.go", "package p\n")
+	all := CollectFiles(nil, []string{dir}, nil)
+	if len(all) != 1 {
+		t.Fatalf("expected 1 file (vendor and .txt skipped), got %d", len(all))
+	}
+}
+
+func TestCollectFilesIgnoresPattern(t *testing.T) {
+	dir := t.TempDir()
+	write(t, dir, "a_test.go", "package p\n")
+	all := CollectFiles(nil, []string{dir}, []string{"**/*_test.go"})
+	if len(all) != 0 {
+		t.Fatalf("expected 0 files (ignored), got %d", len(all))
+	}
+}
+
+func TestCollectFilesWalkError(t *testing.T) {
+	// A non-existent dir makes WalkDir report an error inside the callback.
+	all := CollectFiles(nil, []string{filepath.Join(t.TempDir(), "missing")}, nil)
+	if len(all) != 0 {
+		t.Fatalf("expected 0 files, got %d", len(all))
 	}
 }
