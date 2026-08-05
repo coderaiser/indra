@@ -43,7 +43,7 @@ func TestCompareDecl(t *testing.T) {
 		t.End()
 	})
 
-	Test(t, "CompareDecl: unparseable pattern returns nil", func(t *T) {
+	Test(t, "CompareDecl: unparsable pattern returns nil", func(t *T) {
 		vars := compare.CompareDecl(decl, `not valid go {{{{`)
 		t.Equal(vars, compare.Vars(nil))
 		t.End()

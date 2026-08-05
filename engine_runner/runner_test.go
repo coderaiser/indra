@@ -394,7 +394,7 @@ func TestApplyRewritesMultipleInBlock(t *testing.T) {
 	})
 }
 
-func TestRunUnparseableReplace(t *testing.T) {
+func TestRunUnparsableReplace(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n"
 	file, fset := parse(t, src)
 	funcs := []loader.PluginFuncs{{
@@ -408,7 +408,7 @@ func TestRunUnparseableReplace(t *testing.T) {
 	pl := items(funcs)
 	places := RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
 
-	Test(t, "runner: unparseable replace still reports place", func(t *T) {
+	Test(t, "runner: unparsable replace still reports place", func(t *T) {
 		result := len(places)
 		t.Equal(result, 1)
 
@@ -432,7 +432,7 @@ func TestRunTraverserBlockMsgOverride(t *testing.T) {
 func TestSubstituteAndParseError(t *testing.T) {
 	stmts := substituteAndParse("func (", Vars{})
 
-	Test(t, "runner: unparseable template returns nil", func(t *T) {
+	Test(t, "runner: unparsable template returns nil", func(t *T) {
 		t.NotOk(stmts)
 
 		t.End()

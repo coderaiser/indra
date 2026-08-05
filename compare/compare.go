@@ -200,12 +200,12 @@ func matchField(name string, pf, rf reflect.Value, vars Vars) bool {
 		if rf.IsNil() {
 			return false
 		}
-		pn, okP := pf.Interface().(ast.Node)
+		on, okP := pf.Interface().(ast.Node)
 		rn, okR := rf.Interface().(ast.Node)
 		if !okP || !okR {
 			return pf.Interface() == rf.Interface()
 		}
-		return matchNode(pn, rn, vars)
+		return matchNode(on, rn, vars)
 	default:
 		return pf.Interface() == rf.Interface()
 	}
