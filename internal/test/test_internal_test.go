@@ -248,7 +248,7 @@ func TestReadModuleNameModuleLineMissing(t *testing.T) {
 }
 
 func TestCreateTestHappyPath(t *testing.T) {
-	file := filepath.Join(modInfo.root, "internal/plugins/remove_skip/remove_skip_test.go")
+	file := filepath.Join(modInfo.root, "internal/plugin_tape/remove_skip/remove_skip_test.go")
 	run := CreateTest(0, file, 0, false)
 	run(t, "createtest: real plugin path returns working runner", func(tt *T) {
 		tt.Ok(run)
@@ -335,7 +335,7 @@ func TestCreateItemsFromTopLevelLeaf(t *testing.T) {
 func TestLoadItemsNested(t *testing.T) {
 	var pf loader.PluginFuncs
 	for _, p := range plugins.All {
-		if p.Path == "coderaiser/indra/internal/plugins/tape" {
+		if p.Path == "coderaiser/indra/internal/plugin_tape" {
 			pf = p
 		}
 	}
@@ -369,7 +369,7 @@ func TestLoadItemsNested(t *testing.T) {
 // TestCreateItemsNestedMember covers resolving a plugin registered only inside
 // a nested group (remove-skip lives only in tape.Rules, not in All).
 func TestCreateItemsNestedMember(t *testing.T) {
-	items := createItems("coderaiser/indra/internal/plugins/remove_skip")
+	items := createItems("coderaiser/indra/internal/plugin_tape/remove_skip")
 	if len(items) != 1 {
 		t.Fatalf("expected single item for nested member, got %d", len(items))
 	}

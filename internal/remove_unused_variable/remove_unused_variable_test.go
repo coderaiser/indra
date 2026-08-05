@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"coderaiser/indra/internal/plugins/remove_unused_variable"
+	"coderaiser/indra/internal/remove_unused_variable"
 	indratest "coderaiser/indra/internal/test"
 
 	tape "github.com/coderaiser/go-tape"

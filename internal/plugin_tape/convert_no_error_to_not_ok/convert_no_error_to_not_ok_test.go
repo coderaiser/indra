@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"testing"
 
-	"coderaiser/indra/internal/plugins/convert_no_error_to_not_ok"
+	"coderaiser/indra/internal/plugin_tape/convert_no_error_to_not_ok"
 	indratest "coderaiser/indra/internal/test"
 
 	tape "github.com/coderaiser/go-tape"
