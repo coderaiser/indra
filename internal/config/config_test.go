@@ -130,6 +130,73 @@ func TestIsIgnoredZeroSegments(t *testing.T) {
 	})
 }
 
+func TestIsIgnoredNegationOverrides(t *testing.T) {
+	tape.Test(t, "isIgnored: negation overrides earlier match", func(t *tape.T) {
+		t.Ok(!config.IsIgnored([]string{"vendor/**", "!vendor/mypkg/**"}, "vendor/mypkg/file.go"))
+		t.End()
+	})
+}
+
+func TestIsIgnoredPositiveAfterNegationWins(t *testing.T) {
+	tape.Test(t, "isIgnored: positive after negation wins", func(t *tape.T) {
+		t.Ok(config.IsIgnored([]string{"!vendor/**", "vendor/**"}, "vendor/pkg/file.go"))
+		t.End()
+	})
+}
+
+func TestIsIgnoredNegationOnlyMatch(t *testing.T) {
+	tape.Test(t, "isIgnored: negation-only match unignores", func(t *tape.T) {
+		t.Ok(!config.IsIgnored([]string{"!vendor/**"}, "vendor/pkg/file.go"))
+		t.End()
+	})
+}
+
+func TestDefaultIgnoreIgnoresVendor(t *testing.T) {
+	tape.Test(t, "default: ignores vendor", func(t *tape.T) {
+		t.Ok(config.IsIgnored(config.DefaultIgnorePatterns, "vendor/pkg/f.go"))
+		t.End()
+	})
+}
+
+func TestDefaultIgnoreIgnoresTestdata(t *testing.T) {
+	tape.Test(t, "default: ignores testdata", func(t *tape.T) {
+		t.Ok(config.IsIgnored(config.DefaultIgnorePatterns, "testdata/f.go"))
+		t.End()
+	})
+}
+
+func TestDefaultIgnoreIgnoresDotDir(t *testing.T) {
+	tape.Test(t, "default: ignores dot-dir", func(t *tape.T) {
+		t.Ok(config.IsIgnored(config.DefaultIgnorePatterns, ".git/config"))
+		t.End()
+	})
+}
+
+func TestDefaultIgnoreKeepsInternal(t *testing.T) {
+	tape.Test(t, "default: does not ignore internal", func(t *tape.T) {
+		t.Ok(!config.IsIgnored(config.DefaultIgnorePatterns, "internal/pkg/f.go"))
+		t.End()
+	})
+}
+
+func TestToLoaderConfigOnEnabled(t *testing.T) {
+	tape.Test(t, "ToLoaderConfig: on maps to Enabled true", func(t *tape.T) {
+		cfg := config.Config{Rules: map[string]string{"tape": "on"}}
+		lc := cfg.ToLoaderConfig()
+		t.Equal(lc["tape"].Enabled, true)
+		t.End()
+	})
+}
+
+func TestToLoaderConfigOffDisabled(t *testing.T) {
+	tape.Test(t, "ToLoaderConfig: off maps to Enabled false", func(t *tape.T) {
+		cfg := config.Config{Rules: map[string]string{"tape": "off"}}
+		lc := cfg.ToLoaderConfig()
+		t.Equal(lc["tape"].Enabled, false)
+		t.End()
+	})
+}
+
 func TestIsIgnoredDoubleStarExhausts(t *testing.T) {
 	tape.Test(t, "isIgnored: double star backtracking exhausts and returns false", func(t *tape.T) {
 		t.Ok(!config.IsIgnored([]string{"**/nomatch"}, "a/b/c"))

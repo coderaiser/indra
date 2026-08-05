@@ -77,12 +77,6 @@ func ProcessDir(dir string, opts Options, ignore []string, ov ...Overrides) ([]t
 		}
 		name := d.Name()
 		if d.IsDir() {
-			if path == dir {
-				return nil
-			}
-			if name == "vendor" || name == "testdata" || strings.HasPrefix(name, ".") {
-				return filepath.SkipDir
-			}
 			return nil
 		}
 		if !strings.HasSuffix(name, ".go") {
@@ -142,12 +136,6 @@ func CollectFiles(files []string, dirs []string, ignore []string) []string {
 			}
 			name := d.Name()
 			if d.IsDir() {
-				if path == dir {
-					return nil
-				}
-				if name == "vendor" || name == "testdata" || strings.HasPrefix(name, ".") {
-					return filepath.SkipDir
-				}
 				return nil
 			}
 			if !strings.HasSuffix(name, ".go") {

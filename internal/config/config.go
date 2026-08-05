@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	loader "coderaiser/indra/engine-loader"
 	"github.com/BurntSushi/toml"
 )
 
@@ -39,16 +40,42 @@ func Load(dir string) (Config, error) {
 	return cfg, err
 }
 
-// IsIgnored reports whether relPath matches any ignore pattern.
-// relPath is slash-separated and relative to the walk root.
+// IsIgnored reports whether relPath is ignored by the pattern list.
+// Patterns are evaluated in order; the last matching pattern wins.
+// A pattern prefixed with "!" negates: the path is not ignored if the
+// last matching pattern is a negation.
+// relPath must be slash-separated and relative to the walk root.
 func IsIgnored(patterns []string, relPath string) bool {
 	relPath = filepath.ToSlash(relPath)
+	ignored := false
 	for _, pat := range patterns {
+		negate := strings.HasPrefix(pat, "!")
+		if negate {
+			pat = pat[1:]
+		}
 		if matchGlob(pat, relPath) {
-			return true
+			ignored = !negate
 		}
 	}
-	return false
+	return ignored
+}
+
+// DefaultIgnorePatterns are the built-in base patterns, replacing the
+// previously hardcoded vendor/testdata/dot-dir skips in processor-go.
+var DefaultIgnorePatterns = []string{
+	"vendor/**",
+	"testdata/**",
+	".*/**",
+}
+
+// ToLoaderConfig translates the [rules] section into a loader.Config.
+// "on" → enabled, "off" → disabled.
+func (c Config) ToLoaderConfig() loader.Config {
+	lc := make(loader.Config, len(c.Rules))
+	for rule, val := range c.Rules {
+		lc[rule] = loader.RuleState{Enabled: val == "on"}
+	}
+	return lc
 }
 
 func matchGlob(pattern, path string) bool {

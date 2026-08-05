@@ -20,8 +20,8 @@ import (
 // loadPlugins resolves all enabled plugins into runnable items.
 // Tape sub-rules fire only under their "tape/*" group names; the standalone
 // provider entries are stripped so each rule fires exactly once.
-func loadPlugins() []runner.PluginItem {
-	kinds := loader.Load(plugins.LoadInput(), loader.DefaultConfig())
+func loadPlugins(lc loader.Config) []runner.PluginItem {
+	kinds := loader.Load(plugins.LoadInput(), lc)
 	items := make([]runner.PluginItem, 0, len(kinds))
 	for _, k := range kinds {
 		if isProviderName(k.Name()) {
@@ -49,7 +49,7 @@ func Lint(src []byte, fix bool) ([]byte, []types.Place, error) {
 	res, err := processor.Process(processor.Params{
 		Src:     src,
 		Fix:     fix,
-		Plugins: loadPlugins(),
+		Plugins: loadPlugins(loader.DefaultConfig()),
 	})
 	return res.Out, res.Places, err
 }
@@ -80,14 +80,14 @@ func Indra(args []string, w io.Writer) error {
 	}
 
 	cfg, _ := config.Load(".")
+	ignore := append(config.DefaultIgnorePatterns, cfg.Ignore.Patterns...)
 	formatter_progress_bar.Configure(formatter_progress_bar.Config{
 		Color:    cfg.Progress.Color,
 		MinCount: cfg.Progress.MinCount,
 	})
-	ignore := cfg.Ignore.Patterns
 
 	rawFiles, dirs := processor_go.ResolveArgs(files)
-	items := loadPlugins()
+	items := loadPlugins(cfg.ToLoaderConfig())
 	allFiles := processor_go.CollectFiles(rawFiles, dirs, ignore)
 	if len(allFiles) == 0 {
 		return nil

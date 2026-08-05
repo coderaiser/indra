@@ -9,14 +9,17 @@ import (
 
 	loader "coderaiser/indra/engine-loader"
 	runner "coderaiser/indra/engine-runner"
+	"coderaiser/indra/internal/config"
 	"coderaiser/indra/types"
 )
 
 func pluginOpts() Options {
 	kinds := loader.Load([]loader.PluginFuncs{{
-		Name:    "eq",
-		Report:  func() string { return "use DeepEqual" },
-		Match:   func() types.Matcher { return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }} },
+		Name:   "eq",
+		Report: func() string { return "use DeepEqual" },
+		Match: func() types.Matcher {
+			return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}
+		},
 		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"} },
 	}}, loader.Config{})
 	return Opt([]runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}, false)
@@ -147,7 +150,7 @@ func TestProcessDirSkipsVendor(t *testing.T) {
 	vendor := filepath.Join(dir, "vendor")
 	os.Mkdir(vendor, 0755)
 	write(t, vendor, "a.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
-	places, err := ProcessDir(dir, pluginOpts(), nil)
+	places, err := ProcessDir(dir, pluginOpts(), config.DefaultIgnorePatterns)
 	if err != nil {
 		t.Fatalf("ProcessDir: %v", err)
 	}
@@ -161,7 +164,7 @@ func TestProcessDirSkipsHidden(t *testing.T) {
 	hidden := filepath.Join(dir, ".hidden")
 	os.Mkdir(hidden, 0755)
 	write(t, hidden, "a.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
-	places, err := ProcessDir(dir, pluginOpts(), nil)
+	places, err := ProcessDir(dir, pluginOpts(), config.DefaultIgnorePatterns)
 	if err != nil {
 		t.Fatalf("ProcessDir: %v", err)
 	}
@@ -190,7 +193,7 @@ func TestProcessDirSkipsTestdata(t *testing.T) {
 	td := filepath.Join(dir, "testdata")
 	os.Mkdir(td, 0755)
 	write(t, td, "a.go", "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n")
-	places, err := ProcessDir(dir, pluginOpts(), nil)
+	places, err := ProcessDir(dir, pluginOpts(), config.DefaultIgnorePatterns)
 	if err != nil {
 		t.Fatalf("ProcessDir: %v", err)
 	}
@@ -282,7 +285,7 @@ func TestCollectFilesSkipsNonGoAndVendor(t *testing.T) {
 	vendor := filepath.Join(dir, "vendor")
 	os.Mkdir(vendor, 0755)
 	write(t, vendor, "v.go", "package p\n")
-	all := CollectFiles(nil, []string{dir}, nil)
+	all := CollectFiles(nil, []string{dir}, config.DefaultIgnorePatterns)
 	if len(all) != 1 {
 		t.Fatalf("expected 1 file (vendor and .txt skipped), got %d", len(all))
 	}
