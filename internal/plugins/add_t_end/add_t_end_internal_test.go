@@ -68,14 +68,14 @@ func TestGuard(t *testing.T) {
 	}
 
 	Test(t, "guard: non-BodySlice __body returns false", func(t *T) {
-		result := guard(Vars{"__body": ast.NewIdent("x")})
+		result := guard(Vars{"__body": ast.NewIdent("x")}, nil)
 		t.Equal(result, false)
 
 		t.End()
 	})
 
 	Test(t, "guard: empty BodySlice returns true", func(t *T) {
-		result := guard(Vars{"__body": compare.BodySlice{Stmts: []ast.Stmt{}}})
+		result := guard(Vars{"__body": compare.BodySlice{Stmts: []ast.Stmt{}}}, nil)
 		t.Equal(result, true)
 
 		t.End()

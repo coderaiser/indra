@@ -12,16 +12,9 @@ import (
 func Report() string { return "tape: missing t.End()" }
 
 func Match() Matcher {
-	guard := func(vars Vars) bool {
-		body, ok := vars["__body"].(compare.BodySlice)
-		if !ok {
-			return false
-		}
-		return !stmtsContainEnd(body.Stmts)
-	}
 	return Matcher{
-		`Test(__a, __b, func(__a *Test.T) { __body })`:      guard,
-		`Test.Only(__a, __b, func(__a *Test.T) { __body })`: guard,
+		`Test(__a, __b, func(__a *Test.T) { __body })`:      missingEnd,
+		`Test.Only(__a, __b, func(__a *Test.T) { __body })`: missingEnd,
 	}
 }
 
@@ -51,4 +44,14 @@ func stmtsContainEnd(stmts []ast.Stmt) bool {
 		}
 	}
 	return false
+}
+
+// missingEnd is a guard that accepts a test body which does not already end
+// with t.End(). The block argument is unused but kept to satisfy MatchFn.
+func missingEnd(vars Vars, _ *ast.BlockStmt) bool {
+	body, ok := vars["__body"].(compare.BodySlice)
+	if !ok {
+		return false
+	}
+	return !stmtsContainEnd(body.Stmts)
 }

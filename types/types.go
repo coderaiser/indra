@@ -11,9 +11,11 @@ import (
 // Vars is the hole-bindings map from compare.
 type Vars = compare.Vars
 
-// MatchFn is a guard run after pattern match. Every Matcher entry must supply
-// a non-nil MatchFn. To express "no guard", omit the key from Match() entirely.
-type MatchFn = func(Vars) bool
+// MatchFn is a guard run after pattern match. Its second argument is the
+// *ast.BlockStmt containing the matched statement (nil for declaration-level
+// matches). Every Matcher entry must supply a non-nil MatchFn. To express
+// "no guard", omit the key from Match() entirely.
+type MatchFn = func(Vars, *ast.BlockStmt) bool
 
 // Matcher maps pattern string → optional guard. Returned by Match().
 type Matcher map[string]MatchFn

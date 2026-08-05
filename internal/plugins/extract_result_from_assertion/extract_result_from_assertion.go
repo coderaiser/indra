@@ -13,13 +13,6 @@ func Report() string { return "extract inline expression from assertion" }
 // re-extracted when a "result" variable is already declared in the containing
 // block (which would shadow the injected declaration).
 func Match() Matcher {
-	noResultInBlock := func(vars Vars) bool {
-		block, ok := vars["$block"].(*ast.BlockStmt)
-		if !ok {
-			return true
-		}
-		return !blockDeclares(block, "result")
-	}
 	return Matcher{
 		"__a.Equal(__b(__args), __c)":     noResultInBlock,
 		"__a.DeepEqual(__b(__args), __c)": noResultInBlock,
@@ -33,6 +26,16 @@ func Replace() Replacer {
 		"__a.Equal(__b, __array)":         "expected := __array\n__a.Equal(__b, expected)",
 		"__a.DeepEqual(__b, __array)":     "expected := __array\n__a.DeepEqual(__b, expected)",
 	}
+}
+
+// noResultInBlock is a guard that rejects re-extraction when a "result"
+// variable is already declared in the containing block (which would shadow the
+// injected declaration). A nil block (no block context) passes.
+func noResultInBlock(_ Vars, block *ast.BlockStmt) bool {
+	if block == nil {
+		return true
+	}
+	return !blockDeclares(block, "result")
 }
 
 // blockDeclares reports whether any statement in block declares name via a

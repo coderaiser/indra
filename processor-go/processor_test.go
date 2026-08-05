@@ -2,6 +2,7 @@ package processor_go
 
 import (
 	"errors"
+	"go/ast"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,7 +19,7 @@ func pluginOpts() Options {
 		Name:   "eq",
 		Report: func() string { return "use DeepEqual" },
 		Match: func() types.Matcher {
-			return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}
+			return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}
 		},
 		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"} },
 	}}, loader.Config{})

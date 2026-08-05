@@ -95,7 +95,7 @@ func TestReplacerShape(t *testing.T) {
 // TestMatcherShape verifies Matcher is a map of pattern to guard.
 func TestMatcherShape(t *testing.T) {
 	m := Matcher{
-		"pat": func(Vars) bool { return true },
+		"pat": func(Vars, *ast.BlockStmt) bool { return true },
 	}
 	if _, ok := m["pat"]; !ok {
 		t.Fatal("expected pattern in matcher")

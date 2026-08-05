@@ -133,10 +133,9 @@ func runOnce(p RunParams) []types.Place {
 				if vars == nil {
 					continue
 				}
-				// "$block" is a reserved key injected by the runner so guard
-				// functions can inspect the containing block for prior decls.
-				vars["$block"] = block
-				if guard, ok := matcher[pattern]; ok && !guard(vars) {
+				// The containing block is passed to the guard so it can inspect
+				// prior declarations (e.g. to avoid shadowing an injected var).
+				if guard, ok := matcher[pattern]; ok && !guard(vars, block) {
 					continue
 				}
 				msg := rp.Report()
@@ -187,7 +186,7 @@ func runOnce(p RunParams) []types.Place {
 				if vars == nil {
 					return
 				}
-				if guard, ok := matcher[pattern]; ok && !guard(vars) {
+				if guard, ok := matcher[pattern]; ok && !guard(vars, nil) {
 					return
 				}
 				msg := rp.Report()

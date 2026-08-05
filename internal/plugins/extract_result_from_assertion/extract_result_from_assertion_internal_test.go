@@ -78,27 +78,45 @@ func TestBlockDeclares(t *testing.T) {
 	})
 }
 
-func TestMatchGuardNilBlock(t *testing.T) {
-	Test(t, "Match guard: missing $block key returns true", func(t *T) {
+func TestMatchGuardBlock(t *testing.T) {
+	Test(t, "Match guard: nil block returns true", func(t *T) {
 		var guard MatchFn
 		for _, g := range Match() {
 			guard = g
 			break
 		}
-		result := guard(Vars{})
+		result := guard(Vars{}, nil)
 		t.Equal(result, true)
 
 		t.End()
 	})
 
-	Test(t, "Match guard: non-BlockStmt $block returns true", func(t *T) {
+	Test(t, "Match guard: block without result decl returns true", func(t *T) {
 		var guard MatchFn
 		for _, g := range Match() {
 			guard = g
 			break
 		}
-		result := guard(Vars{"$block": ast.NewIdent("x")})
+		block := &ast.BlockStmt{List: []ast.Stmt{&ast.ExprStmt{X: ast.NewIdent("f()")}}}
+		result := guard(Vars{}, block)
 		t.Equal(result, true)
+
+		t.End()
+	})
+
+	Test(t, "Match guard: block declaring result rejects", func(t *T) {
+		var guard MatchFn
+		for _, g := range Match() {
+			guard = g
+			break
+		}
+		block := &ast.BlockStmt{List: []ast.Stmt{&ast.AssignStmt{
+			Tok: token.DEFINE,
+			Lhs: []ast.Expr{ast.NewIdent("result")},
+			Rhs: []ast.Expr{ast.NewIdent("x")},
+		}}}
+		result := guard(Vars{}, block)
+		t.Equal(result, false)
 
 		t.End()
 	})
