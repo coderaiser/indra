@@ -29,7 +29,9 @@ func TestCollectImportsLen(t *testing.T) {
 			},
 		}}
 		result := collectImports(file)
-		t.Equal(len(result), 1)
+		n := len(result)
+		t.Equal(n, 1)
+
 		t.End()
 	})
 }

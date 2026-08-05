@@ -7,6 +7,7 @@ import (
 	"coderaiser/indra/internal/plugins/add_t_end"
 	"coderaiser/indra/internal/plugins/convert_equal_to_deep_equal"
 	"coderaiser/indra/internal/plugins/convert_equal_to_not_ok"
+	convert_no_error_to_not_ok "coderaiser/indra/internal/plugins/convert_no_error_to_not_ok"
 	"coderaiser/indra/internal/plugins/convert_ok_to_not_ok"
 	"coderaiser/indra/internal/plugins/extract_result_from_assertion"
 	"coderaiser/indra/internal/plugins/remove_skip"
@@ -24,6 +25,7 @@ import (
 var All = []engine_loader.PluginFuncs{
 	{Name: "tape", Path: "coderaiser/indra/internal/plugins/tape", Rules: tape.Rules},
 	{Name: "remove-unused-import", Path: "coderaiser/indra/internal/plugins/remove_unused_import", Report: remove_unused_import.Report, Traverse: remove_unused_import.Traverse, Fix: remove_unused_import.Fix},
+	{Name: "convert-no-error-to-not-ok", Path: "coderaiser/indra/internal/plugins/convert_no_error_to_not_ok", Report: convert_no_error_to_not_ok.Report, Traverse: convert_no_error_to_not_ok.Traverse, Fix: convert_no_error_to_not_ok.Fix},
 	{Name: "remove-unused-variable", Path: "coderaiser/indra/internal/plugins/remove_unused_variable", Report: remove_unused_variable.Report, Traverse: remove_unused_variable.Traverse, Fix: remove_unused_variable.Fix},
 	{Name: "remove-useless-match", Path: "coderaiser/indra/internal/plugin_indra/remove_useless_match", Report: remove_useless_match.Report, Traverse: remove_useless_match.Traverse, Fix: remove_useless_match.Fix},
 	{Name: "indra", Path: "coderaiser/indra/internal/plugin_indra", Rules: plugin_indra.Rules},
@@ -40,6 +42,7 @@ var Providers = []engine_loader.PluginFuncs{
 	{Name: "extract-result-from-assertion", Path: "coderaiser/indra/internal/plugins/extract_result_from_assertion", Report: extract_result_from_assertion.Report, Match: extract_result_from_assertion.Match, Replace: extract_result_from_assertion.Replace},
 	{Name: "remove-useless-condition", Path: "coderaiser/indra/internal/plugins/remove_useless_condition", Report: remove_useless_condition.Report, Replace: remove_useless_condition.Replace},
 	{Name: "remove-useless-prefix", Path: "coderaiser/indra/internal/plugins/remove_useless_prefix", Report: remove_useless_prefix.Report, Traverse: remove_useless_prefix.Traverse, Fix: remove_useless_prefix.Fix},
+	{Name: "convert-no-error-to-not-ok", Path: "coderaiser/indra/internal/plugins/convert_no_error_to_not_ok", Report: convert_no_error_to_not_ok.Report, Traverse: convert_no_error_to_not_ok.Traverse, Fix: convert_no_error_to_not_ok.Fix},
 }
 
 // LoadInput is the slice loader.Load needs to resolve top-level rules and the
