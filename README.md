@@ -18,19 +18,19 @@ using [📼 go-tape](https://github.com/coderaiser/go-tape).
     Source
         │
         ▼
-    engine-parser    — parse Go source into *ast.File
+    engine_parser      — parse Go source into *ast.File
         │
         ▼
-    engine-runner    — run plugins (Match → Replace, Traverse)
+    engine_runner      — run plugins (Match → Replace, Traverse)
         │
         ▼
-    engine-printer   — print *ast.File back to []byte
+    engine_printer     — print *ast.File back to []byte
         │
         ▼
-    engine-processor — orchestrate parser/runner/printer per file type
+    engine_processor   — orchestrate parser/runner/printer per file type
         │
         ▼
-    engine-loader    — resolve .indra.toml chain → Options
+    engine_loader      — resolve .indra.toml chain → Options
 
 ## ⚙️ Configuration
 
