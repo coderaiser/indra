@@ -232,3 +232,47 @@ func TestIndraNoGoFiles(t *testing.T) {
 		t.End()
 	})
 }
+
+func TestIndraHelp(t *testing.T) {
+	Test(t, "lint: --help returns nil", func(t *T) {
+		var buf bytes.Buffer
+		error := indra.Indra([]string{"--help"}, &buf)
+		t.NotOk(error)
+		t.End()
+	})
+
+	Test(t, "lint: --help writes output", func(t *T) {
+		var buf bytes.Buffer
+		indra.Indra([]string{"--help"}, &buf)
+		t.Ok(buf.Len() > 0)
+		t.End()
+	})
+
+	Test(t, "lint: -h returns nil", func(t *T) {
+		var buf bytes.Buffer
+		error := indra.Indra([]string{"-h"}, &buf)
+		t.NotOk(error)
+		t.End()
+	})
+
+	Test(t, "lint: -h writes output", func(t *T) {
+		var buf bytes.Buffer
+		indra.Indra([]string{"-h"}, &buf)
+		t.Ok(buf.Len() > 0)
+		t.End()
+	})
+
+	Test(t, "lint: --help output contains Usage", func(t *T) {
+		var buf bytes.Buffer
+		indra.Indra([]string{"--help"}, &buf)
+		t.Match(buf.String(), "Usage")
+		t.End()
+	})
+
+	Test(t, "lint: --help output contains --fix", func(t *T) {
+		var buf bytes.Buffer
+		indra.Indra([]string{"--help"}, &buf)
+		t.Match(buf.String(), "--fix")
+		t.End()
+	})
+}
