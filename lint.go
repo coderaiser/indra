@@ -1,10 +1,13 @@
 package indra
 
 import (
+	_ "embed"
 	"errors"
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/BurntSushi/toml"
 
 	loader "coderaiser/indra/engine_loader"
 	processor "coderaiser/indra/engine_processor"
@@ -16,6 +19,35 @@ import (
 	processor_go "coderaiser/indra/processor-go"
 	"coderaiser/indra/types"
 )
+
+//go:embed cmd/indra/help.toml
+var helpToml []byte
+
+type helpConfig struct {
+	Usage   struct{ Text string }
+	Options []struct {
+		Flag string
+		Desc string
+		Note string
+	}
+}
+
+func loadUsage() string {
+	var cfg helpConfig
+	if err := toml.Unmarshal(helpToml, &cfg); err != nil {
+		return "Usage: indra [options] [path ...]\n"
+	}
+	var sb strings.Builder
+	sb.WriteString(cfg.Usage.Text + "\n\nOptions:\n")
+	for _, o := range cfg.Options {
+		fmt.Fprintf(&sb, "  %-24s %s\n", o.Flag, o.Desc)
+		if o.Note != "" {
+			fmt.Fprintf(&sb, "                         %s\n", o.Note)
+		}
+	}
+	sb.WriteString("\n")
+	return sb.String()
+}
 
 // loadPlugins resolves all enabled plugins into runnable items.
 // Tape sub-rules fire only under their "tape/*" group names; the standalone
@@ -57,6 +89,10 @@ func Lint(src []byte, fix bool) ([]byte, []types.Place, error) {
 // Indra runs the CLI over the given files, printing findings.
 func Indra(args []string, w io.Writer) error {
 	for _, arg := range args {
+		if arg == "--help" || arg == "-h" {
+			fmt.Fprint(w, loadUsage())
+			return nil
+		}
 		if arg == "--version" || arg == "-v" {
 			fmt.Fprintln(w, VersionLine())
 			return nil

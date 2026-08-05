@@ -1,0 +1,14 @@
+[usage]
+text = "Usage: indra [options] [path ...]"
+
+[[options]]
+flag = "-h, --help"
+desc = "display this help and exit"
+
+[[options]]
+flag = "-v, --version"
+desc = "output version information and exit"
+
+[[options]]
+flag = "--fix"
+desc = "rewrite files in place to fix lint issues"
