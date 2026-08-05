@@ -1,7 +1,7 @@
 {
   "name": "indra",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Go linter for tape-based test files",
   "main": "index.js",
   "scripts": {
