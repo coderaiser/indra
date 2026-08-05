@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	processor "coderaiser/indra/engine-processor"
-	runner "coderaiser/indra/engine-runner"
+	processor "coderaiser/indra/engine_processor"
+	runner "coderaiser/indra/engine_runner"
 	"coderaiser/indra/internal/config"
 	"coderaiser/indra/types"
 )

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	loader "coderaiser/indra/engine-loader"
+	loader "coderaiser/indra/engine_loader"
 	"coderaiser/indra/types"
 	. "github.com/coderaiser/go-tape"
 )

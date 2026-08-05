@@ -3,8 +3,8 @@ package printer_test
 import (
 	"testing"
 
-	engineparser "coderaiser/indra/engine-parser"
-	engineprinter "coderaiser/indra/engine-printer"
+	engineparser "coderaiser/indra/engine_parser"
+	engineprinter "coderaiser/indra/engine_printer"
 	. "github.com/coderaiser/go-tape"
 )
 

@@ -3,7 +3,7 @@ package plugin_indra_test
 import (
 	"testing"
 
-	. "coderaiser/indra/internal/plugin-indra"
+	. "coderaiser/indra/internal/plugin_indra"
 	. "coderaiser/indra/types"
 	. "github.com/coderaiser/go-tape"
 )

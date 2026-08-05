@@ -6,9 +6,9 @@ import (
 	"io"
 	"strings"
 
-	loader "coderaiser/indra/engine-loader"
-	processor "coderaiser/indra/engine-processor"
-	runner "coderaiser/indra/engine-runner"
+	loader "coderaiser/indra/engine_loader"
+	processor "coderaiser/indra/engine_processor"
+	runner "coderaiser/indra/engine_runner"
 	"coderaiser/indra/internal/config"
 	"coderaiser/indra/internal/formatter"
 	"coderaiser/indra/internal/formatter_progress_bar"

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	loader "coderaiser/indra/engine-loader"
-	runner "coderaiser/indra/engine-runner"
+	loader "coderaiser/indra/engine_loader"
+	runner "coderaiser/indra/engine_runner"
 	"coderaiser/indra/internal/config"
 	"coderaiser/indra/types"
 )

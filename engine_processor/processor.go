@@ -2,9 +2,9 @@
 package engine_processor
 
 import (
-	engineparser "coderaiser/indra/engine-parser"
-	engineprinter "coderaiser/indra/engine-printer"
-	runner "coderaiser/indra/engine-runner"
+	engineparser "coderaiser/indra/engine_parser"
+	engineprinter "coderaiser/indra/engine_printer"
+	runner "coderaiser/indra/engine_runner"
 	"coderaiser/indra/types"
 )
 

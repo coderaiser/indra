@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"coderaiser/indra/compare"
-	loader "coderaiser/indra/engine-loader"
+	loader "coderaiser/indra/engine_loader"
 	"coderaiser/indra/types"
 )
 

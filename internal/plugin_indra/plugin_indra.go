@@ -6,5 +6,5 @@ import . "coderaiser/indra/types"
 // All rules are Off by default.
 // Enable in .indra.toml: "indra" = "on"
 var Rules = Nested{
-	"remove-useless-match": Off("coderaiser/indra/internal/plugin-indra/remove-useless-match"),
+	"remove-useless-match": Off("coderaiser/indra/internal/plugin_indra/remove_useless_match"),
 }

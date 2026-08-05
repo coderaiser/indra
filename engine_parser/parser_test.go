@@ -3,7 +3,7 @@ package parser_test
 import (
 	"testing"
 
-	parser "coderaiser/indra/engine-parser"
+	parser "coderaiser/indra/engine_parser"
 	. "github.com/coderaiser/go-tape"
 )
 

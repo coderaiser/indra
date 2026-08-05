@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	loader "coderaiser/indra/engine-loader"
-	runner "coderaiser/indra/engine-runner"
+	loader "coderaiser/indra/engine_loader"
+	runner "coderaiser/indra/engine_runner"
 	indratest "coderaiser/indra/internal/test"
 	"coderaiser/indra/types"
 	. "github.com/coderaiser/go-tape"

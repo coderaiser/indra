@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	loader "coderaiser/indra/engine-loader"
+	loader "coderaiser/indra/engine_loader"
 	"github.com/BurntSushi/toml"
 )
 

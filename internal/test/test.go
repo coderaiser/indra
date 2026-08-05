@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	loader "coderaiser/indra/engine-loader"
-	processor "coderaiser/indra/engine-processor"
-	runner "coderaiser/indra/engine-runner"
+	loader "coderaiser/indra/engine_loader"
+	processor "coderaiser/indra/engine_processor"
+	runner "coderaiser/indra/engine_runner"
 	"coderaiser/indra/internal/plugins"
 	"coderaiser/indra/types"
 	tape "github.com/coderaiser/go-tape"
