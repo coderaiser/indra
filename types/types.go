@@ -50,19 +50,9 @@ type Place struct {
 	Position Position
 }
 
-// PluginEntry is a value in a Nested map.
-// Enabled=true means on by default; false means off by default.
-type PluginEntry struct {
-	Path    string
-	Enabled bool
+// Rule is a named plugin entry inside a group's Rules() return.
+type Rule struct {
+	Name     string
+	Plugin   any  // carries Report/Match/Replace/Traverse/Fix methods
+	Disabled bool // true = off by default; config can re-enable
 }
-
-// Off marks a plugin disabled by default in a Nested map.
-// User can re-enable in config: "group/rule" = "on".
-func Off(path string) PluginEntry {
-	return PluginEntry{Path: path, Enabled: false}
-}
-
-// Nested groups sub-plugins. Values are package path strings (enabled by default)
-// or PluginEntry (to set a non-default state).
-type Nested map[string]any // string | PluginEntry

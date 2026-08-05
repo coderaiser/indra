@@ -2,7 +2,6 @@ package convert_no_error_to_not_ok_test
 
 import (
 	"go/ast"
-	"runtime"
 	"testing"
 
 	"coderaiser/indra/internal/plugin_tape/convert_no_error_to_not_ok"
@@ -11,7 +10,7 @@ import (
 	tape "github.com/coderaiser/go-tape"
 )
 
-var Test = indratest.CreateTest(runtime.Caller(0))
+var Test = indratest.For("convert-no-error-to-not-ok", convert_no_error_to_not_ok.Plugin{})
 
 // TestFixDirect covers the Fix early return for a file without the go-tape
 // import, which is not reachable through the push-based fixture harness.

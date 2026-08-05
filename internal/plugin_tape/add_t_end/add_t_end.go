@@ -21,3 +21,10 @@ func Replace() Replacer {
 		`Test.Only(__a, __b, func(__a *Test.T) { __body })`: "Test.Only(__a, __b, func(__a *Test.T) {\n__body\n__a.End()\n})",
 	}
 }
+
+// Plugin wraps the rule for the registry: a replacer with a Match guard.
+type Plugin struct{}
+
+func (Plugin) Report() string    { return Report() }
+func (Plugin) Match() Matcher    { return Match() }
+func (Plugin) Replace() Replacer { return Replace() }

@@ -1,17 +1,14 @@
 package test
 
 import (
-	"bufio"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 
 	loader "coderaiser/indra/engine_loader"
 	processor "coderaiser/indra/engine_processor"
 	runner "coderaiser/indra/engine_runner"
-	"coderaiser/indra/internal/plugins"
 	"coderaiser/indra/types"
 
 	tape "github.com/coderaiser/go-tape"
@@ -31,98 +28,48 @@ func New(tt *tape.T, plugins []runner.PluginItem, dir string) *T {
 	return &T{T: tt, plugins: plugins, dir: dir, fatal: tt.TB().Fatalf, writeFile: os.WriteFile}
 }
 
-// CreateTest returns a typed test runner for the plugin at the caller's
-// package path.
+// For returns a test runner fixed to a single leaf rule whose plugin is a
+// method-bearing struct (e.g. remove_skip.Plugin{}). The fixture dir is the
+// caller's fixture/ directory.
 //
-// Call once at package level, passing runtime.Caller(0) directly:
-//
-//	var Test = indratest.CreateTest(runtime.Caller(0))
-//
-// runtime.Caller(0) expands its four return values directly into the
-// parameters, so no thunk or path string is needed. file resolves to the
-// plugin test file, the package path is derived from go.mod, and fixture/
-// is found next to the test file.
-func CreateTest(_ uintptr, file string, _ int, _ bool) func(*testing.T, string, func(*T)) {
-	pkgPath := derivePackagePath(file)
-	dir := filepath.Join(filepath.Dir(file), "fixture")
-	items := createItems(pkgPath)
-	if items == nil {
-		panic("internal/test: unknown plugin " + pkgPath)
-	}
+//	func TestRemoveSkip(t *testing.T) {
+//		For("remove-skip", remove_skip.Plugin{}) ...
+//	}
+func For(rule string, plugin any) func(*testing.T, string, func(*T)) {
+	items := itemsFor(rule, plugin)
+	dir := callerFixtureDir(1)
 	return tape.Extend(func(base *tape.T) *T {
 		return New(base, items, dir)
 	})
 }
 
-// createItems returns the runnable PluginItems for the target package path.
-func createItems(pkgPath string) []runner.PluginItem {
-	return createItemsFrom(pkgPath, plugins.All, plugins.LoadInput())
-}
-
-// createItemsFrom is the testable core of createItems. It handles three cases:
-// a top-level leaf plugin, a top-level nested group, and a plugin that is
-// registered only as a member of a nested group (e.g. a tape sub-rule
-// referenced only inside tape.Rules). The registry and loader input are
-// injected so the error paths can be driven from synthetic data.
-func createItemsFrom(pkgPath string, all []loader.PluginFuncs, input []loader.PluginFuncs) []runner.PluginItem {
-	for _, pf := range all {
-		if pf.Path != pkgPath {
-			continue
-		}
-		return loadItems(pf)
-	}
-	// nested group member: locate the owning group and return that single rule
-	for _, pf := range all {
-		if pf.Rules == nil {
-			continue
-		}
-		for rule, v := range pf.Rules {
-			if entryPath(v) != pkgPath {
-				continue
-			}
-			ruleName := pf.Name + "/" + rule
-			for _, k := range loader.Load(input, loader.Config{}) {
-				if k.Name() == ruleName {
-					return []runner.PluginItem{{Rule: ruleName, Plugin: k}}
-				}
-			}
-			return nil
-		}
-	}
-	return nil
-}
-
-// entryPath extracts the package path from a Nested value (string or PluginEntry).
-func entryPath(v any) string {
-	switch t := v.(type) {
-	case string:
-		return t
-	case types.PluginEntry:
-		return t.Path
-	default:
-		return ""
-	}
-}
-
-// loadItems resolves the runnable PluginItems for a top-level plugin. A nested
-// (grouping) plugin expands its sub-rules from the full registry into
-// "group/rule" items; a leaf plugin yields a single item matching its name.
-func loadItems(pf loader.PluginFuncs) []runner.PluginItem {
-	if pf.Rules == nil {
-		kinds := loader.Load([]loader.PluginFuncs{pf}, loader.Config{})
-		validatePlugin(kinds[0])
-		return []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}
-	}
-	prefix := pf.Name + "/"
-	kinds := loader.Load(plugins.LoadInput(), loader.Config{})
-	var items []runner.PluginItem
+// ForGroup returns a test runner for every rule of a group. It is used by a
+// group's own test file to exercise all sub-rules at once (e.g. tape.Rules()).
+func ForGroup(name string, rules []types.Rule) func(*testing.T, string, func(*T)) {
+	kinds := loader.Load([]loader.PluginFuncs{{Name: name, Rules: rules}}, loader.Config{})
+	items := make([]runner.PluginItem, 0, len(kinds))
 	for _, k := range kinds {
-		if strings.HasPrefix(k.Name(), prefix) {
-			validatePlugin(k)
-			items = append(items, runner.PluginItem{Rule: k.Name(), Plugin: k})
-		}
+		validatePlugin(k)
+		items = append(items, runner.PluginItem{Rule: k.Name(), Plugin: k})
 	}
-	return items
+	dir := callerFixtureDir(1)
+	return tape.Extend(func(base *tape.T) *T {
+		return New(base, items, dir)
+	})
+}
+
+// callerFixtureDir returns the fixture/ directory next to the test file that
+// called For/ForGroup. depth is the position of For/ForGroup's caller frame.
+func callerFixtureDir(depth int) string {
+	_, file, _, _ := runtime.Caller(depth + 1)
+	return filepath.Join(filepath.Dir(file), "fixture")
+}
+
+// itemsFor resolves a single leaf rule into runnable PluginItems.
+func itemsFor(rule string, plugin any) []runner.PluginItem {
+	kinds := loader.Load([]loader.PluginFuncs{{Name: rule, Plugin: plugin}}, loader.Config{})
+	validatePlugin(kinds[0])
+	return []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}
 }
 
 // validatePlugin enforces consistency on a resolved ReplacerPlugin before it is
@@ -144,64 +91,6 @@ func validatePlugin(kind loader.PluginKind) {
 			panic("internal/test: " + kind.Name() + ": Match key not in Replace: " + pattern)
 		}
 	}
-}
-
-// modInfo caches the module name and root dir, located from go.mod.
-var modInfo struct {
-	name string // e.g. "coderaiser/indra"
-	root string // abs path of module root dir
-}
-
-func init() {
-	_, thisFile, _, _ := runtime.Caller(0)
-	modInfo.root, modInfo.name = findModInfo(filepath.Dir(thisFile), func(p string) error {
-		_, err := os.Stat(p)
-		return err
-	}, readModuleName)
-}
-
-// findModInfo walks up from startDir looking for a go.mod, returning the
-// module root dir and module name. stat and moduleName are injected so the
-// not-found panic path can be driven from a synthetic filesystem in tests.
-func findModInfo(startDir string, stat func(string) error, moduleName func(string) string) (string, string) {
-	dir := startDir
-	for {
-		candidate := filepath.Join(dir, "go.mod")
-		if stat(candidate) == nil {
-			return dir, moduleName(candidate)
-		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			panic("internal/test: go.mod not found")
-		}
-		dir = parent
-	}
-}
-
-// readModuleName returns the module directive from a go.mod file.
-func readModuleName(gomod string) string {
-	f, err := os.Open(gomod)
-	if err != nil {
-		panic("internal/test: cannot open go.mod: " + err.Error())
-	}
-	defer f.Close()
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if strings.HasPrefix(line, "module ") {
-			return strings.TrimPrefix(line, "module ")
-		}
-	}
-	panic("internal/test: module line not found in go.mod")
-}
-
-// derivePackagePath maps a test file path to its package import path.
-func derivePackagePath(file string) string {
-	rel, err := filepath.Rel(modInfo.root, filepath.Dir(file))
-	if err != nil {
-		panic("internal/test: cannot relativize path: " + err.Error())
-	}
-	return modInfo.name + "/" + filepath.ToSlash(rel)
 }
 
 // Report asserts the plugin emits exactly ≥1 place whose first Message equals

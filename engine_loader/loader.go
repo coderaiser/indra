@@ -9,27 +9,19 @@ import (
 	"coderaiser/indra/types"
 )
 
-// PluginFuncs is a set of exported funcs from one plugin package.
-// It is passed by plugins.go which imports the packages statically.
-// A nested plugin carries Rules instead of Report/Match/Replace/Traverse/Fix.
+// PluginFuncs is one entry of the plugin registry. It never describes a
+// plugin's shape (Report/Match/Replace/Traverse/Fix): a leaf carries the whole
+// method-bearing struct in Plugin, and a group carries its []types.Rule. The
+// loader detects the shape through reflection, so a plugin can switch between
+// replacer and traverser without touching the registry.
 type PluginFuncs struct {
 	// Name is the rule or group name (e.g. "remove-skip", "tape").
 	Name string
-	// Path is the package import path (used to expand Nested entries).
-	Path string
-	// Report is func() string for replacers, func(ast.Node) string for
-	// traversers — nil for nested plugins.
-	Report any
-	// Match is func() types.Matcher — nil for traversers and nested plugins.
-	Match any
-	// Replace is func() types.Replacer — nil for traversers and nested plugins.
-	Replace any
-	// Traverse is func() types.Traverser — nil for replacers and nested plugins.
-	Traverse any
-	// Fix is func(ast.Node, map[string]any) — nil for replacers and nested plugins.
-	Fix any
-	// Rules is types.Nested — non-nil only for nested (grouping) plugins.
-	Rules types.Nested
+	// Plugin is a leaf plugin — a struct exposing Report/Match/Replace/Traverse/
+	// Fix methods. Nil for groups.
+	Plugin any
+	// Rules is a group's sub-rules. Non-nil means this is a nested group.
+	Rules []types.Rule
 }
 
 // PluginKind is a resolved, runnable plugin.
@@ -60,6 +52,12 @@ type TraverserPlugin struct {
 	fix      types.FixFn
 }
 
+func (p TraverserPlugin) Name() string                           { return p.rule }
+func (TraverserPlugin) pluginKind()                              { _ = "traverser" }
+func (p TraverserPlugin) Report(node ast.Node) string            { return p.report(node) }
+func (p TraverserPlugin) Traverse() types.Traverser              { return p.traverse() }
+func (p TraverserPlugin) Fix(node ast.Node, opts map[string]any) { p.fix(node, opts) }
+
 // RuleState is the enabled/disabled state of a rule from config.
 type RuleState struct {
 	Enabled bool
@@ -77,37 +75,31 @@ func DefaultConfig() Config { return Config{} }
 type candidate struct {
 	rule    string
 	kind    PluginKind
-	enabled bool // default-enabled from Nested PluginEntry (true for strings)
+	enabled bool // default-enabled state (from a group Rule's Disabled flag)
 }
 
 // Load resolves top-level plugins and nested sub-plugins into runnable kinds,
 // then filters them by cfg.
 //
 // A plugin entry whose Rules field is non-nil is a nested group: Load expands
-// each of its sub-paths into "group/rule" candidates. Top-level entries keep
-// their own rule name.
+// each rule into "group/rule" candidates. Top-level entries keep their own name.
 //
 // Filtering priority:
 //  1. exact config match: "tape/remove-skip" disabled → rule disabled
 //  2. prefix config match: "tape" disabled → all "tape/*" disabled
-//  3. PluginEntry.Enabled=false (Off() in Nested) → disabled unless config says on
+//  3. a group Rule's Disabled flag
 //  4. default: enabled
 func Load(plugins []PluginFuncs, cfg Config) []PluginKind {
 	var cands []candidate
 	for _, p := range plugins {
 		if p.Rules != nil {
-			for name, v := range p.Rules {
-				path := entryPath(v)
-				pf, ok := findPluginFuncs(plugins, path)
-				if !ok {
-					continue
-				}
-				rule := p.Name + "/" + name
-				cands = append(cands, candidate{rule: rule, kind: resolveKind(pf, rule), enabled: isEntryEnabled(v)})
+			for _, r := range p.Rules {
+				rule := p.Name + "/" + r.Name
+				cands = append(cands, candidate{rule: rule, kind: resolve(r.Plugin, rule, p.Name), enabled: !r.Disabled})
 			}
 			continue
 		}
-		cands = append(cands, candidate{rule: p.Name, kind: resolveKind(p, p.Name), enabled: true})
+		cands = append(cands, candidate{rule: p.Name, kind: resolve(p.Plugin, p.Name, p.Name), enabled: true})
 	}
 
 	out := make([]PluginKind, 0, len(cands))
@@ -126,155 +118,74 @@ func isEnabled(c candidate, cfg Config) bool {
 	if st, ok := cfg[c.rule]; ok {
 		return st.Enabled
 	}
-	// 2. prefix match: a disabled group key disables every group/* rule
+	// 2. group prefix match: "tape" off → all "tape/*" disabled; "tape" on → all
+	// "tape/*" enabled (this re-enables a group rule disabled by default).
 	for key, st := range cfg {
-		if len(key) < len(c.rule) && c.rule[:len(key)] == key && c.rule[len(key)] == '/' && !st.Enabled {
-			return false
+		if len(key) < len(c.rule) && c.rule[:len(key)] == key && c.rule[len(key)] == '/' {
+			return st.Enabled
 		}
 	}
-	// 3/4. default from Nested PluginEntry, else enabled
+	// 3/4. default from group Rule.Disabled, else enabled
 	return c.enabled
 }
 
-func (p TraverserPlugin) Name() string                           { return p.rule }
-func (TraverserPlugin) pluginKind()                              { _ = "traverser" }
-func (p TraverserPlugin) Report(node ast.Node) string            { return p.report(node) }
-func (p TraverserPlugin) Traverse() types.Traverser              { return p.traverse() }
-func (p TraverserPlugin) Fix(node ast.Node, opts map[string]any) { p.fix(node, opts) }
-
-// resolveKind detects a plugin's kind from its func fields, naming it rule,
-// and panics on a malformed shape at init time.
-func resolveKind(p PluginFuncs, rule string) PluginKind {
-	if p.Replace != nil {
+// resolve detects a plugin's kind from its exported methods, naming it rule.
+// A plugin with a Replace method is a replacer; one with a Traverse method is
+// a traverser. It panics on a malformed shape at init time.
+func resolve(plugin any, rule, owner string) PluginKind {
+	v := reflect.ValueOf(plugin)
+	if r, ok := method[func() types.Replacer](v, "Replace"); ok {
 		return ReplacerPlugin{
 			rule:    rule,
-			report:  invokeReport(p),
-			match:   matchFuncOrEmpty(p),
-			replace: mustFunc[func() types.Replacer](p, "Replace"),
+			report:  mustMethod[func() string](v, "Report"),
+			match:   matchOrEmpty(v),
+			replace: r,
 		}
 	}
-	if p.Traverse != nil && p.Fix != nil {
+	if tr, ok := method[func() types.Traverser](v, "Traverse"); ok {
 		return TraverserPlugin{
 			rule:     rule,
-			report:   invokeTraverserReport(p),
-			traverse: mustFunc[func() types.Traverser](p, "Traverse"),
-			fix:      mustFunc[types.FixFn](p, "Fix"),
+			report:   mustMethod[types.ReportFn](v, "Report"),
+			traverse: tr,
+			fix:      mustMethod[types.FixFn](v, "Fix"),
 		}
 	}
-	panic("engine-loader: " + p.Name + ": unknown plugin kind (need Match+Replace or Traverse+Fix)")
+	panic("engine-loader: " + owner + ": unknown plugin kind (need Replace or Traverse)")
 }
 
-// matchFuncOrEmpty returns the Match func if present, else a func returning
-// an empty Matcher (the guard for a replacer without Match is a no-op).
-func matchFuncOrEmpty(p PluginFuncs) func() types.Matcher {
-	if p.Match == nil {
-		return func() types.Matcher { return types.Matcher{} }
+// method returns the named method of plugin value v asserted to type T.
+// It reports false when the method is absent; it panics when the method exists
+// with an incompatible signature.
+func method[T any](v reflect.Value, name string) (T, bool) {
+	var zero T
+	if !v.IsValid() {
+		return zero, false
 	}
-	return mustFunc[func() types.Matcher](p, "Match")
-}
-
-// invokeReport extracts the func() string Report value (Replacer plugins).
-func invokeReport(p PluginFuncs) func() string {
-	if p.Report == nil {
-		panic("engine-loader: " + p.Name + ": missing Report func")
+	m := v.MethodByName(name)
+	if !m.IsValid() {
+		return zero, false
 	}
-	return mustFunc[func() string](p, "Report")
-}
-
-// invokeTraverserReport extracts the func(ast.Node) string Report value
-// (Traverser plugins).
-func invokeTraverserReport(p PluginFuncs) types.ReportFn {
-	if p.Report == nil {
-		panic("engine-loader: " + p.Name + ": missing Report func")
-	}
-	return mustFunc[types.ReportFn](p, "Report")
-}
-
-// funcValue validates the named field is a non-nil func with an expected shape.
-// Match/Replace/Traverse are zero-arg single-return. Fix is func(ast.Node,
-// map[string]any). Report is func() string for replacers or func(ast.Node)
-// string for traversers.
-func funcValue(p PluginFuncs, field string) reflect.Value {
-	raw := reflect.ValueOf(fieldOf(p, field))
-	if raw.Kind() != reflect.Func {
-		panic("engine-loader: " + p.Name + ": " + field + " is not a func")
-	}
-	switch field {
-	case "Fix":
-		if raw.Type().NumIn() != 2 || raw.Type().NumOut() != 0 {
-			panic("engine-loader: " + p.Name + ": Fix must be func(ast.Node, map[string]any)")
-		}
-	case "Report":
-		// Traverser Report is func(ast.Node) string; Replacer Report is func() string.
-		if raw.Type().NumOut() != 1 {
-			panic("engine-loader: " + p.Name + ": Report must return string")
-		}
-		if raw.Type().NumIn() != 0 && raw.Type().NumIn() != 1 {
-			panic("engine-loader: " + p.Name + ": Report must be func() string or func(ast.Node) string")
-		}
-	default:
-		if raw.Type().NumIn() != 0 || raw.Type().NumOut() != 1 {
-			panic("engine-loader: " + p.Name + ": " + field + " must be func() single-return")
-		}
-	}
-	return raw
-}
-
-// fieldOf returns the raw value of a named PluginFuncs field.
-func fieldOf(p PluginFuncs, field string) any {
-	switch field {
-	case "Report":
-		return p.Report
-	case "Match":
-		return p.Match
-	case "Replace":
-		return p.Replace
-	case "Traverse":
-		return p.Traverse
-	case "Fix":
-		return p.Fix
-	default:
-		panic("engine-loader: unknown field " + field)
-	}
-}
-
-// isEntryEnabled reports the default enabled state of a Nested value.
-// A plain string path is enabled; a PluginEntry carries its own state.
-func isEntryEnabled(v any) bool {
-	if e, ok := v.(types.PluginEntry); ok {
-		return e.Enabled
-	}
-	return true
-}
-
-// entryPath extracts the package path from a Nested value (string or PluginEntry).
-func entryPath(v any) string {
-	switch t := v.(type) {
-	case string:
-		return t
-	case types.PluginEntry:
-		return t.Path
-	default:
-		return ""
-	}
-}
-
-// findPluginFuncs returns the PluginFuncs whose Path matches, else ok=false.
-func findPluginFuncs(plugins []PluginFuncs, path string) (PluginFuncs, bool) {
-	for _, pf := range plugins {
-		if pf.Path == path {
-			return pf, true
-		}
-	}
-	return PluginFuncs{}, false
-}
-
-// mustFunc asserts the named field has a func type matching T and returns it.
-func mustFunc[T any](p PluginFuncs, field string) T {
-	raw := funcValue(p, field)
-	fn, ok := raw.Interface().(T)
+	fn, ok := m.Interface().(T)
 	if !ok {
-		panic("engine-loader: " + p.Name + ": " + field + " has wrong signature")
+		panic("engine-loader: method " + name + " has wrong signature")
+	}
+	return fn, true
+}
+
+// mustMethod is method but panics when the method is missing.
+func mustMethod[T any](v reflect.Value, name string) T {
+	fn, ok := method[T](v, name)
+	if !ok {
+		panic("engine-loader: missing " + name + " method")
 	}
 	return fn
+}
+
+// matchOrEmpty returns the Match method if present, else a func returning an
+// empty Matcher (the guard for a replacer without Match is a no-op).
+func matchOrEmpty(v reflect.Value) func() types.Matcher {
+	if m, ok := method[func() types.Matcher](v, "Match"); ok {
+		return m
+	}
+	return func() types.Matcher { return types.Matcher{} }
 }

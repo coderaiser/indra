@@ -1,13 +1,13 @@
 package remove_useless_prefix_test
 
 import (
-	"runtime"
 	"testing"
 
+	"coderaiser/indra/internal/plugin_tape/remove_useless_prefix"
 	indratest "coderaiser/indra/internal/test"
 )
 
-var Test = indratest.CreateTest(runtime.Caller(0))
+var Test = indratest.For("remove-useless-prefix", remove_useless_prefix.Plugin{})
 
 func TestRemoveUselessPrefix(t *testing.T) {
 	Test(t, "remove-useless-prefix: report named tape alias", func(t *indratest.T) {

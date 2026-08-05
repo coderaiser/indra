@@ -1,13 +1,13 @@
 package convert_equal_to_not_ok_test
 
 import (
-	"runtime"
 	"testing"
 
+	"coderaiser/indra/internal/plugin_tape/convert_equal_to_not_ok"
 	indratest "coderaiser/indra/internal/test"
 )
 
-var Test = indratest.CreateTest(runtime.Caller(0))
+var Test = indratest.For("convert-equal-to-not-ok", convert_equal_to_not_ok.Plugin{})
 
 func TestConvertEqualToNotOk(t *testing.T) {
 	Test(t, "convert-equal-to-not-ok: report Equal(err, nil)", func(t *indratest.T) {

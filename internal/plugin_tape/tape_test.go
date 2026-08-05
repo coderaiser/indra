@@ -1,13 +1,13 @@
 package tape_test
 
 import (
-	"runtime"
 	"testing"
 
+	tape "coderaiser/indra/internal/plugin_tape"
 	indratest "coderaiser/indra/internal/test"
 )
 
-var Test = indratest.CreateTest(runtime.Caller(0))
+var Test = indratest.ForGroup("tape", tape.Rules())
 
 func TestTape(t *testing.T) {
 	Test(t, "tape: transform remove-skip", func(t *indratest.T) {

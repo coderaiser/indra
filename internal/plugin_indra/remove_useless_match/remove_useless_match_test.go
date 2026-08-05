@@ -1,13 +1,13 @@
 package remove_useless_match_test
 
 import (
-	"runtime"
 	"testing"
 
+	"coderaiser/indra/internal/plugin_indra/remove_useless_match"
 	indratest "coderaiser/indra/internal/test"
 )
 
-var Test = indratest.CreateTest(runtime.Caller(0))
+var Test = indratest.For("remove-useless-match", remove_useless_match.Plugin{})
 
 func TestRemoveUselessMatch(t *testing.T) {
 	Test(t, "remove-useless-match: report nil guard entry", func(t *indratest.T) {

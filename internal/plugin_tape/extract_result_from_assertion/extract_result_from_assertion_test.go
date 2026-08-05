@@ -1,13 +1,13 @@
 package extract_result_from_assertion_test
 
 import (
-	"runtime"
 	"testing"
 
+	"coderaiser/indra/internal/plugin_tape/extract_result_from_assertion"
 	indratest "coderaiser/indra/internal/test"
 )
 
-var Test = indratest.CreateTest(runtime.Caller(0))
+var Test = indratest.For("extract-result-from-assertion", extract_result_from_assertion.Plugin{})
 
 func TestExtractResultFromAssertion(t *testing.T) {
 	Test(t, "extract-result-from-assertion: report inline call", func(t *indratest.T) {

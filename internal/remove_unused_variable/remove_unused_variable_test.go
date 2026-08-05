@@ -3,7 +3,6 @@ package remove_unused_variable_test
 import (
 	"go/ast"
 	"go/token"
-	"runtime"
 	"testing"
 
 	"coderaiser/indra/internal/remove_unused_variable"
@@ -12,7 +11,7 @@ import (
 	tape "github.com/coderaiser/go-tape"
 )
 
-var Test = indratest.CreateTest(runtime.Caller(0))
+var Test = indratest.For("remove-unused-variable", remove_unused_variable.Plugin{})
 
 // TestReportDirect covers Report branches that are not reachable through the
 // fixture harness (nil node, and a block whose vars are all used).

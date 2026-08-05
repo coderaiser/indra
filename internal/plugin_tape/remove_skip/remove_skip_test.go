@@ -1,13 +1,13 @@
 package remove_skip_test
 
 import (
-	"runtime"
 	"testing"
 
+	"coderaiser/indra/internal/plugin_tape/remove_skip"
 	indratest "coderaiser/indra/internal/test"
 )
 
-var Test = indratest.CreateTest(runtime.Caller(0))
+var Test = indratest.For("remove-skip", remove_skip.Plugin{})
 
 func TestRemoveSkip(t *testing.T) {
 	Test(t, "remove-skip: report Test.Skip call", func(t *indratest.T) {

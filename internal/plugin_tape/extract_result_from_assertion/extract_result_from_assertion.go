@@ -24,3 +24,10 @@ func Replace() Replacer {
 		"__a.DeepEqual(__b, __array)":     "expected := __array\n__a.DeepEqual(__b, expected)",
 	}
 }
+
+// Plugin wraps the rule for the registry: a replacer with a Match guard.
+type Plugin struct{}
+
+func (Plugin) Report() string    { return Report() }
+func (Plugin) Match() Matcher    { return Match() }
+func (Plugin) Replace() Replacer { return Replace() }

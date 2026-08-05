@@ -15,6 +15,30 @@ import (
 	. "github.com/coderaiser/go-tape"
 )
 
+// replacer is a field-carrying replacer plugin for runner tests.
+type replacer struct {
+	report  string
+	match   types.Matcher
+	replace types.Replacer
+}
+
+func (x replacer) Report() string          { return x.report }
+func (x replacer) Match() types.Matcher    { return x.match }
+func (x replacer) Replace() types.Replacer { return x.replace }
+
+// traverser is a field-carrying traverser plugin for runner tests.
+type traverser struct {
+	report string
+	tr     types.Traverser
+	fix    func(node ast.Node, opts map[string]any)
+}
+
+func (x traverser) Report(_ ast.Node) string  { return x.report }
+func (x traverser) Traverse() types.Traverser { return x.tr }
+func (x traverser) Fix(node ast.Node, opts map[string]any) {
+	x.fix(node, opts)
+}
+
 func parse(t *testing.T, src string) (*ast.File, *token.FileSet) {
 	t.Helper()
 	fset := token.NewFileSet()
@@ -36,27 +60,27 @@ func items(plugins []loader.PluginFuncs) []PluginItem {
 
 func replacerItem() []loader.PluginFuncs {
 	return []loader.PluginFuncs{{
-		Name:   "eq",
-		Report: func() string { return "use DeepEqual" },
-		Match: func() types.Matcher {
-			return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}
+		Name: "eq",
+		Plugin: replacer{
+			report:  "use DeepEqual",
+			match:   types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }},
+			replace: types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"},
 		},
-		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"} },
 	}}
 }
 
 func traverserFuncs(name, key string) loader.PluginFuncs {
 	return loader.PluginFuncs{
-		Name:   name,
-		Report: func(node ast.Node) string { return "issue" },
-		Traverse: func() types.Traverser {
-			return types.Traverser{
+		Name: name,
+		Plugin: traverser{
+			report: "issue",
+			tr: types.Traverser{
 				key: func(node ast.Node, push func(ast.Node)) {
 					push(node)
 				},
-			}
+			},
+			fix: func(node ast.Node, opts map[string]any) {},
 		},
-		Fix: func(node ast.Node, opts map[string]any) {},
 	}
 }
 
@@ -140,18 +164,18 @@ func TestRunTraverserFixCallsFix(t *testing.T) {
 	src := "package p\n\nfunc f() {}\n"
 	file, fset := parse(t, src)
 	funcs := loader.PluginFuncs{
-		Name:   "file",
-		Report: func(node ast.Node) string { return "file issue" },
-		Traverse: func() types.Traverser {
-			return types.Traverser{
+		Name: "file",
+		Plugin: traverser{
+			report: "file issue",
+			tr: types.Traverser{
 				"*ast.File": func(node ast.Node, push func(ast.Node)) {
 					push(node)
 				},
-			}
-		},
-		Fix: func(node ast.Node, opts map[string]any) {
-			f := node.(*ast.File)
-			f.Name.Name = "q"
+			},
+			fix: func(node ast.Node, opts map[string]any) {
+				f := node.(*ast.File)
+				f.Name.Name = "q"
+			},
 		},
 	}
 	pl := items([]loader.PluginFuncs{funcs})
@@ -194,12 +218,12 @@ func TestRunGuardRejects(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n"
 	file, fset := parse(t, src)
 	funcs := loader.PluginFuncs{
-		Name:   "guarded",
-		Report: func() string { return "m" },
-		Match: func() types.Matcher {
-			return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return false }}
+		Name: "guarded",
+		Plugin: replacer{
+			report:  "m",
+			match:   types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return false }},
+			replace: types.Replacer{"t.Equal(__a, __b)": "x"},
 		},
-		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "x"} },
 	}
 	pl := items([]loader.PluginFuncs{funcs})
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
@@ -216,10 +240,12 @@ func TestRunNilGuardPanics(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n"
 	file, fset := parse(t, src)
 	funcs := []loader.PluginFuncs{{
-		Name:    "nilguard",
-		Report:  func() string { return "m" },
-		Match:   func() types.Matcher { return types.Matcher{"t.Equal(__a, __b)": nil} },
-		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "x"} },
+		Name: "nilguard",
+		Plugin: replacer{
+			report:  "m",
+			match:   types.Matcher{"t.Equal(__a, __b)": nil},
+			replace: types.Replacer{"t.Equal(__a, __b)": "x"},
+		},
 	}}
 	pl := items(funcs)
 	defer func() {
@@ -234,18 +260,18 @@ func TestRunTraverserBlockFix(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tx := 1\n}\n"
 	file, fset := parse(t, src)
 	funcs := loader.PluginFuncs{
-		Name:   "block",
-		Report: func(node ast.Node) string { return "block" },
-		Traverse: func() types.Traverser {
-			return types.Traverser{
+		Name: "block",
+		Plugin: traverser{
+			report: "block",
+			tr: types.Traverser{
 				"*ast.BlockStmt": func(node ast.Node, push func(ast.Node)) {
 					push(node)
 				},
-			}
-		},
-		Fix: func(node ast.Node, opts map[string]any) {
-			block := node.(*ast.BlockStmt)
-			block.List = nil
+			},
+			fix: func(node ast.Node, opts map[string]any) {
+				block := node.(*ast.BlockStmt)
+				block.List = nil
+			},
 		},
 	}
 	pl := items([]loader.PluginFuncs{funcs})
@@ -326,12 +352,12 @@ func TestRunRenderArgSlice(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tuse(f, g)\n}\n"
 	file, fset := parse(t, src)
 	funcs := []loader.PluginFuncs{{
-		Name:   "args",
-		Report: func() string { return "m" },
-		Match: func() types.Matcher {
-			return types.Matcher{"use(__args)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}
+		Name: "args",
+		Plugin: replacer{
+			report:  "m",
+			match:   types.Matcher{"use(__args)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }},
+			replace: types.Replacer{"use(__args)": "wrap(__args)"},
 		},
-		Replace: func() types.Replacer { return types.Replacer{"use(__args)": "wrap(__args)"} },
 	}}
 	pl := items(funcs)
 	RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
@@ -347,13 +373,13 @@ func TestRunRenderBodySlice(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tTest(\"s\", \"n\", func(t *T) {\n\t\tt.Equal(a, b)\n\t})\n}\n"
 	file, fset := parse(t, src)
 	funcs := []loader.PluginFuncs{{
-		Name:   "body",
-		Report: func() string { return "m" },
-		Match: func() types.Matcher {
-			return types.Matcher{"Test(__a, __b, func(__r *T) { __body })": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}
-		},
-		Replace: func() types.Replacer {
-			return types.Replacer{"Test(__a, __b, func(__r *T) { __body })": "Test(__a, __b, func(__r *T) {\n__body\n__r.End()\n})"}
+		Name: "body",
+		Plugin: replacer{
+			report: "m",
+			match:  types.Matcher{"Test(__a, __b, func(__r *T) { __body })": func(v types.Vars, _ *ast.BlockStmt) bool { return true }},
+			replace: types.Replacer{
+				"Test(__a, __b, func(__r *T) { __body })": "Test(__a, __b, func(__r *T) {\n__body\n__r.End()\n})",
+			},
 		},
 	}}
 	pl := items(funcs)
@@ -379,12 +405,12 @@ func TestApplyRewritesMultipleInBlock(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tmakeSlices(x)\n\tmakeSlices(y)\n}\n"
 	file, fset := parse(t, src)
 	funcs := []loader.PluginFuncs{{
-		Name:   "multi",
-		Report: func() string { return "m" },
-		Match: func() types.Matcher {
-			return types.Matcher{"makeSlices(__x)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}
+		Name: "multi",
+		Plugin: replacer{
+			report:  "m",
+			match:   types.Matcher{"makeSlices(__x)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }},
+			replace: types.Replacer{"makeSlices(__x)": "v := __x"},
 		},
-		Replace: func() types.Replacer { return types.Replacer{"makeSlices(__x)": "v := __x"} },
 	}}
 	pl := items(funcs)
 	RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
@@ -402,12 +428,12 @@ func TestRunUnparsableReplace(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n"
 	file, fset := parse(t, src)
 	funcs := []loader.PluginFuncs{{
-		Name:   "badreplace",
-		Report: func() string { return "m" },
-		Match: func() types.Matcher {
-			return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}
+		Name: "badreplace",
+		Plugin: replacer{
+			report:  "m",
+			match:   types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }},
+			replace: types.Replacer{"t.Equal(__a, __b)": "func ("},
 		},
-		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "func ("} },
 	}}
 	pl := items(funcs)
 	places := RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
@@ -447,12 +473,12 @@ func TestSubstituteAndParseError(t *testing.T) {
 // top-level declaration pattern (used for decl-level rewrites).
 func declFuncs() []loader.PluginFuncs {
 	return []loader.PluginFuncs{{
-		Name:   "decl",
-		Report: func() string { return "decl issue" },
-		Match: func() types.Matcher {
-			return types.Matcher{`func Match() Matcher { return Matcher{__a: nil} }`: func(v types.Vars, _ *ast.BlockStmt) bool { return true }}
+		Name: "decl",
+		Plugin: replacer{
+			report:  "decl issue",
+			match:   types.Matcher{`func Match() Matcher { return Matcher{__a: nil} }`: func(v types.Vars, _ *ast.BlockStmt) bool { return true }},
+			replace: types.Replacer{`func Match() Matcher { return Matcher{__a: nil} }`: ""},
 		},
-		Replace: func() types.Replacer { return types.Replacer{`func Match() Matcher { return Matcher{__a: nil} }`: ""} },
 	}}
 }
 
@@ -474,12 +500,12 @@ func TestRunDeclRewritesGuardRejects(t *testing.T) {
 	src := "package p\n\nfunc Match() Matcher { return Matcher{\"x\": nil} }\n"
 	file, fset := parse(t, src)
 	funcs := []loader.PluginFuncs{{
-		Name:   "decl",
-		Report: func() string { return "decl issue" },
-		Match: func() types.Matcher {
-			return types.Matcher{`func Match() Matcher { return Matcher{__a: nil} }`: func(v types.Vars, _ *ast.BlockStmt) bool { return false }}
+		Name: "decl",
+		Plugin: replacer{
+			report:  "decl issue",
+			match:   types.Matcher{`func Match() Matcher { return Matcher{__a: nil} }`: func(v types.Vars, _ *ast.BlockStmt) bool { return false }},
+			replace: types.Replacer{`func Match() Matcher { return Matcher{__a: nil} }`: ""},
 		},
-		Replace: func() types.Replacer { return types.Replacer{`func Match() Matcher { return Matcher{__a: nil} }`: ""} },
 	}}
 	pl := items(funcs)
 	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
@@ -560,12 +586,12 @@ func TestRunMatchOnlyFixNoRewrite(t *testing.T) {
 	src := "package p\n\nfunc f() { t.Equal(a, b) }\n"
 	file, fset := parse(t, src)
 	funcs := []loader.PluginFuncs{{
-		Name:   "report-only",
-		Report: func() string { return "m" },
-		Match: func() types.Matcher {
-			return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}
+		Name: "report-only",
+		Plugin: replacer{
+			report:  "m",
+			match:   types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }},
+			replace: types.Replacer{},
 		},
-		Replace: func() types.Replacer { return types.Replacer{} },
 	}}
 	pl := items(funcs)
 	places := RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
@@ -588,10 +614,12 @@ func TestRunReplaceOnlyRewrites(t *testing.T) {
 	src := "package p\n\nfunc f() { t.Equal(a, b) }\n"
 	file, fset := parse(t, src)
 	funcs := []loader.PluginFuncs{{
-		Name:    "replace-only",
-		Report:  func() string { return "m" },
-		Match:   func() types.Matcher { return types.Matcher{} },
-		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"} },
+		Name: "replace-only",
+		Plugin: replacer{
+			report:  "m",
+			match:   types.Matcher{},
+			replace: types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"},
+		},
 	}}
 	pl := items(funcs)
 	places := RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
@@ -616,19 +644,17 @@ func TestRunPassesBlockToGuard(t *testing.T) {
 	guardCalled := false
 	sawBlock := false
 	pf := loader.PluginFuncs{
-		Name:   "block-guard",
-		Report: func() string { return "found" },
-		Match: func() types.Matcher {
-			return types.Matcher{
+		Name: "block-guard",
+		Plugin: replacer{
+			report: "found",
+			match: types.Matcher{
 				"t.Equal(__a, __b)": func(vars types.Vars, block *ast.BlockStmt) bool {
 					guardCalled = true
 					sawBlock = block != nil
 					return true
 				},
-			}
-		},
-		Replace: func() types.Replacer {
-			return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}
+			},
+			replace: types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"},
 		},
 	}
 	RunPlugins(RunParams{File: file, Fset: fset, Plugins: items([]loader.PluginFuncs{pf})})

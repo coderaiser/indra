@@ -19,17 +19,23 @@ func (traverserLike) Report() string                         { return "t" }
 func (traverserLike) Traverse() Traverser                    { return nil }
 func (traverserLike) Fix(node ast.Node, opts map[string]any) {}
 
-// TestNestedHoldsSubPlugins verifies Nested can hold any plugin value.
-func TestNestedHoldsSubPlugins(t *testing.T) {
-	n := Nested{
-		"replacer":  replacerLike{},
-		"traverser": traverserLike{},
+// TestRuleDefaults verifies the Rule struct carries a plugin and its
+// default-disabled flag.
+func TestRuleDefaults(t *testing.T) {
+	r := Rule{Name: "remove-skip", Plugin: replacerLike{}}
+	if r.Name != "remove-skip" || r.Disabled {
+		t.Fatalf("unexpected Rule defaults: %+v", r)
 	}
-	if len(n) != 2 {
-		t.Fatalf("expected 2 sub plugins, got %d", len(n))
+	if _, ok := r.Plugin.(replacerLike); !ok {
+		t.Fatalf("expected replacer plugin, got %T", r.Plugin)
 	}
-	if _, ok := n["replacer"]; !ok {
-		t.Fatal("expected replacer sub plugin")
+}
+
+// TestRuleDisabled verifies a Rule can be disabled by default.
+func TestRuleDisabled(t *testing.T) {
+	r := Rule{Name: "meta", Plugin: traverserLike{}, Disabled: true}
+	if !r.Disabled {
+		t.Fatal("expected Rule to be disabled by default")
 	}
 }
 
@@ -109,30 +115,5 @@ func TestTraverserShape(t *testing.T) {
 	}
 	if _, ok := tr["*ast.File"]; !ok {
 		t.Fatal("expected *ast.File key in traverser")
-	}
-}
-
-// TestOff marks a plugin disabled by default.
-func TestOff(t *testing.T) {
-	e := Off("x")
-	if e.Path != "x" || e.Enabled {
-		t.Fatalf("unexpected PluginEntry: %+v", e)
-	}
-}
-
-// TestNestedStringEnabled treats a plain string in Nested as enabled.
-func TestNestedStringEnabled(t *testing.T) {
-	n := Nested{"rule": "coderaiser/indra/pkg"}
-	entry, ok := n["rule"].(string)
-	if !ok || entry == "" {
-		t.Fatalf("expected string value in Nested, got %#v", n["rule"])
-	}
-}
-
-// TestPluginEntryFields verifies PluginEntry carries Path and Enabled.
-func TestPluginEntryFields(t *testing.T) {
-	e := PluginEntry{Path: "p", Enabled: true}
-	if e.Path != "p" || !e.Enabled {
-		t.Fatal("unexpected PluginEntry fields")
 	}
 }

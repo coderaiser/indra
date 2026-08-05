@@ -1,13 +1,13 @@
 package convert_ok_to_not_ok_test
 
 import (
-	"runtime"
 	"testing"
 
+	"coderaiser/indra/internal/plugin_tape/convert_ok_to_not_ok"
 	indratest "coderaiser/indra/internal/test"
 )
 
-var Test = indratest.CreateTest(runtime.Caller(0))
+var Test = indratest.For("convert-ok-to-not-ok", convert_ok_to_not_ok.Plugin{})
 
 func TestConvertOkToNotOk(t *testing.T) {
 	Test(t, "convert-ok-to-not-ok: report Ok(err == nil)", func(t *indratest.T) {

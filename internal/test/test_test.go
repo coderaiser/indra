@@ -44,9 +44,20 @@ func f() {
 }
 `
 
+// synthR is a field-carrying replacer for harness tests.
+type synthR struct {
+	report  string
+	match   types.Matcher
+	replace types.Replacer
+}
+
+func (s synthR) Report() string          { return s.report }
+func (s synthR) Match() types.Matcher    { return s.match }
+func (s synthR) Replace() types.Replacer { return s.replace }
+
 // items builds runnable PluginItems from synthetic plugin funcs.
 func items(report string, match types.Matcher, replace types.Replacer) []runner.PluginItem {
-	pf := loader.PluginFuncs{Name: "synth", Report: func() string { return report }, Match: func() types.Matcher { return match }, Replace: func() types.Replacer { return replace }}
+	pf := loader.PluginFuncs{Name: "synth", Plugin: synthR{report: report, match: match, replace: replace}}
 	kinds := loader.Load([]loader.PluginFuncs{pf}, loader.Config{})
 	return []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}
 }

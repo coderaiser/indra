@@ -1,10 +1,14 @@
 package plugin_indra
 
-import . "coderaiser/indra/types"
+import (
+	"coderaiser/indra/internal/plugin_indra/remove_useless_match"
+	"coderaiser/indra/types"
+)
 
-// Rules groups indra meta-rules.
-// All rules are Off by default.
-// Enable in .indra.toml: "indra" = "on"
-var Rules = Nested{
-	"remove-useless-match": Off("coderaiser/indra/internal/plugin_indra/remove_useless_match"),
+// Rules returns the indra meta-rules. All rules are Disabled by default;
+// enable them in .indra.toml: "indra" = "on".
+func Rules() []types.Rule {
+	return []types.Rule{
+		{Name: "remove-useless-match", Plugin: remove_useless_match.Plugin{}, Disabled: true},
+	}
 }

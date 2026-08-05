@@ -12,15 +12,19 @@ import (
 	"coderaiser/indra/types"
 )
 
+// eqReplacer is a synthetic replacer matching Equal calls.
+type eqReplacer struct{}
+
+func (eqReplacer) Report() string { return "use DeepEqual" }
+func (eqReplacer) Match() types.Matcher {
+	return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}
+}
+func (eqReplacer) Replace() types.Replacer {
+	return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}
+}
+
 func pluginItems() []runner.PluginItem {
-	kinds := loader.Load([]loader.PluginFuncs{{
-		Name:   "eq",
-		Report: func() string { return "use DeepEqual" },
-		Match: func() types.Matcher {
-			return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}
-		},
-		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"} },
-	}}, loader.Config{})
+	kinds := loader.Load([]loader.PluginFuncs{{Name: "eq", Plugin: eqReplacer{}}}, loader.Config{})
 	return []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}
 }
 

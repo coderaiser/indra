@@ -1,13 +1,13 @@
 package remove_unused_import_test
 
 import (
-	"runtime"
 	"testing"
 
+	"coderaiser/indra/internal/remove_unused_import"
 	indratest "coderaiser/indra/internal/test"
 )
 
-var Test = indratest.CreateTest(runtime.Caller(0))
+var Test = indratest.For("remove-unused-import", remove_unused_import.Plugin{})
 
 func TestRemoveUnusedImport(t *testing.T) {
 	Test(t, "remove-unused-import: report unused import", func(t *indratest.T) {

@@ -39,3 +39,10 @@ func Fix(node ast.Node, _ map[string]any) {
 	spec.Name = &ast.Ident{Name: ".", NamePos: spec.Name.NamePos}
 	replaceSelectors(reflect.ValueOf(file), alias)
 }
+
+// Plugin wraps the rule for the registry: an AST-walking plugin.
+type Plugin struct{}
+
+func (Plugin) Report(node ast.Node) string            { return Report(node) }
+func (Plugin) Traverse() Traverser                    { return Traverse() }
+func (Plugin) Fix(node ast.Node, opts map[string]any) { Fix(node, opts) }

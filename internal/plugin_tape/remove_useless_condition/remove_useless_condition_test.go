@@ -1,13 +1,13 @@
 package remove_useless_condition_test
 
 import (
-	"runtime"
 	"testing"
 
+	"coderaiser/indra/internal/plugin_tape/remove_useless_condition"
 	indratest "coderaiser/indra/internal/test"
 )
 
-var Test = indratest.CreateTest(runtime.Caller(0))
+var Test = indratest.For("remove-useless-condition", remove_useless_condition.Plugin{})
 
 func TestRemoveUselessCondition(t *testing.T) {
 	Test(t, "remove-useless-condition: report Ok(err != nil)", func(t *indratest.T) {
