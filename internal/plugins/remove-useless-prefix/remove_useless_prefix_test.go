@@ -44,4 +44,14 @@ func TestRemoveUselessPrefix(t *testing.T) {
 		t.NoTransform("local-collision")
 		t.End()
 	})
+
+	Test(t, "remove-useless-prefix: no report when member name used as bare ident", func(t *indratest.T) {
+		t.NoReport("cross-file-t")
+		t.End()
+	})
+
+	Test(t, "remove-useless-prefix: no transform when member name used as bare ident", func(t *indratest.T) {
+		t.NoTransform("cross-file-t")
+		t.End()
+	})
 }

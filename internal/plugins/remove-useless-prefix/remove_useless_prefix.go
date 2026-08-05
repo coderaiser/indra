@@ -58,12 +58,34 @@ func Fix(node ast.Node, _ map[string]any) {
 	replaceSelectors(reflect.ValueOf(file), alias)
 }
 
+// usedBareNames returns all bare *ast.Ident names that appear outside any
+// selector expression — i.e. neither as a qualifier (X) nor as a member (Sel)
+// of a SelectorExpr. These are names that would clash if a prefix were removed
+// and a same-named selector member became bare: removing the prefix turns an
+// alias.X selector into a bare X, which collides with any pre-existing bare X.
+func usedBareNames(file *ast.File) map[string]bool {
+	names := make(map[string]bool)
+	ast.Inspect(file, func(n ast.Node) bool {
+		if _, ok := n.(*ast.SelectorExpr); ok {
+			return false // skip the whole selector (X qualifier and Sel member)
+		}
+		if id, ok := n.(*ast.Ident); ok {
+			names[id.Name] = true
+		}
+		return true
+	})
+	return names
+}
+
 // hasLocalCollision reports whether removing the alias prefix from any
 // alias.X selector would introduce an identifier that collides with a
-// locally declared (package-level) name. Skipping such files avoids emitting
-// broken code where the unqualified name would now resolve to a local decl.
+// locally declared (package-level) name or with a name already used as a bare
+// identifier elsewhere. Skipping such files avoids emitting broken code where
+// the unqualified name would now resolve to a local decl or clash with an
+// existing bare usage.
 func hasLocalCollision(file *ast.File, alias string) bool {
 	declared := declaredNames(file)
+	usedBare := usedBareNames(file)
 	collision := false
 	ast.Inspect(file, func(n ast.Node) bool {
 		sel, ok := n.(*ast.SelectorExpr)
@@ -73,7 +95,7 @@ func hasLocalCollision(file *ast.File, alias string) bool {
 		if !selMatchesAlias(sel, alias) {
 			return true
 		}
-		if declared[sel.Sel.Name] {
+		if declared[sel.Sel.Name] || usedBare[sel.Sel.Name] {
 			collision = true
 			return false
 		}

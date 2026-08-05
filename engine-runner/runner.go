@@ -133,6 +133,9 @@ func runOnce(p RunParams) []types.Place {
 				if vars == nil {
 					continue
 				}
+				// "$block" is a reserved key injected by the runner so guard
+				// functions can inspect the containing block for prior decls.
+				vars["$block"] = block
 				if guard, ok := matcher[pattern]; ok && !guard(vars) {
 					continue
 				}

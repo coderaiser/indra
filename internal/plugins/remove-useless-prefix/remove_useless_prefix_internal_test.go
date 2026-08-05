@@ -98,6 +98,42 @@ func TestMaybeReplaceSelNil(t *testing.T) {
 	})
 }
 
+func TestUsedBareNamesSkipsQualifier(t *testing.T) {
+	tape.Test(t, "usedBareNames: qualifier X is not collected", func(t *tape.T) {
+		file := parseFile(t, "package p\nfunc f() { _ = pkg.Method }\n")
+		names := usedBareNames(file)
+		t.Ok(!names["pkg"])
+		t.End()
+	})
+}
+
+func TestUsedBareNamesSkipsMember(t *testing.T) {
+	tape.Test(t, "usedBareNames: selector member Sel is not collected", func(t *tape.T) {
+		file := parseFile(t, "package p\nimport z \"github.com/coderaiser/go-tape\"\nfunc f() { z.Test() }\n")
+		names := usedBareNames(file)
+		t.Ok(!names["Test"])
+		t.End()
+	})
+}
+
+func TestUsedBareNamesBareIdent(t *testing.T) {
+	tape.Test(t, "usedBareNames: bare ident outside selector is collected", func(t *tape.T) {
+		file := parseFile(t, "package p\nfunc f() { _ = T{} }\n")
+		names := usedBareNames(file)
+		t.Ok(names["T"])
+		t.End()
+	})
+}
+
+func TestHasLocalCollisionBareIdent(t *testing.T) {
+	tape.Test(t, "hasLocalCollision: bare ident matching selector member triggers collision", func(t *tape.T) {
+		// File uses z.T and also has bare T usage → collision
+		file := parseFile(t, "package p\nimport z \"github.com/coderaiser/go-tape\"\nfunc f(_ z.T) {}\nfunc g(_ T) {}\n")
+		t.Ok(hasLocalCollision(file, "z"))
+		t.End()
+	})
+}
+
 // TestReplaceSelectorsScopeGuard covers pruning the ast.Scope field (cycles).
 func TestReplaceSelectorsScopeGuard(t *testing.T) {
 	tape.Test(t, "replaceSelectors: ast.Scope value is pruned", func(t *tape.T) {
@@ -228,4 +264,3 @@ func TestDeclaredNamesValueSpec(t *testing.T) {
 		t.End()
 	})
 }
-

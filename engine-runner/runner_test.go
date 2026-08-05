@@ -35,9 +35,11 @@ func items(plugins []loader.PluginFuncs) []PluginItem {
 
 func replacerItem() []loader.PluginFuncs {
 	return []loader.PluginFuncs{{
-		Name:    "eq",
-		Report:  func() string { return "use DeepEqual" },
-		Match:   func() types.Matcher { return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }} },
+		Name:   "eq",
+		Report: func() string { return "use DeepEqual" },
+		Match: func() types.Matcher {
+			return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}
+		},
 		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"} },
 	}}
 }
@@ -245,7 +247,6 @@ func TestRunTraverserBlockFix(t *testing.T) {
 	})
 }
 
-
 func TestRunTraverserMsgOverride(t *testing.T) {
 	src := "package p\n\nfunc f() {}\n"
 	file, fset := parse(t, src)
@@ -331,7 +332,9 @@ func TestRunRenderBodySlice(t *testing.T) {
 	funcs := []loader.PluginFuncs{{
 		Name:   "body",
 		Report: func() string { return "m" },
-		Match:  func() types.Matcher { return types.Matcher{"Test(__a, __b, func(__r *T) { __body })": func(v types.Vars) bool { return true }} },
+		Match: func() types.Matcher {
+			return types.Matcher{"Test(__a, __b, func(__r *T) { __body })": func(v types.Vars) bool { return true }}
+		},
 		Replace: func() types.Replacer {
 			return types.Replacer{"Test(__a, __b, func(__r *T) { __body })": "Test(__a, __b, func(__r *T) {\n__body\n__r.End()\n})"}
 		},
@@ -374,14 +377,15 @@ func TestApplyRewritesMultipleInBlock(t *testing.T) {
 	})
 }
 
-
 func TestRunUnparseableReplace(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n"
 	file, fset := parse(t, src)
 	funcs := []loader.PluginFuncs{{
-		Name:    "badreplace",
-		Report:  func() string { return "m" },
-		Match:   func() types.Matcher { return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }} },
+		Name:   "badreplace",
+		Report: func() string { return "m" },
+		Match: func() types.Matcher {
+			return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}
+		},
 		Replace: func() types.Replacer { return types.Replacer{"t.Equal(__a, __b)": "func ("} },
 	}}
 	pl := items(funcs)
@@ -419,9 +423,11 @@ func TestSubstituteAndParseError(t *testing.T) {
 // top-level declaration pattern (used for decl-level rewrites).
 func declFuncs() []loader.PluginFuncs {
 	return []loader.PluginFuncs{{
-		Name:    "decl",
-		Report:  func() string { return "decl issue" },
-		Match:   func() types.Matcher { return types.Matcher{`func Match() Matcher { return Matcher{__a: nil} }`: func(v types.Vars) bool { return true }} },
+		Name:   "decl",
+		Report: func() string { return "decl issue" },
+		Match: func() types.Matcher {
+			return types.Matcher{`func Match() Matcher { return Matcher{__a: nil} }`: func(v types.Vars) bool { return true }}
+		},
 		Replace: func() types.Replacer { return types.Replacer{`func Match() Matcher { return Matcher{__a: nil} }`: ""} },
 	}}
 }
@@ -516,14 +522,15 @@ func TestApplyDeclRewritesRemovesMultiple(t *testing.T) {
 	})
 }
 
-
 func TestRunMatchOnlyFixNoRewrite(t *testing.T) {
 	src := "package p\n\nfunc f() { t.Equal(a, b) }\n"
 	file, fset := parse(t, src)
 	funcs := []loader.PluginFuncs{{
-		Name:    "report-only",
-		Report:  func() string { return "m" },
-		Match:   func() types.Matcher { return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }} },
+		Name:   "report-only",
+		Report: func() string { return "m" },
+		Match: func() types.Matcher {
+			return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}
+		},
 		Replace: func() types.Replacer { return types.Replacer{} },
 	}}
 	pl := items(funcs)
@@ -565,3 +572,31 @@ func TestRunReplaceOnlyRewrites(t *testing.T) {
 	})
 }
 
+func TestRunInjectsBlockGuard(t *testing.T) {
+	src := "package p\nfunc f() { t.Equal(1, 2) }\n"
+	file, fset := parse(t, src)
+	guardCalled := false
+	sawBlock := false
+	pf := loader.PluginFuncs{
+		Name:   "block-guard",
+		Report: func() string { return "found" },
+		Match: func() types.Matcher {
+			return types.Matcher{
+				"t.Equal(__a, __b)": func(vars types.Vars) bool {
+					guardCalled = true
+					_, sawBlock = vars["$block"].(*ast.BlockStmt)
+					return true
+				},
+			}
+		},
+		Replace: func() types.Replacer {
+			return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}
+		},
+	}
+	RunPlugins(RunParams{File: file, Fset: fset, Plugins: items([]loader.PluginFuncs{pf})})
+
+	tape.Test(t, "runner: $block injected into vars before guard", func(t *tape.T) {
+		t.Ok(guardCalled && sawBlock)
+		t.End()
+	})
+}

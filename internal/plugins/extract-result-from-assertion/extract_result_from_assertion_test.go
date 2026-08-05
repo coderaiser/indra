@@ -39,4 +39,14 @@ func TestExtractResultFromAssertion(t *testing.T) {
 		t.NoTransform("extracted")
 		t.End()
 	})
+
+	Test(t, "extract-result-from-assertion: no report when result already declared", func(t *indratest.T) {
+		t.NoReport("result-declared")
+		t.End()
+	})
+
+	Test(t, "extract-result-from-assertion: no transform when result already declared", func(t *indratest.T) {
+		t.NoTransform("result-declared")
+		t.End()
+	})
 }
