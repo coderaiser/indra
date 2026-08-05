@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"slices"
 
 	"github.com/BurntSushi/toml"
 
@@ -116,7 +117,7 @@ func Indra(args []string, w io.Writer) error {
 	}
 
 	cfg, _ := config.Load(".")
-	ignore := append(config.DefaultIgnorePatterns, cfg.Ignore.Patterns...)
+	ignore := append(slices.Clone(config.DefaultIgnorePatterns), cfg.Ignore.Patterns...)
 	formatter_progress_bar.Configure(formatter_progress_bar.Config{
 		Color:    cfg.Progress.Color,
 		MinCount: cfg.Progress.MinCount,

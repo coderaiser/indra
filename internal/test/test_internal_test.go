@@ -42,26 +42,6 @@ func f() {
 
 const badSrc = "package p\nfunc (\n"
 
-// ── helper plugins ───────────────────────────────────────────────────────────
-
-type reportPlugin struct{}
-
-func (reportPlugin) Report() string { return "found it" }
-func (reportPlugin) Match() types.Matcher {
-	return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}
-}
-func (reportPlugin) Replace() types.Replacer { return nil }
-
-type replacePlugin struct{}
-
-func (replacePlugin) Report() string { return "found it" }
-func (replacePlugin) Match() types.Matcher {
-	return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}
-}
-func (replacePlugin) Replace() types.Replacer {
-	return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}
-}
-
 // items builds runnable PluginItems from synthetic plugin funcs.
 func items(report string, match types.Matcher, replace types.Replacer) []runner.PluginItem {
 	pf := loader.PluginFuncs{Name: "synth", Report: func() string { return report }, Match: func() types.Matcher { return match }, Replace: func() types.Replacer { return replace }}

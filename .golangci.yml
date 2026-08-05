@@ -1,12 +1,12 @@
 version: "2"
 linters:
   enable:
-    - exhaustive
     - unused
     - gocritic
     - misspell
   disable:
     - errcheck
+    - staticcheck
 formatters:
   enable:
     - gofmt

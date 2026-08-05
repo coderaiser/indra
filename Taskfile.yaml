@@ -23,12 +23,13 @@ tasks:
   lint:
     deps: [build]
     cmds:
-      - go run cmd/indra/main.go .
+      - ./indra .
+      - golangci-lint run
 
   fix:lint:
     deps: [build]
     cmds:
-      - go run cmd/indra/main.go --fix .
+      - ./indra --fix .
       - golangci-lint run --fix
 
   clean:
