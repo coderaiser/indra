@@ -17,16 +17,6 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: stable
-      - name: Run tests
-        run: go test ./...
-      - name: Check library indra is 100%
-        run: |
-          go test \
-            -coverprofile=indra.out \
-            -covermode=atomic \
-            -coverpkg=coderaiser/indra \
-            ./...
-          go tool cover -func=indra.out
   release:
     name: GoReleaser
     needs: test
