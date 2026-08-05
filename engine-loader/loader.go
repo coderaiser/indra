@@ -136,11 +136,11 @@ func isEnabled(c candidate, cfg Config) bool {
 	return c.enabled
 }
 
-func (p TraverserPlugin) Name() string                            { return p.rule }
-func (TraverserPlugin) pluginKind()                               { _ = "traverser" }
-func (p TraverserPlugin) Report(node ast.Node) string             { return p.report(node) }
-func (p TraverserPlugin) Traverse() types.Traverser               { return p.traverse() }
-func (p TraverserPlugin) Fix(node ast.Node, opts map[string]any)  { p.fix(node, opts) }
+func (p TraverserPlugin) Name() string                           { return p.rule }
+func (TraverserPlugin) pluginKind()                              { _ = "traverser" }
+func (p TraverserPlugin) Report(node ast.Node) string            { return p.report(node) }
+func (p TraverserPlugin) Traverse() types.Traverser              { return p.traverse() }
+func (p TraverserPlugin) Fix(node ast.Node, opts map[string]any) { p.fix(node, opts) }
 
 // resolveKind detects a plugin's kind from its func fields, naming it rule,
 // and panics on a malformed shape at init time.

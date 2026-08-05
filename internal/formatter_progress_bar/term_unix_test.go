@@ -14,7 +14,9 @@ func TestTermWidthIoctlCol(t *testing.T) {
 		old := winsizeReader
 		winsizeReader = func() (row, col uint16) { return 24, 160 }
 		defer func() { winsizeReader = old }()
-		t.Equal(TermWidth(), 160)
+		result := TermWidth()
+		t.Equal(result, 160)
+
 		t.End()
 	})
 
@@ -23,7 +25,9 @@ func TestTermWidthIoctlCol(t *testing.T) {
 		old := winsizeReader
 		winsizeReader = func() (row, col uint16) { return 24, 0 }
 		defer func() { winsizeReader = old }()
-		t.Equal(TermWidth(), 80)
+		result := TermWidth()
+		t.Equal(result, 80)
+
 		t.End()
 	})
 

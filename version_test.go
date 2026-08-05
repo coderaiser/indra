@@ -6,23 +6,23 @@ import (
 
 	indra "coderaiser/indra"
 
-	tape "github.com/coderaiser/go-tape"
+	. "github.com/coderaiser/go-tape"
 )
 
 func TestVersionFromJSON(t *testing.T) {
-	tape.Test(t, "version: returns version string", func(t *tape.T) {
+	Test(t, "version: returns version string", func(t *T) {
 		result := indra.VersionFromJSON([]byte("{\"version\":\"1.2.3\"}"))
 		t.Equal(result, "1.2.3")
 		t.End()
 	})
 
-	tape.Test(t, "version: invalid JSON returns unknown", func(t *tape.T) {
+	Test(t, "version: invalid JSON returns unknown", func(t *T) {
 		result := indra.VersionFromJSON([]byte("{invalid"))
 		t.Equal(result, "unknown")
 		t.End()
 	})
 
-	tape.Test(t, "version: empty version returns unknown", func(t *tape.T) {
+	Test(t, "version: empty version returns unknown", func(t *T) {
 		result := indra.VersionFromJSON([]byte("{\"version\":\"\"}"))
 		t.Equal(result, "unknown")
 		t.End()
@@ -30,20 +30,20 @@ func TestVersionFromJSON(t *testing.T) {
 }
 
 func TestVersionLine(t *testing.T) {
-	tape.Test(t, "version: VersionLine contains binary name", func(t *tape.T) {
+	Test(t, "version: VersionLine contains binary name", func(t *T) {
 		t.Match(indra.VersionLine(), "indra ")
 		t.End()
 	})
 }
 
 func TestVersion(t *testing.T) {
-	tape.Test(t, "version: reads package.json at runtime", func(t *tape.T) {
+	Test(t, "version: reads package.json at runtime", func(t *T) {
 		semver := regexp.MustCompile(`^\d+\.\d+\.\d+$`)
 		t.Ok(semver.MatchString(indra.Version()))
 		t.End()
 	})
 
-	tape.Test(t, "version: missing package.json returns unknown", func(t *tape.T) {
+	Test(t, "version: missing package.json returns unknown", func(t *T) {
 		t.TB().Chdir(t.TB().TempDir())
 		result := indra.Version()
 		t.Equal(result, "unknown")

@@ -33,4 +33,3 @@ func TermWidth() int {
 	}
 	return 80
 }
-

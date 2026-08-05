@@ -285,7 +285,6 @@ func TestMultiReturnPanics(t *testing.T) {
 	Load([]PluginFuncs{bad}, Config{})
 }
 
-
 // TestResolveKindReplacerWithoutMatch covers a replacer whose Match is nil.
 func TestResolveKindReplacerWithoutMatch(t *testing.T) {
 	pf := PluginFuncs{
@@ -420,4 +419,3 @@ func TestMatchWrongReturnPanics(t *testing.T) {
 	}
 	Load([]PluginFuncs{bad}, Config{})
 }
-

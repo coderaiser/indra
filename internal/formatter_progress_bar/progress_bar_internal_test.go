@@ -4,11 +4,11 @@ import (
 	"strings"
 	"testing"
 
-	tape "github.com/coderaiser/go-tape"
+	. "github.com/coderaiser/go-tape"
 )
 
 func TestConfigureColor(t *testing.T) {
-	tape.Test(t, "Configure: sets color used by RenderBar", func(t *tape.T) {
+	Test(t, "Configure: sets color used by RenderBar", func(t *T) {
 		cfg = Config{Color: defaultColor, MinCount: 0}
 		Configure(Config{Color: "#ff0000", MinCount: 0})
 		t.Ok(strings.Contains(RenderBar(1, 1, cfg.Color), "255;0;0"))
@@ -17,7 +17,7 @@ func TestConfigureColor(t *testing.T) {
 }
 
 func TestConfigureEmptyColorKeepsDefault(t *testing.T) {
-	tape.Test(t, "Configure: empty color keeps defaultColor", func(t *tape.T) {
+	Test(t, "Configure: empty color keeps defaultColor", func(t *T) {
 		cfg = Config{Color: defaultColor, MinCount: 0}
 		Configure(Config{Color: "", MinCount: 0})
 		t.Equal(cfg.Color, defaultColor)
@@ -26,39 +26,47 @@ func TestConfigureEmptyColorKeepsDefault(t *testing.T) {
 }
 
 func TestConfigureMinBelowThreshold(t *testing.T) {
-	tape.Test(t, "Configure: MinCount below threshold hides bar", func(t *tape.T) {
+	Test(t, "Configure: MinCount below threshold hides bar", func(t *T) {
 		cfg = Config{Color: defaultColor, MinCount: 0}
 		Configure(Config{Color: defaultColor, MinCount: 5})
-		t.Equal(ShouldShow(4), false)
+		result := ShouldShow(4)
+		t.Equal(result, false)
+
 		t.End()
 	})
 }
 
 func TestConfigureMinAtThreshold(t *testing.T) {
-	tape.Test(t, "Configure: MinCount at threshold shows bar", func(t *tape.T) {
+	Test(t, "Configure: MinCount at threshold shows bar", func(t *T) {
 		cfg = Config{Color: defaultColor, MinCount: 0}
 		Configure(Config{Color: defaultColor, MinCount: 5})
-		t.Equal(ShouldShow(5), true)
+		result := ShouldShow(5)
+		t.Equal(result, true)
+
 		t.End()
 	})
 }
 
 func TestShouldShowEnv1Overrides(t *testing.T) {
-	tape.Test(t, "ShouldShow: INDRA_PROGRESS_BAR=1 overrides MinCount", func(t *tape.T) {
+	Test(t, "ShouldShow: INDRA_PROGRESS_BAR=1 overrides MinCount", func(t *T) {
 		cfg = Config{Color: defaultColor, MinCount: 0}
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
 		Configure(Config{Color: defaultColor, MinCount: 999})
-		t.Equal(ShouldShow(1), true)
+		result := ShouldShow(1)
+		t.Equal(result, true)
+
 		t.End()
 	})
 }
 
 func TestShouldShowEnv0Overrides(t *testing.T) {
-	tape.Test(t, "ShouldShow: INDRA_PROGRESS_BAR=0 overrides MinCount", func(t *tape.T) {
+	Test(t, "ShouldShow: INDRA_PROGRESS_BAR=0 overrides MinCount", func(t *T) {
 		cfg = Config{Color: defaultColor, MinCount: 0}
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
 		Configure(Config{Color: defaultColor, MinCount: 0})
-		t.Equal(ShouldShow(999), false)
+		result := ShouldShow(999)
+		t.Equal(result, false)
+
 		t.End()
 	})
 }

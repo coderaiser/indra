@@ -16,7 +16,9 @@ func TestChoose(t *testing.T) {
 		t.TB().Setenv("CI", "true")
 		t.TB().Setenv("INDRA_FORMATTER", "")
 		f := formatter.Choose()
-		t.Equal(fmt.Sprintf("%p", f), fmt.Sprintf("%p", dump.Format))
+		result := fmt.Sprintf("%p", f)
+		t.Equal(result, fmt.Sprintf("%p", dump.Format))
+
 		t.End()
 	})
 
@@ -24,7 +26,9 @@ func TestChoose(t *testing.T) {
 		t.TB().Setenv("CI", "")
 		t.TB().Setenv("INDRA_FORMATTER", "dump")
 		f := formatter.Choose()
-		t.Equal(fmt.Sprintf("%p", f), fmt.Sprintf("%p", dump.Format))
+		result := fmt.Sprintf("%p", f)
+		t.Equal(result, fmt.Sprintf("%p", dump.Format))
+
 		t.End()
 	})
 
@@ -32,7 +36,9 @@ func TestChoose(t *testing.T) {
 		t.TB().Setenv("CI", "")
 		t.TB().Setenv("INDRA_FORMATTER", "json-lines")
 		f := formatter.Choose()
-		t.Equal(fmt.Sprintf("%p", f), fmt.Sprintf("%p", jsonlines.Format))
+		result := fmt.Sprintf("%p", f)
+		t.Equal(result, fmt.Sprintf("%p", jsonlines.Format))
+
 		t.End()
 	})
 
@@ -40,7 +46,9 @@ func TestChoose(t *testing.T) {
 		t.TB().Setenv("CI", "")
 		t.TB().Setenv("INDRA_FORMATTER", "")
 		f := formatter.Choose()
-		t.Equal(fmt.Sprintf("%p", f), fmt.Sprintf("%p", pb.Format))
+		result := fmt.Sprintf("%p", f)
+		t.Equal(result, fmt.Sprintf("%p", pb.Format))
+
 		t.End()
 	})
 }

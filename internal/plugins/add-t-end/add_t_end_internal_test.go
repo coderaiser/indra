@@ -6,43 +6,55 @@ import (
 
 	"coderaiser/indra/compare"
 	. "coderaiser/indra/types"
-	tape "github.com/coderaiser/go-tape"
+	. "github.com/coderaiser/go-tape"
 )
 
 func TestStmtsContainEnd(t *testing.T) {
-	tape.Test(t, "stmtsContainEnd: nil list returns false", func(t *tape.T) {
-		t.Equal(stmtsContainEnd(nil), false)
+	Test(t, "stmtsContainEnd: nil list returns false", func(t *T) {
+		result := stmtsContainEnd(nil)
+		t.Equal(result, false)
+
 		t.End()
 	})
 
-	tape.Test(t, "stmtsContainEnd: End selector returns true", func(t *tape.T) {
+	Test(t, "stmtsContainEnd: End selector returns true", func(t *T) {
 		stmts := []ast.Stmt{&ast.ExprStmt{X: &ast.CallExpr{
 			Fun: &ast.SelectorExpr{X: ast.NewIdent("t"), Sel: ast.NewIdent("End")},
 		}}}
-		t.Equal(stmtsContainEnd(stmts), true)
+		result := stmtsContainEnd(stmts)
+		t.Equal(result, true)
+
 		t.End()
 	})
 
-	tape.Test(t, "stmtsContainEnd: AssignStmt returns false", func(t *tape.T) {
-		t.Equal(stmtsContainEnd([]ast.Stmt{&ast.AssignStmt{}}), false)
+	Test(t, "stmtsContainEnd: AssignStmt returns false", func(t *T) {
+		result := stmtsContainEnd([]ast.Stmt{&ast.AssignStmt{}})
+		t.Equal(result, false)
+
 		t.End()
 	})
 
-	tape.Test(t, "stmtsContainEnd: ExprStmt with non-CallExpr returns false", func(t *tape.T) {
-		t.Equal(stmtsContainEnd([]ast.Stmt{&ast.ExprStmt{X: ast.NewIdent("foo")}}), false)
+	Test(t, "stmtsContainEnd: ExprStmt with non-CallExpr returns false", func(t *T) {
+		result := stmtsContainEnd([]ast.Stmt{&ast.ExprStmt{X: ast.NewIdent("foo")}})
+		t.Equal(result, false)
+
 		t.End()
 	})
 
-	tape.Test(t, "stmtsContainEnd: CallExpr with non-SelectorExpr returns false", func(t *tape.T) {
-		t.Equal(stmtsContainEnd([]ast.Stmt{&ast.ExprStmt{X: &ast.CallExpr{Fun: ast.NewIdent("foo")}}}), false)
+	Test(t, "stmtsContainEnd: CallExpr with non-SelectorExpr returns false", func(t *T) {
+		result := stmtsContainEnd([]ast.Stmt{&ast.ExprStmt{X: &ast.CallExpr{Fun: ast.NewIdent("foo")}}})
+		t.Equal(result, false)
+
 		t.End()
 	})
 
-	tape.Test(t, "stmtsContainEnd: Equal selector returns false", func(t *tape.T) {
+	Test(t, "stmtsContainEnd: Equal selector returns false", func(t *T) {
 		stmts := []ast.Stmt{&ast.ExprStmt{X: &ast.CallExpr{
 			Fun: &ast.SelectorExpr{X: ast.NewIdent("t"), Sel: ast.NewIdent("Equal")},
 		}}}
-		t.Equal(stmtsContainEnd(stmts), false)
+		result := stmtsContainEnd(stmts)
+		t.Equal(result, false)
+
 		t.End()
 	})
 }
@@ -54,13 +66,17 @@ func TestGuard(t *testing.T) {
 		break
 	}
 
-	tape.Test(t, "guard: non-BodySlice __body returns false", func(t *tape.T) {
-		t.Equal(guard(Vars{"__body": ast.NewIdent("x")}), false)
+	Test(t, "guard: non-BodySlice __body returns false", func(t *T) {
+		result := guard(Vars{"__body": ast.NewIdent("x")})
+		t.Equal(result, false)
+
 		t.End()
 	})
 
-	tape.Test(t, "guard: empty BodySlice returns true", func(t *tape.T) {
-		t.Equal(guard(Vars{"__body": compare.BodySlice{Stmts: []ast.Stmt{}}}), true)
+	Test(t, "guard: empty BodySlice returns true", func(t *T) {
+		result := guard(Vars{"__body": compare.BodySlice{Stmts: []ast.Stmt{}}})
+		t.Equal(result, true)
+
 		t.End()
 	})
 }

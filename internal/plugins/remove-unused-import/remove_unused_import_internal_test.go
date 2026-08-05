@@ -5,18 +5,20 @@ import (
 	"go/token"
 	"testing"
 
-	tape "github.com/coderaiser/go-tape"
+	. "github.com/coderaiser/go-tape"
 )
 
 func TestReportMessage(t *testing.T) {
-	tape.Test(t, "report: returns remove unused import", func(t *tape.T) {
-		t.Equal(Report(nil), "remove unused import")
+	Test(t, "report: returns remove unused import", func(t *T) {
+		result := Report(nil)
+		t.Equal(result, "remove unused import")
+
 		t.End()
 	})
 }
 
 func TestCollectImportsLen(t *testing.T) {
-	tape.Test(t, "collectImports: returns 1 entry for 1 ImportSpec", func(t *tape.T) {
+	Test(t, "collectImports: returns 1 entry for 1 ImportSpec", func(t *T) {
 		file := &ast.File{Decls: []ast.Decl{
 			&ast.GenDecl{
 				Tok: token.IMPORT,
@@ -33,7 +35,7 @@ func TestCollectImportsLen(t *testing.T) {
 }
 
 func TestCollectImportsPath(t *testing.T) {
-	tape.Test(t, "collectImports: path equals import path literal", func(t *tape.T) {
+	Test(t, "collectImports: path equals import path literal", func(t *T) {
 		file := &ast.File{Decls: []ast.Decl{
 			&ast.GenDecl{
 				Tok: token.IMPORT,
@@ -49,7 +51,7 @@ func TestCollectImportsPath(t *testing.T) {
 }
 
 func TestFixRemovesDecl(t *testing.T) {
-	tape.Test(t, "Fix: removes GenDecl when all specs removed", func(t *tape.T) {
+	Test(t, "Fix: removes GenDecl when all specs removed", func(t *T) {
 		file := &ast.File{Name: ast.NewIdent("fixture"), Decls: []ast.Decl{
 			&ast.GenDecl{
 				Tok:   token.IMPORT,
@@ -57,7 +59,9 @@ func TestFixRemovesDecl(t *testing.T) {
 			},
 		}}
 		Fix(file, nil)
-		t.Equal(len(file.Decls), 0)
+		result := len(file.Decls)
+		t.Equal(result, 0)
+
 		t.End()
 	})
 }
@@ -87,17 +91,21 @@ func usedImportFile() *ast.File {
 }
 
 func TestReportNoUnused(t *testing.T) {
-	tape.Test(t, "Report: used import falls through to static message", func(t *tape.T) {
-		t.Equal(Report(usedImportFile()), "remove unused import")
+	Test(t, "Report: used import falls through to static message", func(t *T) {
+		result := Report(usedImportFile())
+		t.Equal(result, "remove unused import")
+
 		t.End()
 	})
 }
 
 func TestFixKeepsUsedImport(t *testing.T) {
-	tape.Test(t, "Fix: keeps used import", func(t *tape.T) {
+	Test(t, "Fix: keeps used import", func(t *T) {
 		file := usedImportFile()
 		Fix(file, nil)
-		t.Equal(len(file.Decls), 2)
+		result := len(file.Decls)
+		t.Equal(result, 2)
+
 		t.End()
 	})
 }
@@ -118,17 +126,21 @@ func blankImportFile() *ast.File {
 }
 
 func TestReportBlankImport(t *testing.T) {
-	tape.Test(t, "Report: blank import falls through to static message", func(t *tape.T) {
-		t.Equal(Report(blankImportFile()), "remove unused import")
+	Test(t, "Report: blank import falls through to static message", func(t *T) {
+		result := Report(blankImportFile())
+		t.Equal(result, "remove unused import")
+
 		t.End()
 	})
 }
 
 func TestFixKeepsBlankImport(t *testing.T) {
-	tape.Test(t, "Fix: blank import is kept", func(t *tape.T) {
+	Test(t, "Fix: blank import is kept", func(t *T) {
 		file := blankImportFile()
 		Fix(file, nil)
-		t.Equal(len(file.Decls), 1)
+		result := len(file.Decls)
+		t.Equal(result, 1)
+
 		t.End()
 	})
 }

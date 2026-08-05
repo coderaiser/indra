@@ -4,31 +4,33 @@ import (
 	"testing"
 
 	"coderaiser/indra/internal/plugins"
-	tape "github.com/coderaiser/go-tape"
+	. "github.com/coderaiser/go-tape"
 )
 
 func TestRegistries(t *testing.T) {
-	tape.Test(t, "plugins: All is non-empty", func(t *tape.T) {
+	Test(t, "plugins: All is non-empty", func(t *T) {
 		t.Ok(len(plugins.All) > 0)
 		t.End()
 	})
 
-	tape.Test(t, "plugins: LoadInput contains All and Providers", func(t *tape.T) {
+	Test(t, "plugins: LoadInput contains All and Providers", func(t *T) {
 		input := plugins.LoadInput()
 		t.Ok(len(input) >= len(plugins.All)+len(plugins.Providers))
 		t.End()
 	})
 
-	tape.Test(t, "plugins: LoadInput is a fresh slice (does not alias All)", func(t *tape.T) {
+	Test(t, "plugins: LoadInput is a fresh slice (does not alias All)", func(t *T) {
 		origLen := len(plugins.All)
 		input := plugins.LoadInput()
 		// Appending to a returned slice must not mutate All.
 		input = append(input, plugins.All[0])
-		t.Equal(len(plugins.All), origLen)
+		result := len(plugins.All)
+		t.Equal(result, origLen)
+
 		t.End()
 	})
 
-	tape.Test(t, "plugins: every Provider path is unique", func(t *tape.T) {
+	Test(t, "plugins: every Provider path is unique", func(t *T) {
 		seen := map[string]bool{}
 		dup := false
 		for _, p := range plugins.Providers {

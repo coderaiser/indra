@@ -9,7 +9,7 @@ import (
 	runner "coderaiser/indra/engine-runner"
 	indratest "coderaiser/indra/internal/test"
 	"coderaiser/indra/types"
-	tape "github.com/coderaiser/go-tape"
+	. "github.com/coderaiser/go-tape"
 )
 
 // ── fixture sources ──────────────────────────────────────────────────────────
@@ -51,7 +51,7 @@ func items(report string, match types.Matcher, replace types.Replacer) []runner.
 
 // testRunner wraps tape.Extend around indratest.New for synthetic plugins.
 func testRunner(plugins []runner.PluginItem, dir string) func(*testing.T, string, func(*indratest.T)) {
-	return tape.Extend(func(base *tape.T) *indratest.T {
+	return Extend(func(base *T) *indratest.T {
 		return indratest.New(base, plugins, dir)
 	})
 }
@@ -127,6 +127,3 @@ func TestNoTransform(t *testing.T) {
 		t.End()
 	})
 }
-
-
-

@@ -15,8 +15,8 @@ func (replacerLike) Replace() Replacer { return nil }
 // traverserLike is a minimal plugin exposing the traverser method set.
 type traverserLike struct{}
 
-func (traverserLike) Report() string                 { return "t" }
-func (traverserLike) Traverse() Traverser            { return nil }
+func (traverserLike) Report() string                         { return "t" }
+func (traverserLike) Traverse() Traverser                    { return nil }
 func (traverserLike) Fix(node ast.Node, opts map[string]any) {}
 
 // TestNestedHoldsSubPlugins verifies Nested can hold any plugin value.

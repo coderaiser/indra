@@ -7,11 +7,11 @@ import (
 	"reflect"
 	"testing"
 
-	tape "github.com/coderaiser/go-tape"
+	. "github.com/coderaiser/go-tape"
 )
 
 // parseFile parses src into an *ast.File for direct helper tests.
-func parseFile(t *tape.T, src string) *ast.File {
+func parseFile(t *T, src string) *ast.File {
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, "fixture.go", src, parser.ParseComments)
 	if err != nil {
@@ -21,7 +21,7 @@ func parseFile(t *tape.T, src string) *ast.File {
 }
 
 func TestVisitNoTapeImport(t *testing.T) {
-	tape.Test(t, "findUselessPrefix: no tape import pushes nothing", func(t *tape.T) {
+	Test(t, "findUselessPrefix: no tape import pushes nothing", func(t *T) {
 		file := parseFile(t, "package p\nfunc f() {}\n")
 		pushed := false
 		findUselessPrefix(file, func(n ast.Node) { pushed = true })
@@ -31,7 +31,7 @@ func TestVisitNoTapeImport(t *testing.T) {
 }
 
 func TestFindTapeImportBlank(t *testing.T) {
-	tape.Test(t, "findTapeImport: blank import returns empty alias", func(t *tape.T) {
+	Test(t, "findTapeImport: blank import returns empty alias", func(t *T) {
 		file := parseFile(t, "package p\nimport _ \"github.com/coderaiser/go-tape\"\n")
 		alias, _ := findTapeImport(file)
 		t.Equal(alias, "")
@@ -40,7 +40,7 @@ func TestFindTapeImportBlank(t *testing.T) {
 }
 
 func TestFindTapeImportDot(t *testing.T) {
-	tape.Test(t, "findTapeImport: dot import returns empty alias", func(t *tape.T) {
+	Test(t, "findTapeImport: dot import returns empty alias", func(t *T) {
 		file := parseFile(t, "package p\nimport . \"github.com/coderaiser/go-tape\"\n")
 		alias, _ := findTapeImport(file)
 		t.Equal(alias, "")
@@ -49,7 +49,7 @@ func TestFindTapeImportDot(t *testing.T) {
 }
 
 func TestFindTapeImportNamed(t *testing.T) {
-	tape.Test(t, "findTapeImport: named alias returned", func(t *tape.T) {
+	Test(t, "findTapeImport: named alias returned", func(t *T) {
 		file := parseFile(t, "package p\nimport z \"github.com/coderaiser/go-tape\"\n")
 		alias, spec := findTapeImport(file)
 		t.Ok(alias == "z" && spec != nil)
@@ -60,7 +60,7 @@ func TestFindTapeImportNamed(t *testing.T) {
 // TestFixNoAlias covers the early return in Fix when there is no named tape
 // alias: it must leave the file untouched.
 func TestFixNoAlias(t *testing.T) {
-	tape.Test(t, "Fix: no alias leaves file unchanged", func(t *tape.T) {
+	Test(t, "Fix: no alias leaves file unchanged", func(t *T) {
 		file := parseFile(t, "package p\nimport . \"github.com/coderaiser/go-tape\"\n")
 		Fix(file, nil)
 		// dot import must remain a dot import
@@ -71,7 +71,7 @@ func TestFixNoAlias(t *testing.T) {
 
 // TestReplaceSelectorsInvalid covers the !v.IsValid() guard.
 func TestReplaceSelectorsInvalid(t *testing.T) {
-	tape.Test(t, "replaceSelectors: invalid value is a no-op", func(t *tape.T) {
+	Test(t, "replaceSelectors: invalid value is a no-op", func(t *T) {
 		replaceSelectors(reflect.Value{}, "tape")
 		t.Pass("no-op")
 		t.End()
@@ -80,7 +80,7 @@ func TestReplaceSelectorsInvalid(t *testing.T) {
 
 // TestMaybeReplaceSelNonPointer covers the default (non iface/ptr) path.
 func TestMaybeReplaceSelNonPointer(t *testing.T) {
-	tape.Test(t, "maybeReplaceSel: non-pointer value returns false", func(t *tape.T) {
+	Test(t, "maybeReplaceSel: non-pointer value returns false", func(t *T) {
 		s := &ast.SelectorExpr{X: ast.NewIdent("tape"), Sel: ast.NewIdent("Test")}
 		v := reflect.ValueOf(*s) // struct kind
 		t.Ok(!maybeReplaceSel(v, "tape"))
@@ -90,7 +90,7 @@ func TestMaybeReplaceSelNonPointer(t *testing.T) {
 
 // TestMaybeReplaceSelNil covers nil interface/pointer paths.
 func TestMaybeReplaceSelNil(t *testing.T) {
-	tape.Test(t, "maybeReplaceSel: nil pointer returns false", func(t *tape.T) {
+	Test(t, "maybeReplaceSel: nil pointer returns false", func(t *T) {
 		var p *ast.SelectorExpr
 		v := reflect.ValueOf(p)
 		t.Ok(!maybeReplaceSel(v, "tape"))
@@ -99,7 +99,7 @@ func TestMaybeReplaceSelNil(t *testing.T) {
 }
 
 func TestUsedBareNamesSkipsQualifier(t *testing.T) {
-	tape.Test(t, "usedBareNames: qualifier X is not collected", func(t *tape.T) {
+	Test(t, "usedBareNames: qualifier X is not collected", func(t *T) {
 		file := parseFile(t, "package p\nfunc f() { _ = pkg.Method }\n")
 		names := usedBareNames(file)
 		t.Ok(!names["pkg"])
@@ -108,7 +108,7 @@ func TestUsedBareNamesSkipsQualifier(t *testing.T) {
 }
 
 func TestUsedBareNamesSkipsMember(t *testing.T) {
-	tape.Test(t, "usedBareNames: selector member Sel is not collected", func(t *tape.T) {
+	Test(t, "usedBareNames: selector member Sel is not collected", func(t *T) {
 		file := parseFile(t, "package p\nimport z \"github.com/coderaiser/go-tape\"\nfunc f() { z.Test() }\n")
 		names := usedBareNames(file)
 		t.Ok(!names["Test"])
@@ -117,7 +117,7 @@ func TestUsedBareNamesSkipsMember(t *testing.T) {
 }
 
 func TestUsedBareNamesBareIdent(t *testing.T) {
-	tape.Test(t, "usedBareNames: bare ident outside selector is collected", func(t *tape.T) {
+	Test(t, "usedBareNames: bare ident outside selector is collected", func(t *T) {
 		file := parseFile(t, "package p\nfunc f() { _ = T{} }\n")
 		names := usedBareNames(file)
 		t.Ok(names["T"])
@@ -126,7 +126,7 @@ func TestUsedBareNamesBareIdent(t *testing.T) {
 }
 
 func TestHasLocalCollisionBareIdent(t *testing.T) {
-	tape.Test(t, "hasLocalCollision: bare ident matching selector member triggers collision", func(t *tape.T) {
+	Test(t, "hasLocalCollision: bare ident matching selector member triggers collision", func(t *T) {
 		// File uses z.T and also has bare T usage → collision
 		file := parseFile(t, "package p\nimport z \"github.com/coderaiser/go-tape\"\nfunc f(_ z.T) {}\nfunc g(_ T) {}\n")
 		t.Ok(hasLocalCollision(file, "z"))
@@ -136,7 +136,7 @@ func TestHasLocalCollisionBareIdent(t *testing.T) {
 
 // TestReplaceSelectorsScopeGuard covers pruning the ast.Scope field (cycles).
 func TestReplaceSelectorsScopeGuard(t *testing.T) {
-	tape.Test(t, "replaceSelectors: ast.Scope value is pruned", func(t *tape.T) {
+	Test(t, "replaceSelectors: ast.Scope value is pruned", func(t *T) {
 		scope := &ast.Scope{}
 		replaceSelectors(reflect.ValueOf(scope), "tape")
 		t.Pass("scope pruned without recursion")
@@ -146,7 +146,7 @@ func TestReplaceSelectorsScopeGuard(t *testing.T) {
 
 // TestReplaceSelectorsIdentGuard covers pruning ast.Ident (Obj back-refs).
 func TestReplaceSelectorsIdentGuard(t *testing.T) {
-	tape.Test(t, "replaceSelectors: ast.Ident value is pruned", func(t *tape.T) {
+	Test(t, "replaceSelectors: ast.Ident value is pruned", func(t *T) {
 		ident := ast.NewIdent("tape")
 		replaceSelectors(reflect.ValueOf(ident), "tape")
 		t.Pass("ident pruned without recursion")
@@ -157,7 +157,7 @@ func TestReplaceSelectorsIdentGuard(t *testing.T) {
 // TestReplaceSelectorsNilInterface covers the nil-interface guard in
 // replaceSelectors.
 func TestReplaceSelectorsNilInterface(t *testing.T) {
-	tape.Test(t, "replaceSelectors: nil interface is a no-op", func(t *tape.T) {
+	Test(t, "replaceSelectors: nil interface is a no-op", func(t *T) {
 		var e ast.Expr
 		rv := reflect.ValueOf(&e).Elem() // settable nil interface field
 		replaceSelectors(rv, "tape")
@@ -169,7 +169,7 @@ func TestReplaceSelectorsNilInterface(t *testing.T) {
 // TestReplaceSelectorsIfaceSelector covers the interface branch where the
 // element IS a matching selector: it must be replaced in place.
 func TestReplaceSelectorsIfaceSelector(t *testing.T) {
-	tape.Test(t, "replaceSelectors: matching selector in interface is replaced", func(t *tape.T) {
+	Test(t, "replaceSelectors: matching selector in interface is replaced", func(t *T) {
 		var e ast.Expr = &ast.SelectorExpr{X: ast.NewIdent("tape"), Sel: ast.NewIdent("Test")}
 		rv := reflect.ValueOf(&e).Elem() // settable interface field
 		replaceSelectors(rv, "tape")
@@ -183,7 +183,7 @@ func TestReplaceSelectorsIfaceSelector(t *testing.T) {
 // TestReplaceSelectorsSliceSelector covers the slice branch where an element is
 // a matching selector: it must be replaced.
 func TestReplaceSelectorsSliceSelector(t *testing.T) {
-	tape.Test(t, "replaceSelectors: matching selector in slice is replaced", func(t *tape.T) {
+	Test(t, "replaceSelectors: matching selector in slice is replaced", func(t *T) {
 		e := []ast.Expr{
 			&ast.SelectorExpr{X: ast.NewIdent("tape"), Sel: ast.NewIdent("Test")},
 		}
@@ -197,7 +197,7 @@ func TestReplaceSelectorsSliceSelector(t *testing.T) {
 
 // TestReplaceInStructNonStruct covers the kind guard in replaceInStruct.
 func TestReplaceInStructNonStruct(t *testing.T) {
-	tape.Test(t, "replaceInStruct: non-struct value is a no-op", func(t *tape.T) {
+	Test(t, "replaceInStruct: non-struct value is a no-op", func(t *T) {
 		replaceInStruct(reflect.ValueOf(42), "tape")
 		t.Pass("non-struct pruned")
 		t.End()
@@ -206,7 +206,7 @@ func TestReplaceInStructNonStruct(t *testing.T) {
 
 // TestReplaceInStructUnexportedField covers the !CanSet() guard.
 func TestReplaceInStructUnexportedField(t *testing.T) {
-	tape.Test(t, "replaceInStruct: unexported fields are skipped", func(t *tape.T) {
+	Test(t, "replaceInStruct: unexported fields are skipped", func(t *T) {
 		type hidden struct{ x int }
 		replaceInStruct(reflect.ValueOf(hidden{x: 1}), "tape")
 		t.Pass("unexported skipped")
@@ -217,7 +217,7 @@ func TestReplaceInStructUnexportedField(t *testing.T) {
 // TestMaybeReplaceSelNilInterface covers the nil-interface guard in
 // maybeReplaceSel.
 func TestMaybeReplaceSelNilInterface(t *testing.T) {
-	tape.Test(t, "maybeReplaceSel: nil interface returns false", func(t *tape.T) {
+	Test(t, "maybeReplaceSel: nil interface returns false", func(t *T) {
 		var e ast.Expr
 		rv := reflect.ValueOf(&e).Elem() // settable nil interface field
 		t.Ok(!maybeReplaceSel(rv, "tape"))
@@ -227,7 +227,7 @@ func TestMaybeReplaceSelNilInterface(t *testing.T) {
 
 // TestFixAppliesAcrossNestedCall covers a nested selector inside a call arg.
 func TestFixAppliesAcrossNestedCall(t *testing.T) {
-	tape.Test(t, "Fix: rewrite nested selector in call arguments", func(t *tape.T) {
+	Test(t, "Fix: rewrite nested selector in call arguments", func(t *T) {
 		file := parseFile(t, "package p\n\nimport z \"github.com/coderaiser/go-tape\"\n\nfunc f() {\n\tz.Equal(1, z.T{})\n}\n")
 		pushed := 0
 		findUselessPrefix(file, func(n ast.Node) { pushed++ })
@@ -235,7 +235,7 @@ func TestFixAppliesAcrossNestedCall(t *testing.T) {
 		t.End()
 	})
 
-	tape.Test(t, "Fix: selectors rewritten and import dotted", func(t *tape.T) {
+	Test(t, "Fix: selectors rewritten and import dotted", func(t *T) {
 		file := parseFile(t, "package p\n\nimport z \"github.com/coderaiser/go-tape\"\n\nfunc f() {\n\tz.Equal(1, z.T{})\n}\n")
 		Fix(file, nil)
 		imp := file.Imports[0]
@@ -247,7 +247,7 @@ func TestFixAppliesAcrossNestedCall(t *testing.T) {
 // TestFixCollisionSkips covers the Fix early-return when removing the prefix
 // would collide with a locally declared identifier.
 func TestFixCollisionSkips(t *testing.T) {
-	tape.Test(t, "Fix: collision leaves alias import unchanged", func(t *tape.T) {
+	Test(t, "Fix: collision leaves alias import unchanged", func(t *T) {
 		file := parseFile(t, "package p\n\nimport z \"github.com/coderaiser/go-tape\"\n\ntype T struct{ inner *z.T }\n")
 		Fix(file, nil)
 		t.Ok(file.Imports[0].Name != nil && file.Imports[0].Name.Name == "z")
@@ -257,7 +257,7 @@ func TestFixCollisionSkips(t *testing.T) {
 
 // TestDeclaredNamesValueSpec covers the *ast.ValueSpec (var/const) branch.
 func TestDeclaredNamesValueSpec(t *testing.T) {
-	tape.Test(t, "declaredNames: includes var and const names", func(t *tape.T) {
+	Test(t, "declaredNames: includes var and const names", func(t *T) {
 		file := parseFile(t, "package p\n\nvar version = \"1.0\"\nconst max = 10\n")
 		names := declaredNames(file)
 		t.Ok(names["version"] && names["max"])

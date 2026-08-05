@@ -230,7 +230,8 @@ func TestDerivePackagePathRelError(t *testing.T) {
 func TestModInfoRoot(t *testing.T) {
 	tape.Test(t, "modinfo: root dir contains go.mod", func(t *tape.T) {
 		_, err := os.Stat(filepath.Join(modInfo.root, "go.mod"))
-		t.Equal(err, nil)
+		t.NotOk(err)
+
 		t.End()
 	})
 }
@@ -269,7 +270,8 @@ func TestCreateTestHappyPath(t *testing.T) {
 	file := filepath.Join(modInfo.root, "internal/plugins/remove-skip/remove_skip_test.go")
 	run := CreateTest(0, file, 0, false)
 	run(t, "createtest: real plugin path returns working runner", func(tt *T) {
-		tt.Ok(run != nil)
+		tt.Ok(run)
+
 		tt.End()
 	})
 }

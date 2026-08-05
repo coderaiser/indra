@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"coderaiser/indra/compare"
-	tape "github.com/coderaiser/go-tape"
+	. "github.com/coderaiser/go-tape"
 )
 
 func parseDecl(src string) ast.Decl {
@@ -21,51 +21,54 @@ func parseDecl(src string) ast.Decl {
 func TestCompareDecl(t *testing.T) {
 	decl := parseDecl(`func Match() Matcher { return Matcher{"k": nil} }`)
 
-	tape.Test(t, "CompareDecl: matching decl returns non-nil vars", func(t *tape.T) {
+	Test(t, "CompareDecl: matching decl returns non-nil vars", func(t *T) {
 		vars := compare.CompareDecl(decl, `func Match() Matcher { return Matcher{__a: nil} }`)
-		t.Ok(vars != nil)
+		t.Ok(vars)
+
 		t.End()
 	})
 
-	tape.Test(t, "CompareDecl: matching decl binds hole", func(t *tape.T) {
+	Test(t, "CompareDecl: matching decl binds hole", func(t *T) {
 		vars := compare.CompareDecl(decl, `func Match() Matcher { return Matcher{__a: nil} }`)
-		t.Ok(vars["__a"] != nil)
+		t.Ok(vars["__a"])
+
 		t.End()
 	})
 
-	tape.Test(t, "CompareDecl: non-matching decl returns nil", func(t *tape.T) {
+	Test(t, "CompareDecl: non-matching decl returns nil", func(t *T) {
 		other := parseDecl(`func Other() {}`)
 		vars := compare.CompareDecl(other, `func Match() Matcher { return Matcher{__a: nil} }`)
 		t.Equal(vars, compare.Vars(nil))
 		t.End()
 	})
 
-	tape.Test(t, "CompareDecl: unparseable pattern returns nil", func(t *tape.T) {
+	Test(t, "CompareDecl: unparseable pattern returns nil", func(t *T) {
 		vars := compare.CompareDecl(decl, `not valid go {{{{`)
 		t.Equal(vars, compare.Vars(nil))
 		t.End()
 	})
 
-	tape.Test(t, "CompareDecl: empty body pattern matches empty body decl", func(t *tape.T) {
+	Test(t, "CompareDecl: empty body pattern matches empty body decl", func(t *T) {
 		empty := parseDecl(`func Match() Matcher { return Matcher{} }`)
 		vars := compare.CompareDecl(empty, `func Match() Matcher { return Matcher{} }`)
-		t.Ok(vars != nil)
+		t.Ok(vars)
+
 		t.End()
 	})
 
-	tape.Test(t, "CompareDecl: nil node returns nil", func(t *tape.T) {
+	Test(t, "CompareDecl: nil node returns nil", func(t *T) {
 		vars := compare.CompareDecl(nil, `func Match() Matcher { return Matcher{} }`)
 		t.Equal(vars, compare.Vars(nil))
 		t.End()
 	})
 
-	tape.Test(t, "CompareDecl: pattern with no decl returns nil", func(t *tape.T) {
+	Test(t, "CompareDecl: pattern with no decl returns nil", func(t *T) {
 		vars := compare.CompareDecl(decl, `// just a comment`)
 		t.Equal(vars, compare.Vars(nil))
 		t.End()
 	})
 
-	tape.Test(t, "CompareDecl: doc comment on decl is ignored", func(t *tape.T) {
+	Test(t, "CompareDecl: doc comment on decl is ignored", func(t *T) {
 		f, err := parser.ParseFile(token.NewFileSet(), "", "package p\n\n// Comment above Match.\nfunc Match() Matcher { return Matcher{} }\n", parser.ParseComments)
 		if err != nil || len(f.Decls) == 0 {
 			t.Ok(false)
@@ -73,7 +76,8 @@ func TestCompareDecl(t *testing.T) {
 			return
 		}
 		vars := compare.CompareDecl(f.Decls[0], `func Match() Matcher { return Matcher{} }`)
-		t.Ok(vars != nil)
+		t.Ok(vars)
+
 		t.End()
 	})
 }

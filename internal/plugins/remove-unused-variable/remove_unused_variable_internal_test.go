@@ -5,18 +5,20 @@ import (
 	"go/token"
 	"testing"
 
-	tape "github.com/coderaiser/go-tape"
+	. "github.com/coderaiser/go-tape"
 )
 
 func TestReportMessage(t *testing.T) {
-	tape.Test(t, "report: nil node returns static message", func(t *tape.T) {
-		t.Equal(Report(nil), "remove unused variable")
+	Test(t, "report: nil node returns static message", func(t *T) {
+		result := Report(nil)
+		t.Equal(result, "remove unused variable")
+
 		t.End()
 	})
 }
 
 func TestReportUsedVar(t *testing.T) {
-	tape.Test(t, "report: used var falls through to static message", func(t *tape.T) {
+	Test(t, "report: used var falls through to static message", func(t *T) {
 		block := &ast.BlockStmt{List: []ast.Stmt{
 			&ast.AssignStmt{
 				Tok: token.DEFINE,
@@ -25,7 +27,9 @@ func TestReportUsedVar(t *testing.T) {
 			},
 			&ast.ExprStmt{X: ast.NewIdent("x")},
 		}}
-		t.Equal(Report(block), "remove unused variable")
+		result := Report(block)
+		t.Equal(result, "remove unused variable")
+
 		t.End()
 	})
 }

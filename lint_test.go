@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	indra "coderaiser/indra"
-	tape "github.com/coderaiser/go-tape"
+	. "github.com/coderaiser/go-tape"
 )
 
 func writeFile(t *testing.T, dir, name, content string) string {
@@ -26,13 +26,13 @@ const cleanSrc = "package p\n\nfunc f() {}\n"
 const badSrc = "package p\nfunc (\n"
 
 func TestLintReports(t *testing.T) {
-	tape.Test(t, "lint: Lint returns no error for matching source", func(t *tape.T) {
+	Test(t, "lint: Lint returns no error for matching source", func(t *T) {
 		_, _, error := indra.Lint([]byte(matchSrc), false)
 		t.NotOk(error)
 		t.End()
 	})
 
-	tape.Test(t, "lint: Lint returns places for matching source", func(t *tape.T) {
+	Test(t, "lint: Lint returns places for matching source", func(t *T) {
 		_, places, _ := indra.Lint([]byte(matchSrc), false)
 		t.Ok(len(places) > 0)
 		t.End()
@@ -40,27 +40,29 @@ func TestLintReports(t *testing.T) {
 }
 
 func TestLintClean(t *testing.T) {
-	tape.Test(t, "lint: Lint returns no error for clean source", func(t *tape.T) {
+	Test(t, "lint: Lint returns no error for clean source", func(t *T) {
 		_, _, error := indra.Lint([]byte(cleanSrc), false)
 		t.NotOk(error)
 		t.End()
 	})
 
-	tape.Test(t, "lint: Lint returns no places for clean source", func(t *tape.T) {
+	Test(t, "lint: Lint returns no places for clean source", func(t *T) {
 		_, places, _ := indra.Lint([]byte(cleanSrc), false)
-		t.Equal(len(places), 0)
+		result := len(places)
+		t.Equal(result, 0)
+
 		t.End()
 	})
 }
 
 func TestLintFix(t *testing.T) {
-	tape.Test(t, "lint: Lint fix returns no error", func(t *tape.T) {
+	Test(t, "lint: Lint fix returns no error", func(t *T) {
 		_, _, error := indra.Lint([]byte(matchSrc), true)
 		t.NotOk(error)
 		t.End()
 	})
 
-	tape.Test(t, "lint: Lint fix rewrites source", func(t *tape.T) {
+	Test(t, "lint: Lint fix rewrites source", func(t *T) {
 		out, _, _ := indra.Lint([]byte(matchSrc), true)
 		t.Ok(strings.Contains(string(out), "expected"))
 		t.End()
@@ -68,7 +70,7 @@ func TestLintFix(t *testing.T) {
 }
 
 func TestLintParseError(t *testing.T) {
-	tape.Test(t, "lint: Lint returns error for invalid source", func(t *tape.T) {
+	Test(t, "lint: Lint returns error for invalid source", func(t *T) {
 		_, _, error := indra.Lint([]byte(badSrc), false)
 		t.Ok(error)
 		t.End()
@@ -76,28 +78,28 @@ func TestLintParseError(t *testing.T) {
 }
 
 func TestIndraVersion(t *testing.T) {
-	tape.Test(t, "lint: --version prints version", func(t *tape.T) {
+	Test(t, "lint: --version prints version", func(t *T) {
 		var buf bytes.Buffer
 		error := indra.Indra([]string{"--version"}, &buf)
 		t.NotOk(error)
 		t.End()
 	})
 
-	tape.Test(t, "lint: --version writes output", func(t *tape.T) {
+	Test(t, "lint: --version writes output", func(t *T) {
 		var buf bytes.Buffer
 		indra.Indra([]string{"--version"}, &buf)
 		t.Ok(buf.Len() > 0)
 		t.End()
 	})
 
-	tape.Test(t, "lint: -v prints version", func(t *tape.T) {
+	Test(t, "lint: -v prints version", func(t *T) {
 		var buf bytes.Buffer
 		error := indra.Indra([]string{"-v"}, &buf)
 		t.NotOk(error)
 		t.End()
 	})
 
-	tape.Test(t, "lint: -v writes output", func(t *tape.T) {
+	Test(t, "lint: -v writes output", func(t *T) {
 		var buf bytes.Buffer
 		indra.Indra([]string{"-v"}, &buf)
 		t.Ok(buf.Len() > 0)
@@ -106,7 +108,7 @@ func TestIndraVersion(t *testing.T) {
 }
 
 func TestIndraNoFiles(t *testing.T) {
-	tape.Test(t, "lint: no files returns nil", func(t *tape.T) {
+	Test(t, "lint: no files returns nil", func(t *T) {
 		error := indra.Indra([]string{}, io.Discard)
 		t.NotOk(error)
 		t.End()
@@ -114,7 +116,7 @@ func TestIndraNoFiles(t *testing.T) {
 }
 
 func TestIndraUnknownFlag(t *testing.T) {
-	tape.Test(t, "lint: unknown flag with no files returns nil", func(t *tape.T) {
+	Test(t, "lint: unknown flag with no files returns nil", func(t *T) {
 		error := indra.Indra([]string{"--unknown"}, io.Discard)
 		t.NotOk(error)
 		t.End()
@@ -122,7 +124,7 @@ func TestIndraUnknownFlag(t *testing.T) {
 }
 
 func TestIndraMissingFileError(t *testing.T) {
-	tape.Test(t, "lint: missing file returns error", func(t *tape.T) {
+	Test(t, "lint: missing file returns error", func(t *T) {
 		error := indra.Indra([]string{"/nonexistent/file.go"}, io.Discard)
 		t.Ok(error)
 		t.End()
@@ -130,7 +132,7 @@ func TestIndraMissingFileError(t *testing.T) {
 }
 
 func TestIndraCleanFile(t *testing.T) {
-	tape.Test(t, "lint: clean file returns nil", func(t *tape.T) {
+	Test(t, "lint: clean file returns nil", func(t *T) {
 		dir := t.TB().TempDir()
 		f := writeFile(t.TB(), dir, "clean.go", cleanSrc)
 		error := indra.Indra([]string{f}, io.Discard)
@@ -140,7 +142,7 @@ func TestIndraCleanFile(t *testing.T) {
 }
 
 func TestIndraFailsOnIssue(t *testing.T) {
-	tape.Test(t, "lint: file with issue returns error", func(t *tape.T) {
+	Test(t, "lint: file with issue returns error", func(t *T) {
 		dir := t.TB().TempDir()
 		f := writeFile(t.TB(), dir, "bad.go", matchSrc)
 		error := indra.Indra([]string{f}, io.Discard)
@@ -150,7 +152,7 @@ func TestIndraFailsOnIssue(t *testing.T) {
 }
 
 func TestIndraFixWrites(t *testing.T) {
-	tape.Test(t, "lint: --fix returns nil", func(t *tape.T) {
+	Test(t, "lint: --fix returns nil", func(t *T) {
 		dir := t.TB().TempDir()
 		f := writeFile(t.TB(), dir, "bad.go", matchSrc)
 		error := indra.Indra([]string{"--fix", f}, io.Discard)
@@ -158,7 +160,7 @@ func TestIndraFixWrites(t *testing.T) {
 		t.End()
 	})
 
-	tape.Test(t, "lint: --fix rewrites file", func(t *tape.T) {
+	Test(t, "lint: --fix rewrites file", func(t *T) {
 		dir := t.TB().TempDir()
 		f := writeFile(t.TB(), dir, "bad.go", matchSrc)
 		indra.Indra([]string{"--fix", f}, io.Discard)
@@ -169,7 +171,7 @@ func TestIndraFixWrites(t *testing.T) {
 }
 
 func TestIndraDumpFormatterReports(t *testing.T) {
-	tape.Test(t, "lint: Indra dir with dump formatter reports findings", func(t *tape.T) {
+	Test(t, "lint: Indra dir with dump formatter reports findings", func(t *T) {
 		dir := t.TB().TempDir()
 		writeFile(t.TB(), dir, "bad.go", matchSrc)
 		t.TB().Setenv("INDRA_FORMATTER", "dump")
@@ -181,7 +183,7 @@ func TestIndraDumpFormatterReports(t *testing.T) {
 		t.End()
 	})
 
-	tape.Test(t, "lint: Indra dump formatter output names file", func(t *tape.T) {
+	Test(t, "lint: Indra dump formatter output names file", func(t *T) {
 		dir := t.TB().TempDir()
 		writeFile(t.TB(), dir, "bad.go", matchSrc)
 		t.TB().Setenv("INDRA_FORMATTER", "dump")
@@ -195,7 +197,7 @@ func TestIndraDumpFormatterReports(t *testing.T) {
 }
 
 func TestIndraJsonLinesFormatter(t *testing.T) {
-	tape.Test(t, "lint: Indra dir with json-lines formatter outputs JSON", func(t *tape.T) {
+	Test(t, "lint: Indra dir with json-lines formatter outputs JSON", func(t *T) {
 		dir := t.TB().TempDir()
 		writeFile(t.TB(), dir, "bad.go", matchSrc)
 		t.TB().Setenv("INDRA_FORMATTER", "json-lines")
@@ -208,7 +210,7 @@ func TestIndraJsonLinesFormatter(t *testing.T) {
 }
 
 func TestIndraDumpFormatterClean(t *testing.T) {
-	tape.Test(t, "lint: Indra dir with clean files outputs nothing for dump", func(t *tape.T) {
+	Test(t, "lint: Indra dir with clean files outputs nothing for dump", func(t *T) {
 		dir := t.TB().TempDir()
 		writeFile(t.TB(), dir, "clean.go", cleanSrc)
 		t.TB().Setenv("INDRA_FORMATTER", "dump")
@@ -221,7 +223,7 @@ func TestIndraDumpFormatterClean(t *testing.T) {
 }
 
 func TestIndraNoGoFiles(t *testing.T) {
-	tape.Test(t, "lint: Indra dir with no go files returns nil", func(t *tape.T) {
+	Test(t, "lint: Indra dir with no go files returns nil", func(t *T) {
 		dir := t.TB().TempDir()
 		writeFile(t.TB(), dir, "readme.txt", "hello")
 		var buf bytes.Buffer
@@ -230,4 +232,3 @@ func TestIndraNoGoFiles(t *testing.T) {
 		t.End()
 	})
 }
-

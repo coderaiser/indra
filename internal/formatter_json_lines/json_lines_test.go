@@ -25,7 +25,8 @@ func TestJsonLines(t *testing.T) {
 		out := jsonlines.Format("foo.go", nil, 0, 1, 0, 0)
 		var m map[string]any
 		err := json.Unmarshal([]byte(strings.TrimSpace(out)), &m)
-		t.Ok(err == nil)
+		t.NotOk(err)
+
 		t.End()
 	})
 
@@ -41,7 +42,9 @@ func TestJsonLines(t *testing.T) {
 		out := jsonlines.Format("foo.go", nil, 0, 1, 0, 0)
 		var m map[string]any
 		json.Unmarshal([]byte(strings.TrimSpace(out)), &m)
-		t.Equal(len(m["places"].([]any)), 0)
+		result := len(m["places"].([]any))
+		t.Equal(result, 0)
+
 		t.End()
 	})
 
@@ -49,7 +52,9 @@ func TestJsonLines(t *testing.T) {
 		out := jsonlines.Format("foo.go", places1, 0, 1, 1, 1)
 		var m map[string]any
 		json.Unmarshal([]byte(strings.TrimSpace(out)), &m)
-		t.Equal(len(m["places"].([]any)), 1)
+		result := len(m["places"].([]any))
+		t.Equal(result, 1)
+
 		t.End()
 	})
 
@@ -89,7 +94,9 @@ func TestJsonLines(t *testing.T) {
 		out1 := jsonlines.Format("a.go", nil, 0, 2, 0, 0)
 		out2 := jsonlines.Format("b.go", places1, 1, 2, 1, 1)
 		lines := strings.Split(strings.TrimSpace(out1+out2), "\n")
-		t.Equal(len(lines), 2)
+		result := len(lines)
+		t.Equal(result, 2)
+
 		t.End()
 	})
 }

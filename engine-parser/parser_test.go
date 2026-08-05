@@ -4,29 +4,31 @@ import (
 	"testing"
 
 	parser "coderaiser/indra/engine-parser"
-	tape "github.com/coderaiser/go-tape"
+	. "github.com/coderaiser/go-tape"
 )
 
 func TestParse(t *testing.T) {
-	tape.Test(t, "parse: valid source returns non-nil file", func(t *tape.T) {
+	Test(t, "parse: valid source returns non-nil file", func(t *T) {
 		file, _, _ := parser.Parse([]byte("package p\nfunc f() {}\n"))
-		t.Ok(file != nil)
+		t.Ok(file)
+
 		t.End()
 	})
 
-	tape.Test(t, "parse: valid source returns non-nil fset", func(t *tape.T) {
+	Test(t, "parse: valid source returns non-nil fset", func(t *T) {
 		_, fset, _ := parser.Parse([]byte("package p\nfunc f() {}\n"))
-		t.Ok(fset != nil)
+		t.Ok(fset)
+
 		t.End()
 	})
 
-	tape.Test(t, "parse: valid source returns nil error", func(t *tape.T) {
+	Test(t, "parse: valid source returns nil error", func(t *T) {
 		_, _, error := parser.Parse([]byte("package p\nfunc f() {}\n"))
 		t.NotOk(error)
 		t.End()
 	})
 
-	tape.Test(t, "parse: invalid source returns non-nil error", func(t *tape.T) {
+	Test(t, "parse: invalid source returns non-nil error", func(t *T) {
 		_, _, error := parser.Parse([]byte("package p\nfunc (\n"))
 		t.Ok(error)
 		t.End()
