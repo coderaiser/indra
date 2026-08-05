@@ -8,5 +8,6 @@
 .DS_Store
 
 /indra
+/indra_bin
 node_modules
 coverage
