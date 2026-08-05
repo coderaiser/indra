@@ -71,6 +71,11 @@ func matcherLit(fn *ast.FuncDecl) *ast.CompositeLit {
 		return nil
 	}
 	lit, ok := retStmt.Results[0].(*ast.CompositeLit)
+
+	if !ok {
+		return nil
+	}
+
 	return lit
 }
 

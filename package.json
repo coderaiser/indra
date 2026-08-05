@@ -1,15 +1,18 @@
 {
   "name": "indra",
   "private": true,
+  "type": "module",
   "version": "1.0.1",
   "description": "Go linter for tape-based test files",
   "main": "index.js",
   "scripts": {
-    "test": "task test",
-    "indra": "task indra",
-    "build": "task build",
-    "lint": "task lint",
-    "fix:lint": "task fix:lint"
+    "test": "madrun test",
+    "coverage": "madrun coverage",
+    "report": "madrun report",
+    "indra": "madrun indra",
+    "build": "madrun build",
+    "lint": "madrun lint",
+    "fix:lint": "madrun fix:lint"
   },
   "repository": {
     "type": "git",
@@ -18,9 +21,15 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/coderaiser/indra/issues"
   },
-  "homepage": "https://github.com/coderaiser/indra#readme"
+  "homepage": "https://github.com/coderaiser/indra#readme",
+  "devDependencies": {
+    "eslint": "^10.8.0",
+    "eslint-plugin-putout": "^31.4.1",
+    "jiti": "^2.7.0",
+    "madrun": "^13.0.4",
+    "putout": "^42.11.0"
+  }
 }

@@ -9,9 +9,21 @@ env:
 tasks:
   test:
     cmds:
+      - tape
+    
+  coverage:
+    cmds:
+      - tape --coverage
+    
+  report:
+    cmds:
+      - tape --coverage --report
+  
+  test:go:
+    cmds:
       - go test $(go list ./... | grep -v "^coderaiser/indra$")
 
-  coverage:
+  coverage:go:
     cmds:
       - go test -coverprofile=c.out $(go list ./... | grep -v "^coderaiser/indra$")
       - go tool cover -func=c.out | grep -v "100.0%" | grep -v "^total"

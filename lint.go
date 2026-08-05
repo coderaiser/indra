@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strings"
 	"slices"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 

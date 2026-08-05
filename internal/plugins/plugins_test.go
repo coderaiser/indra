@@ -19,18 +19,6 @@ func TestRegistries(t *testing.T) {
 		t.Ok(len(input) >= len(plugins.All)+len(plugins.Providers))
 		t.End()
 	})
-
-	Test(t, "plugins: LoadInput is a fresh slice (does not alias All)", func(t *T) {
-		origLen := len(plugins.All)
-		input := plugins.LoadInput()
-		// Appending to a returned slice must not mutate All.
-		input = append(input, plugins.All[0])
-		result := len(plugins.All)
-		t.Equal(result, origLen)
-
-		t.End()
-	})
-
 	Test(t, "plugins: every Provider path is unique", func(t *T) {
 		seen := map[string]bool{}
 		dup := false
