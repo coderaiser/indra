@@ -12,13 +12,20 @@ import (
 
 // Config is the parsed .indra.toml.
 type Config struct {
-	Rules  map[string]string `toml:"rules"`
-	Ignore IgnoreConfig      `toml:"ignore"`
+	Rules    map[string]string `toml:"rules"`
+	Ignore   IgnoreConfig      `toml:"ignore"`
+	Progress ProgressConfig    `toml:"progress"`
 }
 
 // IgnoreConfig holds the ignore patterns.
 type IgnoreConfig struct {
 	Patterns []string `toml:"patterns"`
+}
+
+// ProgressConfig holds progress-bar display options from [progress] in .indra.toml.
+type ProgressConfig struct {
+	Color    string `toml:"color"`
+	MinCount int    `toml:"minCount"`
 }
 
 // Load reads .indra.toml from dir. Returns a zero Config if the file is absent.

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 
 	dump "coderaiser/indra/internal/formatter_dump"
@@ -18,8 +17,27 @@ const (
 	barComplete  = '█'
 	barEmpty     = '░'
 	defaultColor = "#6fbdf1"
-	defaultMin   = 10
 )
+
+// Config holds runtime options for the progress bar.
+type Config struct {
+	Color    string // hex e.g. "#6fbdf1". Empty = defaultColor.
+	MinCount int    // show when file count >= MinCount. 0 = always.
+}
+
+var cfg = Config{
+	Color:    defaultColor,
+	MinCount: 0,
+}
+
+// Configure sets the active progress bar configuration.
+// Call once at program startup before any Format call.
+func Configure(c Config) {
+	if c.Color != "" {
+		cfg.Color = c.Color
+	}
+	cfg.MinCount = c.MinCount
+}
 
 // Format is the progress-bar formatter. It writes a live bar to stderr
 // mid-run and returns the dump output on the last file.
@@ -35,7 +53,7 @@ func Format(name string, places []types.Place, index, count, filesWithIssues, er
 		errStr = fmt.Sprintf("\033[31m%d\033[0m", errorsCount)
 	}
 
-	bar := RenderBar(index+1, count, defaultColor)
+	bar := RenderBar(index+1, count, cfg.Color)
 	pct := 0
 	if count > 0 {
 		pct = (index + 1) * 100 / count
@@ -63,13 +81,7 @@ func ShouldShow(count int) bool {
 	case "0":
 		return false
 	}
-	min := defaultMin
-	if v := os.Getenv("INDRA_PROGRESS_BAR_MIN"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil {
-			min = n
-		}
-	}
-	return count >= min
+	return count >= cfg.MinCount
 }
 
 // RenderBar renders a Unicode block progress bar. Exported for testing.

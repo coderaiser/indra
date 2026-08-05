@@ -11,6 +11,7 @@ import (
 	runner "coderaiser/indra/engine-runner"
 	"coderaiser/indra/internal/config"
 	"coderaiser/indra/internal/formatter"
+	"coderaiser/indra/internal/formatter_progress_bar"
 	"coderaiser/indra/internal/plugins"
 	processor_go "coderaiser/indra/processor-go"
 	"coderaiser/indra/types"
@@ -79,6 +80,10 @@ func Indra(args []string, w io.Writer) error {
 	}
 
 	cfg, _ := config.Load(".")
+	formatter_progress_bar.Configure(formatter_progress_bar.Config{
+		Color:    cfg.Progress.Color,
+		MinCount: cfg.Progress.MinCount,
+	})
 	ignore := cfg.Ignore.Patterns
 
 	rawFiles, dirs := processor_go.ResolveArgs(files)

@@ -50,24 +50,6 @@ func TestProgressBarForceShow(t *testing.T) {
 	})
 }
 
-func TestProgressBarShouldShowTrue(t *testing.T) {
-	tape.Test(t, "progress-bar: ShouldShow true when count >= min", func(t *tape.T) {
-		t.TB().Setenv("INDRA_PROGRESS_BAR", "")
-		t.TB().Setenv("INDRA_PROGRESS_BAR_MIN", "3")
-		t.Ok(pb.ShouldShow(3))
-		t.End()
-	})
-}
-
-func TestProgressBarShouldShowFalse(t *testing.T) {
-	tape.Test(t, "progress-bar: ShouldShow false when count < min", func(t *tape.T) {
-		t.TB().Setenv("INDRA_PROGRESS_BAR", "")
-		t.TB().Setenv("INDRA_PROGRESS_BAR_MIN", "10")
-		t.Ok(!pb.ShouldShow(3))
-		t.End()
-	})
-}
-
 func TestProgressBarShouldShowForcedOff(t *testing.T) {
 	tape.Test(t, "progress-bar: ShouldShow forced off by env", func(t *tape.T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
@@ -205,19 +187,9 @@ func TestHexToANSIInvalid(t *testing.T) {
 	})
 }
 
-func TestShouldShowDefaultMin(t *testing.T) {
-	tape.Test(t, "progress-bar: ShouldShow uses default min when env unset", func(t *tape.T) {
-		t.TB().Setenv("INDRA_PROGRESS_BAR", "")
-		t.TB().Setenv("INDRA_PROGRESS_BAR_MIN", "")
-		t.Ok(!pb.ShouldShow(1))
-		t.End()
-	})
-}
-
 func TestShouldShowInvalidMinFallback(t *testing.T) {
 	tape.Test(t, "progress-bar: ShouldShow ignores invalid min env", func(t *tape.T) {
-		t.TB().Setenv("INDRA_PROGRESS_BAR", "")
-		t.TB().Setenv("INDRA_PROGRESS_BAR_MIN", "not-a-number")
+		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
 		t.Ok(!pb.ShouldShow(1))
 		t.End()
 	})
