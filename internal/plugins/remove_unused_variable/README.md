@@ -1,6 +1,13 @@
 # remove-unused-variable
 
-> Remove unused variables
+Remove unused variables
+
+## Rule
+
+```toml
+[rules]
+"remove-unused-variable" = "on"
+```
 
 ## Example
 
@@ -16,8 +23,3 @@ return 0
 ```go
 return compute()
 ```
-
-## Disable
-
-    [rules]
-    "remove-unused-variable" = "off"
