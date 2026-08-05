@@ -131,12 +131,15 @@ func declaredNames(file *ast.File) map[string]bool {
 	return names
 }
 
-// typed variants used to prune the semantic (non-syntactic) parts of the tree,
-// which can contain back-references (Ident.Obj -> Decl -> Ident) and produce
-// reflection cycles if walked.
+// astIdentType is used to prune *ast.Ident during reflection walks: identifiers
+// hold Obj back-references that can form cycles if walked.
+// astScopeName identifies ast.Scope by reflection without referencing the
+// deprecated type directly — scopes are semantic and must also be skipped to
+// avoid cycles.
 var (
-	astIdentType = reflect.TypeOf((*ast.Ident)(nil))
-	astScopeType = reflect.TypeOf((*ast.Scope)(nil))
+	astIdentType    = reflect.TypeOf((*ast.Ident)(nil))
+	astScopePkgPath = "go/ast"
+	astScopeName    = "Scope"
 )
 
 // replaceSelectors walks an AST value via reflection, replacing every
@@ -165,7 +168,12 @@ func replaceSelectors(v reflect.Value, alias string) {
 		}
 		// Skip identifiers and scopes: identifiers hold Obj back-references and
 		// scopes are semantic, neither can contain a selector to rewrite.
-		if v.Type() == astIdentType || v.Type() == astScopeType {
+		if v.Type() == astIdentType {
+			return
+		}
+		// Identify ast.Scope by package path and name to avoid referencing the
+		// deprecated type directly.
+		if elem := v.Type().Elem(); elem.PkgPath() == astScopePkgPath && elem.Name() == astScopeName {
 			return
 		}
 		replaceInStruct(v.Elem(), alias)

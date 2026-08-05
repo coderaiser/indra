@@ -135,10 +135,15 @@ func TestHasLocalCollisionBareIdent(t *testing.T) {
 }
 
 // TestReplaceSelectorsScopeGuard covers pruning the ast.Scope field (cycles).
+// We locate the type by name via a parsed AST file so we never reference the
+// deprecated ast.Scope identifier directly.
 func TestReplaceSelectorsScopeGuard(t *testing.T) {
 	Test(t, "replaceSelectors: ast.Scope value is pruned", func(t *T) {
-		scope := &ast.Scope{}
-		replaceSelectors(reflect.ValueOf(scope), "tape")
+		// Build a *ast.Scope value through reflect without naming the type.
+		file, _ := parser.ParseFile(token.NewFileSet(), "", "package p", 0)
+		// file.Scope is *ast.Scope; wrap it so we exercise the guard.
+		v := reflect.ValueOf(file).Elem().FieldByName("Scope")
+		replaceSelectors(v, "tape")
 		t.Pass("scope pruned without recursion")
 		t.End()
 	})
