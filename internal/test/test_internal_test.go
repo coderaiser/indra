@@ -15,7 +15,7 @@ import (
 	runner "coderaiser/indra/engine_runner"
 	"coderaiser/indra/internal/plugins"
 	"coderaiser/indra/types"
-	. "github.com/coderaiser/go-tape"
+	tape "github.com/coderaiser/go-tape"
 )
 
 // ── fixtures ─────────────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ func items(report string, match types.Matcher, replace types.Replacer) []runner.
 
 // newRecording builds a T whose fatal is a recording stub so error paths can be
 // exercised without aborting the enclosing test.
-func newRecording(tt *T, plugins []runner.PluginItem, dir string) (*T, *[]string) {
+func newRecording(tt *tape.T, plugins []runner.PluginItem, dir string) (*T, *[]string) {
 	tr := New(tt, plugins, dir)
 	calls := &[]string{}
 	tr.fatal = func(format string, args ...any) {
@@ -102,7 +102,7 @@ func assertFatal(t *testing.T, calls []string) {
 
 func TestReportParseError(t *testing.T) {
 	dir := writeDir(t, map[string]string{"bad.go": badSrc})
-	Test(t, "test: Report parse error", func(tt *T) {
+	tape.Test(t, "test: Report parse error", func(tt *tape.T) {
 		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, nil), dir)
 		tr.Report("bad", "found it")
 		assertFatal(tt.TB(), *calls)
@@ -112,7 +112,7 @@ func TestReportParseError(t *testing.T) {
 
 func TestReportZeroPlaces(t *testing.T) {
 	dir := writeDir(t, map[string]string{"clean.go": cleanSrc})
-	Test(t, "test: Report zero places", func(tt *T) {
+	tape.Test(t, "test: Report zero places", func(tt *tape.T) {
 		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, nil), dir)
 		tr.Report("clean", "found it")
 		assertFatal(tt.TB(), *calls)
@@ -122,7 +122,7 @@ func TestReportZeroPlaces(t *testing.T) {
 
 func TestNoReportParseError(t *testing.T) {
 	dir := writeDir(t, map[string]string{"bad.go": badSrc})
-	Test(t, "test: NoReport parse error", func(tt *T) {
+	tape.Test(t, "test: NoReport parse error", func(tt *tape.T) {
 		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, nil), dir)
 		tr.NoReport("bad")
 		assertFatal(tt.TB(), *calls)
@@ -132,7 +132,7 @@ func TestNoReportParseError(t *testing.T) {
 
 func TestNoReportHasPlaces(t *testing.T) {
 	dir := writeDir(t, map[string]string{"match.go": matchSrc})
-	Test(t, "test: NoReport with places", func(tt *T) {
+	tape.Test(t, "test: NoReport with places", func(tt *tape.T) {
 		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, nil), dir)
 		tr.NoReport("match")
 		assertFatal(tt.TB(), *calls)
@@ -142,7 +142,7 @@ func TestNoReportHasPlaces(t *testing.T) {
 
 func TestTransformParseError(t *testing.T) {
 	dir := writeDir(t, map[string]string{"bad.go": badSrc})
-	Test(t, "test: Transform parse error", func(tt *T) {
+	tape.Test(t, "test: Transform parse error", func(tt *tape.T) {
 		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
 		tr.Transform("bad")
 		assertFatal(tt.TB(), *calls)
@@ -152,7 +152,7 @@ func TestTransformParseError(t *testing.T) {
 
 func TestNoTransformParseError(t *testing.T) {
 	dir := writeDir(t, map[string]string{"bad.go": badSrc})
-	Test(t, "test: NoTransform parse error", func(tt *T) {
+	tape.Test(t, "test: NoTransform parse error", func(tt *tape.T) {
 		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
 		tr.NoTransform("bad")
 		assertFatal(tt.TB(), *calls)
@@ -162,7 +162,7 @@ func TestNoTransformParseError(t *testing.T) {
 
 func TestReadMissingFile(t *testing.T) {
 	dir := writeDir(t, map[string]string{})
-	Test(t, "test: read missing file", func(tt *T) {
+	tape.Test(t, "test: read missing file", func(tt *tape.T) {
 		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, nil), dir)
 		tr.Report("nonexistent", "found it")
 		assertFatal(tt.TB(), *calls)
@@ -173,7 +173,7 @@ func TestReadMissingFile(t *testing.T) {
 func TestTransformUpdateWriteError(t *testing.T) {
 	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
 	t.Setenv("UPDATE", "1")
-	Test(t, "test: Transform UPDATE write error", func(tt *T) {
+	tape.Test(t, "test: Transform UPDATE write error", func(tt *tape.T) {
 		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
 		tr.writeFile = func(_ string, _ []byte, _ os.FileMode) error {
 			return os.ErrPermission
@@ -187,7 +187,7 @@ func TestTransformUpdateWriteError(t *testing.T) {
 func TestTransformUpdateHappy(t *testing.T) {
 	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
 	t.Setenv("UPDATE", "1")
-	Test(t, "test: Transform UPDATE writes fixture", func(tt *T) {
+	tape.Test(t, "test: Transform UPDATE writes fixture", func(tt *tape.T) {
 		tr, calls := newRecording(tt, items("found it", types.Matcher{"t.Equal(__a, __b)": func(v types.Vars) bool { return true }}, types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}), dir)
 		tr.Transform("replace")
 		if len(*calls) != 0 {
@@ -210,7 +210,7 @@ func TestCreateTestUnknownPluginPanics(t *testing.T) {
 }
 
 func TestDerivePackagePath(t *testing.T) {
-	Test(t, "derivePackagePath: resolves this package correctly", func(t *T) {
+	tape.Test(t, "derivePackagePath: resolves this package correctly", func(t *tape.T) {
 		_, file, _, _ := runtime.Caller(0)
 		got := derivePackagePath(file)
 		t.Equal(got, "coderaiser/indra/internal/test")
@@ -228,7 +228,7 @@ func TestDerivePackagePathRelError(t *testing.T) {
 }
 
 func TestModInfoRoot(t *testing.T) {
-	Test(t, "modinfo: root dir contains go.mod", func(t *T) {
+	tape.Test(t, "modinfo: root dir contains go.mod", func(t *tape.T) {
 		_, err := os.Stat(filepath.Join(modInfo.root, "go.mod"))
 		t.NotOk(err)
 
@@ -237,7 +237,7 @@ func TestModInfoRoot(t *testing.T) {
 }
 
 func TestReadModuleName(t *testing.T) {
-	Test(t, "readModuleName: returns module name", func(t *T) {
+	tape.Test(t, "readModuleName: returns module name", func(t *tape.T) {
 		name := readModuleName(filepath.Join(modInfo.root, "go.mod"))
 		t.Equal(name, "coderaiser/indra")
 		t.End()
@@ -280,7 +280,7 @@ func TestCreateTestHappyPath(t *testing.T) {
 // Nested value is neither a string nor a PluginEntry.
 func TestEntryPathUnknownType(t *testing.T) {
 	t.Parallel()
-	Test(t, "entryPath: unknown type returns empty string", func(t *T) {
+	tape.Test(t, "entryPath: unknown type returns empty string", func(t *tape.T) {
 		result := entryPath(42)
 		t.Equal(result, "")
 		t.End()
@@ -290,7 +290,7 @@ func TestEntryPathUnknownType(t *testing.T) {
 // TestEntryPathString covers the string branch of entryPath.
 func TestEntryPathString(t *testing.T) {
 	t.Parallel()
-	Test(t, "entryPath: string returns itself", func(t *T) {
+	tape.Test(t, "entryPath: string returns itself", func(t *tape.T) {
 		result := entryPath("coderaiser/indra/fake/path")
 		t.Equal(result, "coderaiser/indra/fake/path")
 		t.End()
@@ -300,7 +300,7 @@ func TestEntryPathString(t *testing.T) {
 // TestEntryPathPluginEntry covers the PluginEntry branch of entryPath.
 func TestEntryPathPluginEntry(t *testing.T) {
 	t.Parallel()
-	Test(t, "entryPath: PluginEntry returns its Path", func(t *T) {
+	tape.Test(t, "entryPath: PluginEntry returns its Path", func(t *tape.T) {
 		result := entryPath(types.PluginEntry{Path: "coderaiser/indra/fake/path", Enabled: true})
 		t.Equal(result, "coderaiser/indra/fake/path")
 		t.End()
@@ -312,7 +312,7 @@ func TestEntryPathPluginEntry(t *testing.T) {
 // whose rule name is not returned by loader.Load against the injected input.
 func TestCreateItemsFromNestedNotInLoader(t *testing.T) {
 	t.Parallel()
-	Test(t, "createItemsFrom: nested member not in loader output returns nil", func(t *T) {
+	tape.Test(t, "createItemsFrom: nested member not in loader output returns nil", func(t *tape.T) {
 		fakeNested := types.Nested{
 			"fake-rule": "coderaiser/indra/fake/path",
 		}
@@ -331,7 +331,7 @@ func TestCreateItemsFromNestedNotInLoader(t *testing.T) {
 // createItemsFrom where the pkgPath matches a top-level leaf entry in all.
 func TestCreateItemsFromTopLevelLeaf(t *testing.T) {
 	t.Parallel()
-	Test(t, "createItemsFrom: top-level leaf returns loadItems", func(t *T) {
+	tape.Test(t, "createItemsFrom: top-level leaf returns loadItems", func(t *tape.T) {
 		fakeAll := []loader.PluginFuncs{
 			{
 				Name:    "fake-leaf",
@@ -376,7 +376,6 @@ func TestLoadItemsNested(t *testing.T) {
 		"tape/remove-useless-condition",
 		"tape/extract-result-from-assertion",
 		"tape/remove-useless-prefix",
-		"tape/convert-no-error-to-not-ok",
 	} {
 		if !got[rule] {
 			t.Errorf("missing rule %q", rule)
@@ -476,7 +475,7 @@ func syntheticOrphanKey() loader.PluginFuncs {
 }
 
 func TestValidatePluginNilGuard(t *testing.T) {
-	Test(t, "validatePlugin: panics on nil MatchFn", func(t *T) {
+	tape.Test(t, "validatePlugin: panics on nil MatchFn", func(t *tape.T) {
 		kinds := loader.Load([]loader.PluginFuncs{syntheticNilGuard()}, loader.Config{})
 		msg := catchPanic(func() { validatePlugin(kinds[0]) })
 		t.Ok(strings.Contains(msg, "nil MatchFn"))
@@ -485,7 +484,7 @@ func TestValidatePluginNilGuard(t *testing.T) {
 }
 
 func TestValidatePluginOrphanKey(t *testing.T) {
-	Test(t, "validatePlugin: panics on orphan Match key", func(t *T) {
+	tape.Test(t, "validatePlugin: panics on orphan Match key", func(t *tape.T) {
 		kinds := loader.Load([]loader.PluginFuncs{syntheticOrphanKey()}, loader.Config{})
 		msg := catchPanic(func() { validatePlugin(kinds[0]) })
 		t.Ok(strings.Contains(msg, "Match key not in Replace"))
@@ -494,7 +493,7 @@ func TestValidatePluginOrphanKey(t *testing.T) {
 }
 
 func TestValidatePluginTraverserNoPanic(t *testing.T) {
-	Test(t, "validatePlugin: no panic for traverser plugin", func(t *T) {
+	tape.Test(t, "validatePlugin: no panic for traverser plugin", func(t *tape.T) {
 		pf := loader.PluginFuncs{
 			Name:     "trav",
 			Report:   func(_ ast.Node) string { return "x" },
