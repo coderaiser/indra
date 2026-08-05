@@ -31,7 +31,7 @@ func TestVersionFromJSON(t *testing.T) {
 
 func TestVersionLine(t *testing.T) {
 	Test(t, "version: VersionLine contains binary name", func(t *T) {
-		t.Match(indra.VersionLine(), "indra ")
+		t.Match(indra.VersionLine(), "v")
 		t.End()
 	})
 }

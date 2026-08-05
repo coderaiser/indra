@@ -31,5 +31,5 @@ func Version() string {
 
 // VersionLine returns "indra x.y.z" for -v output.
 func VersionLine() string {
-	return fmt.Sprintf("indra %s", Version())
+	return fmt.Sprintf("v%s", Version())
 }
