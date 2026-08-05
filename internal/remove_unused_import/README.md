@@ -2,11 +2,20 @@
 
 > Remove unused imports
 
-## Example
+## Rule
+
+```toml
+[rules]
+"remove-unused-import" = "on"
+```
 
 ### ❌ Incorrect
 
 ```go
+//go:build ignore
+
+package fixture
+
 import "fmt"
 
 func f() {}
@@ -15,12 +24,9 @@ func f() {}
 ### ✅ Correct
 
 ```go
+//go:build ignore
+
+package fixture
+
 func f() {}
-```
-
-## Disable
-
-```toml
-[rules]
-"remove-unused-import" = "off"
 ```

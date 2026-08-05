@@ -1,6 +1,6 @@
 # remove-unused-variable
 
-Remove unused variables
+> Remove unused variables
 
 ## Rule
 
@@ -9,17 +9,28 @@ Remove unused variables
 "remove-unused-variable" = "on"
 ```
 
-## Example
-
 ### ❌ Incorrect
 
 ```go
-x := compute()
-return 0
+//go:build ignore
+
+package fixture
+
+func f() int {
+	x := 1
+	return 0
+}
 ```
 
 ### ✅ Correct
 
 ```go
-return compute()
+//go:build ignore
+
+package fixture
+
+func f() int {
+
+	return 0
+}
 ```
