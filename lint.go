@@ -76,6 +76,32 @@ func isProviderName(name string) bool {
 	return false
 }
 
+// filterPlugins restricts items to those named in the [plugins] list. A list
+// entry matches a rule exactly or, for a group name like "tape", all of its
+// "tape/*" sub-rules. items is filtered in place.
+func filterPlugins(items []runner.PluginItem, names []string) []runner.PluginItem {
+	out := items[:0]
+	for _, item := range items {
+		for _, name := range names {
+			if item.Rule == name || strings.HasPrefix(item.Rule, name+"/") {
+				out = append(out, item)
+				break
+			}
+		}
+	}
+	return out
+}
+
+// configForFile returns the effective loader.Config for a filename: the global
+// [rules] merged with any [match] overrides that apply to that file.
+func configForFile(cfg config.Config, filename string) loader.Config {
+	lc := cfg.ToLoaderConfig()
+	for rule, val := range cfg.Match.OverrideRules(filename) {
+		lc[rule] = loader.RuleState{Enabled: val == "on"}
+	}
+	return lc
+}
+
 // Lint runs all plugins against src.
 // Returns rewritten source, findings, and any parse error.
 func Lint(src []byte, fix bool) ([]byte, []types.Place, error) {
@@ -124,7 +150,6 @@ func Indra(args []string, w io.Writer) error {
 	})
 
 	rawFiles, dirs := processor_go.ResolveArgs(files)
-	items := loadPlugins(cfg.ToLoaderConfig())
 	allFiles := processor_go.CollectFiles(rawFiles, dirs, ignore)
 	if len(allFiles) == 0 {
 		return nil
@@ -137,7 +162,11 @@ func Indra(args []string, w io.Writer) error {
 	total := len(allFiles)
 
 	for i, filename := range allFiles {
-		places, err := processor_go.ProcessFile(filename, processor_go.Opt(items, fix))
+		fileItems := loadPlugins(configForFile(cfg, filename))
+		if len(cfg.Plugins) > 0 {
+			fileItems = filterPlugins(fileItems, cfg.Plugins)
+		}
+		places, err := processor_go.ProcessFile(filename, processor_go.Opt(fileItems, fix))
 		if err != nil {
 			fmt.Fprintf(w, "file://%s: %v\n", filename, err)
 			failed = true

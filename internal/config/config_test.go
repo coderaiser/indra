@@ -211,3 +211,90 @@ func TestIsIgnoredDoubleStarExhausts(t *testing.T) {
 		t.End()
 	})
 }
+
+func TestLoadPluginsField(t *testing.T) {
+	Test(t, "config: Load parses [plugins] list", func(t *T) {
+		dir := t.TB().TempDir()
+		os.WriteFile(filepath.Join(dir, ".indra.toml"), []byte("plugins = [\"tape\", \"remove-unused-variable\"]\n"), 0644)
+		cfg, _ := config.Load(dir)
+		result := len(cfg.Plugins)
+		t.Equal(result, 2)
+
+		t.End()
+	})
+}
+
+func TestLoadMatchField(t *testing.T) {
+	Test(t, "config: Load parses [match] section", func(t *T) {
+		dir := t.TB().TempDir()
+		os.WriteFile(filepath.Join(dir, ".indra.toml"), []byte("[match]\n\"*_test.go\" = { \"tape/add-t-end\" = \"off\" }\n"), 0644)
+		cfg, _ := config.Load(dir)
+		result := len(cfg.Match)
+		t.Equal(result, 1)
+
+		t.End()
+	})
+}
+
+func TestOverrideRulesNoMatch(t *testing.T) {
+	Test(t, "match: no matching pattern returns empty", func(t *T) {
+		m := config.MatchConfig{"*_test.go": {"tape/add-t-end": "off"}}
+		out := m.OverrideRules("plain.go")
+		result := len(out)
+		t.Equal(result, 0)
+
+		t.End()
+	})
+}
+
+func TestOverrideRulesEmpty(t *testing.T) {
+	Test(t, "match: empty config returns empty", func(t *T) {
+		out := config.MatchConfig{}.OverrideRules("foo.go")
+		result := len(out)
+		t.Equal(result, 0)
+
+		t.End()
+	})
+}
+
+func TestOverrideRulesMatchBasename(t *testing.T) {
+	Test(t, "match: pattern matching basename returns override", func(t *T) {
+		m := config.MatchConfig{"*_test.go": {"tape/add-t-end": "off"}}
+		out := m.OverrideRules("foo_test.go")
+		t.Equal(out["tape/add-t-end"], "off")
+		t.End()
+	})
+}
+
+func TestOverrideRulesInvalidPattern(t *testing.T) {
+	Test(t, "match: invalid pattern is skipped", func(t *T) {
+		m := config.MatchConfig{"[": {"a": "off"}}
+		out := m.OverrideRules("foo.go")
+		result := len(out)
+		t.Equal(result, 0)
+
+		t.End()
+	})
+}
+
+func TestOverrideRulesSortedMerge(t *testing.T) {
+	Test(t, "match: later sorted pattern wins for a rule", func(t *T) {
+		m := config.MatchConfig{
+			"*.go":      {"a": "on", "b": "on"},
+			"*_test.go": {"a": "off"},
+		}
+		out := m.OverrideRules("foo_test.go")
+		t.Equal(out["a"], "off")
+		t.End()
+	})
+
+	Test(t, "match: non overridden rule keeps its value", func(t *T) {
+		m := config.MatchConfig{
+			"*.go":      {"a": "on", "b": "on"},
+			"*_test.go": {"a": "off"},
+		}
+		out := m.OverrideRules("foo_test.go")
+		t.Equal(out["b"], "on")
+		t.End()
+	})
+}

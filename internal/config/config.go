@@ -5,6 +5,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	loader "coderaiser/indra/engine_loader"
@@ -15,8 +16,42 @@ import (
 // Config is the parsed .indra.toml.
 type Config struct {
 	Rules    map[string]string `toml:"rules"`
+	Plugins  []string          `toml:"plugins"`
 	Ignore   IgnoreConfig      `toml:"ignore"`
 	Progress ProgressConfig    `toml:"progress"`
+	Match    MatchConfig       `toml:"match"`
+}
+
+// MatchConfig maps a file glob pattern to per-rule on/off overrides. It backs
+// the [match] section: for files matching the pattern, each listed rule is
+// switched on or off regardless of the global [rules] value.
+type MatchConfig map[string]map[string]string
+
+// OverrideRules returns the merged rule overrides that apply to filename.
+// Patterns are matched against the file's base name after sorting for
+// deterministic order; when several patterns match the same rule, the last
+// (alphabetically) matching pattern wins.
+func (m MatchConfig) OverrideRules(filename string) map[string]string {
+	out := map[string]string{}
+	if len(m) == 0 {
+		return out
+	}
+	base := filepath.Base(filename)
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, pat := range keys {
+		ok, err := filepath.Match(pat, base)
+		if err != nil || !ok {
+			continue
+		}
+		for rule, val := range m[pat] {
+			out[rule] = val
+		}
+	}
+	return out
 }
 
 // IgnoreConfig holds the ignore patterns.

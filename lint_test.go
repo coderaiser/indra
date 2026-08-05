@@ -277,3 +277,61 @@ func TestIndraHelp(t *testing.T) {
 		t.End()
 	})
 }
+
+func TestIndraPerFileMatchOverride(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, dir, ".indra.toml", "[match]\n\"skip_*.go\" = { \"tape\" = \"off\" }\n")
+	writeFile(t, dir, "match.go", matchSrc)
+	writeFile(t, dir, "skip_match.go", matchSrc)
+	t.Setenv("INDRA_FORMATTER", "dump")
+	t.Setenv("CI", "")
+	t.Setenv("INDRA_PROGRESS_BAR", "0")
+	t.Chdir(dir)
+	var buf bytes.Buffer
+	error := indra.Indra([]string{"."}, &buf)
+	out := buf.String()
+
+	Test(t, "match: override keeps reports for non matched file", func(t *T) {
+		t.Ok(error != nil && strings.Contains(out, "match.go"))
+		t.End()
+	})
+
+	Test(t, "match: override silences matched file", func(t *T) {
+		t.Ok(!strings.Contains(out, "skip_match.go"))
+		t.End()
+	})
+}
+
+func TestIndraPluginsRestriction(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, dir, ".indra.toml", "plugins = [\"remove-unused-variable\"]\n")
+	writeFile(t, dir, "a.go", matchSrc)
+	t.Setenv("INDRA_FORMATTER", "dump")
+	t.Setenv("CI", "")
+	t.Setenv("INDRA_PROGRESS_BAR", "0")
+	t.Chdir(dir)
+	var buf bytes.Buffer
+	error := indra.Indra([]string{"."}, &buf)
+
+	Test(t, "plugins: restriction drops non listed rules", func(t *T) {
+		t.Ok(error == nil && buf.Len() == 0)
+		t.End()
+	})
+}
+
+func TestIndraPluginsIncludesRule(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, dir, ".indra.toml", "plugins = [\"remove-unused-variable\", \"tape\"]\n")
+	writeFile(t, dir, "a.go", matchSrc)
+	t.Setenv("INDRA_FORMATTER", "dump")
+	t.Setenv("CI", "")
+	t.Setenv("INDRA_PROGRESS_BAR", "0")
+	t.Chdir(dir)
+	var buf bytes.Buffer
+	error := indra.Indra([]string{"."}, &buf)
+
+	Test(t, "plugins: list keeps listed group active", func(t *T) {
+		t.Ok(error != nil && strings.Contains(buf.String(), "a.go"))
+		t.End()
+	})
+}
