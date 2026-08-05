@@ -23,5 +23,7 @@ Test(t, "foo: bar", func(t *Test.T) {
 
 ## Disable
 
-    [rules]
-    "tape/add-t-end" = "off"
+```toml
+[rules]
+"tape/add-t-end" = "off"
+```

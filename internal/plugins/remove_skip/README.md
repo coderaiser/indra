@@ -24,5 +24,7 @@ Test(t, "foo: bar", func(t *Test.T) {
 
 ## Disable
 
-    [rules]
-    "tape/remove-skip" = "off"
+```toml
+[rules]
+"tape/remove-skip" = "off"
+```

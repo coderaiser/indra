@@ -33,8 +33,7 @@ func TestTermWidthIoctlCol(t *testing.T) {
 
 	Test(t, "term-unix: ioctlWinsize returns row and col", func(t *T) {
 		row, col := ioctlWinsize()
-		combined := row >= 0 && col >= 0
-		t.Ok(combined)
+		t.Equal(row, col)
 		t.End()
 	})
 }

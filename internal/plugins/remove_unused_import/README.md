@@ -20,5 +20,7 @@ func f() {}
 
 ## Disable
 
-    [rules]
-    "remove-unused-import" = "off"
+```toml
+[rules]
+"remove-unused-import" = "off"
+```

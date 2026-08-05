@@ -20,5 +20,7 @@ t.DeepEqual(result, expected)
 
 ## Disable
 
-    [rules]
-    "tape/extract-result-from-assertion" = "off"
+```toml
+[rules]
+"tape/extract-result-from-assertion" = "off"
+```

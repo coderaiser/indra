@@ -6,12 +6,13 @@ linters:
     - misspell
   disable:
     - errcheck
-    - staticcheck
   settings:
     staticcheck:
       checks:
         - all
+        - "-ST1000"
         - "-ST1001"
+        - "-ST1003"
 formatters:
   enable:
     - gofmt

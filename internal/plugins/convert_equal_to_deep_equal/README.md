@@ -18,5 +18,7 @@ t.DeepEqual(result, []Block{})
 
 ## Disable
 
-    [rules]
-    "tape/convert-equal-to-deep-equal" = "off"
+```toml
+[rules]
+"tape/convert-equal-to-deep-equal" = "off"
+```
