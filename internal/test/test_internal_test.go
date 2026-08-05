@@ -1,10 +1,14 @@
 package test
 
 import (
+	"go/ast"
+
 	"fmt"
 	"os"
-	"path/filepath"
 	"runtime"
+	"strings"
+
+	"path/filepath"
 	"testing"
 
 	loader "coderaiser/indra/engine-loader"
@@ -438,4 +442,65 @@ func TestFindModInfoNotFound(t *testing.T) {
 		}
 	}()
 	findModInfo("/tmp", func(string) error { return os.ErrNotExist }, readModuleName)
+}
+
+func catchPanic(fn func()) (msg string) {
+	defer func() {
+		if r := recover(); r != nil {
+			msg = fmt.Sprint(r)
+		}
+	}()
+	fn()
+	return ""
+}
+
+func syntheticNilGuard() loader.PluginFuncs {
+	return loader.PluginFuncs{
+		Name:    "nil-guard",
+		Report:  func() string { return "x" },
+		Match:   func() types.Matcher { return types.Matcher{"p": nil} },
+		Replace: func() types.Replacer { return types.Replacer{"p": "q"} },
+	}
+}
+
+func syntheticOrphanKey() loader.PluginFuncs {
+	return loader.PluginFuncs{
+		Name:    "orphan-key",
+		Report:  func() string { return "x" },
+		Match:   func() types.Matcher { return types.Matcher{"p": func(types.Vars) bool { return true }} },
+		Replace: func() types.Replacer { return types.Replacer{} },
+	}
+}
+
+func TestValidatePluginNilGuard(t *testing.T) {
+	tape.Test(t, "validatePlugin: panics on nil MatchFn", func(t *tape.T) {
+		kinds := loader.Load([]loader.PluginFuncs{syntheticNilGuard()}, loader.Config{})
+		msg := catchPanic(func() { validatePlugin(kinds[0]) })
+		t.Ok(strings.Contains(msg, "nil MatchFn"))
+		t.End()
+	})
+}
+
+func TestValidatePluginOrphanKey(t *testing.T) {
+	tape.Test(t, "validatePlugin: panics on orphan Match key", func(t *tape.T) {
+		kinds := loader.Load([]loader.PluginFuncs{syntheticOrphanKey()}, loader.Config{})
+		msg := catchPanic(func() { validatePlugin(kinds[0]) })
+		t.Ok(strings.Contains(msg, "Match key not in Replace"))
+		t.End()
+	})
+}
+
+func TestValidatePluginTraverserNoPanic(t *testing.T) {
+	tape.Test(t, "validatePlugin: no panic for traverser plugin", func(t *tape.T) {
+		pf := loader.PluginFuncs{
+			Name:     "trav",
+			Report:   func(_ ast.Node) string { return "x" },
+			Traverse: func() types.Traverser { return types.Traverser{"*ast.File": func(ast.Node, func(ast.Node)) {}} },
+			Fix:      func(ast.Node, map[string]any) {},
+		}
+		kinds := loader.Load([]loader.PluginFuncs{pf}, loader.Config{})
+		msg := catchPanic(func() { validatePlugin(kinds[0]) })
+		t.Equal(msg, "")
+		t.End()
+	})
 }

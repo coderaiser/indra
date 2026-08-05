@@ -109,6 +109,7 @@ func entryPath(v any) string {
 func loadItems(pf loader.PluginFuncs) []runner.PluginItem {
 	if pf.Rules == nil {
 		kinds := loader.Load([]loader.PluginFuncs{pf}, loader.Config{})
+		validatePlugin(kinds[0])
 		return []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}}
 	}
 	prefix := pf.Name + "/"
@@ -116,10 +117,32 @@ func loadItems(pf loader.PluginFuncs) []runner.PluginItem {
 	var items []runner.PluginItem
 	for _, k := range kinds {
 		if strings.HasPrefix(k.Name(), prefix) {
+			validatePlugin(k)
 			items = append(items, runner.PluginItem{Rule: k.Name(), Plugin: k})
 		}
 	}
 	return items
+}
+
+// validatePlugin enforces consistency on a resolved ReplacerPlugin before it is
+// used in tests: every Match entry must have a non-nil guard function and every
+// Match key must also appear as a Replace key. A malformed plugin would
+// otherwise pass the tester silently and fail only at fix time.
+func validatePlugin(kind loader.PluginKind) {
+	rp, ok := kind.(loader.ReplacerPlugin)
+	if !ok {
+		return
+	}
+	matcher := rp.Match()
+	replacer := rp.Replace()
+	for pattern, guard := range matcher {
+		if guard == nil {
+			panic("internal/test: " + kind.Name() + ": nil MatchFn for pattern " + pattern)
+		}
+		if _, ok := replacer[pattern]; !ok {
+			panic("internal/test: " + kind.Name() + ": Match key not in Replace: " + pattern)
+		}
+	}
 }
 
 // modInfo caches the module name and root dir, located from go.mod.
