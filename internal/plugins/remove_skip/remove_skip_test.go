@@ -11,12 +11,12 @@ var Test = indratest.CreateTest(runtime.Caller(0))
 
 func TestRemoveSkip(t *testing.T) {
 	Test(t, "remove-skip: report Test.Skip call", func(t *indratest.T) {
-		t.Report("skip", "remove Test.Skip call")
+		t.Report("remove-skip", "remove Test.Skip call")
 		t.End()
 	})
 
 	Test(t, "remove-skip: transform Test.Skip to Test", func(t *indratest.T) {
-		t.Transform("skip")
+		t.Transform("remove-skip")
 		t.End()
 	})
 

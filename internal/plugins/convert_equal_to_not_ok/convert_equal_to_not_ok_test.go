@@ -11,12 +11,12 @@ var Test = indratest.CreateTest(runtime.Caller(0))
 
 func TestConvertEqualToNotOk(t *testing.T) {
 	Test(t, "convert-equal-to-not-ok: report Equal(err, nil)", func(t *indratest.T) {
-		t.Report("equal-nil", "convert Equal(err, nil) to NotOk(err)")
+		t.Report("convert-equal-to-not-ok", "convert Equal(err, nil) to NotOk(err)")
 		t.End()
 	})
 
 	Test(t, "convert-equal-to-not-ok: transform Equal(err, nil) to NotOk", func(t *indratest.T) {
-		t.Transform("equal-nil")
+		t.Transform("convert-equal-to-not-ok")
 		t.End()
 	})
 

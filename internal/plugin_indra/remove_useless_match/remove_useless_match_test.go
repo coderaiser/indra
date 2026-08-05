@@ -20,6 +20,11 @@ func TestRemoveUselessMatch(t *testing.T) {
 		t.End()
 	})
 
+	Test(t, "remove-useless-match: report useless match", func(t *indratest.T) {
+		t.Report("remove-useless-match", "remove useless Match")
+		t.End()
+	})
+
 	Test(t, "remove-useless-match: no report for real guard", func(t *indratest.T) {
 		t.NoReport("useful-match")
 		t.End()

@@ -30,6 +30,16 @@ func TestAddTEnd(t *testing.T) {
 		t.End()
 	})
 
+	Test(t, "add-t-end: report missing End in Test", func(t *indratest.T) {
+		t.Report("add-t-end", "tape: missing t.End()")
+		t.End()
+	})
+
+	Test(t, "add-t-end: transform adds End to Test", func(t *indratest.T) {
+		t.Transform("add-t-end")
+		t.End()
+	})
+
 	Test(t, "add-t-end: no report when End present", func(t *indratest.T) {
 		t.NoReport("has-end")
 		t.End()

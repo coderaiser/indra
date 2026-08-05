@@ -25,6 +25,16 @@ func TestConvertEqualToDeepEqual(t *testing.T) {
 		t.End()
 	})
 
+	Test(t, "convert-equal-to-deep-equal: report Equal with slice", func(t *indratest.T) {
+		t.Report("convert-equal-to-deep-equal", "Equal: use DeepEqual for slices")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-deep-equal: transform Equal with slice", func(t *indratest.T) {
+		t.Transform("convert-equal-to-deep-equal")
+		t.End()
+	})
+
 	Test(t, "convert-equal-to-deep-equal: no report for DeepEqual", func(t *indratest.T) {
 		t.NoReport("deep-equal")
 		t.End()

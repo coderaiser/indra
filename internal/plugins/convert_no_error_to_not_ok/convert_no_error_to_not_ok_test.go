@@ -25,12 +25,12 @@ func TestFixDirect(t *testing.T) {
 
 func TestConvertNoErrorToNotOk(t *testing.T) {
 	Test(t, "convert-no-error-to-not-ok: reports NoError call", func(t *indratest.T) {
-		t.Report("no-error", "convert NoError(err) to NotOk(err)")
+		t.Report("convert-no-error-to-not-ok", "convert NoError(err) to NotOk(err)")
 		t.End()
 	})
 
 	Test(t, "convert-no-error-to-not-ok: fixes NoError to NotOk", func(t *indratest.T) {
-		t.Transform("no-error")
+		t.Transform("convert-no-error-to-not-ok")
 		t.End()
 	})
 

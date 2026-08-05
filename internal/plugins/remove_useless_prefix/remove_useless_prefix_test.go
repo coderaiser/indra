@@ -11,7 +11,7 @@ var Test = indratest.CreateTest(runtime.Caller(0))
 
 func TestRemoveUselessPrefix(t *testing.T) {
 	Test(t, "remove-useless-prefix: report named tape alias", func(t *indratest.T) {
-		t.Report("has-prefix", "remove useless tape prefix")
+		t.Report("remove-useless-prefix", "remove useless tape prefix")
 		t.End()
 	})
 
@@ -26,7 +26,7 @@ func TestRemoveUselessPrefix(t *testing.T) {
 	})
 
 	Test(t, "remove-useless-prefix: transform named to dot import", func(t *indratest.T) {
-		t.Transform("has-prefix")
+		t.Transform("remove-useless-prefix")
 		t.End()
 	})
 

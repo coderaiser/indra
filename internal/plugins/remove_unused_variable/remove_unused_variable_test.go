@@ -40,7 +40,7 @@ func TestReportDirect(t *testing.T) {
 
 func TestRemoveUnusedVariable(t *testing.T) {
 	Test(t, "remove-unused-variable: report unused var", func(t *indratest.T) {
-		t.Report("unused-var", "remove unused variable: x")
+		t.Report("remove-unused-variable", "remove unused variable: x")
 		t.End()
 	})
 
@@ -55,7 +55,7 @@ func TestRemoveUnusedVariable(t *testing.T) {
 	})
 
 	Test(t, "remove-unused-variable: fix removes unused var", func(t *indratest.T) {
-		t.Transform("unused-var")
+		t.Transform("remove-unused-variable")
 		t.End()
 	})
 

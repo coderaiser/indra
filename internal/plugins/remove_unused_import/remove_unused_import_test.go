@@ -11,7 +11,7 @@ var Test = indratest.CreateTest(runtime.Caller(0))
 
 func TestRemoveUnusedImport(t *testing.T) {
 	Test(t, "remove-unused-import: report unused import", func(t *indratest.T) {
-		t.Report("unused-import", `remove unused import: "fmt"`)
+		t.Report("remove-unused-import", `remove unused import: "fmt"`)
 		t.End()
 	})
 
@@ -41,7 +41,7 @@ func TestRemoveUnusedImport(t *testing.T) {
 	})
 
 	Test(t, "remove-unused-import: fix removes unused import", func(t *indratest.T) {
-		t.Transform("unused-import")
+		t.Transform("remove-unused-import")
 		t.End()
 	})
 

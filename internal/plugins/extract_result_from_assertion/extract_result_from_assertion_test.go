@@ -11,12 +11,12 @@ var Test = indratest.CreateTest(runtime.Caller(0))
 
 func TestExtractResultFromAssertion(t *testing.T) {
 	Test(t, "extract-result-from-assertion: report inline call", func(t *indratest.T) {
-		t.Report("inline-call", "extract inline expression from assertion")
+		t.Report("extract-result-from-assertion", "extract inline expression from assertion")
 		t.End()
 	})
 
 	Test(t, "extract-result-from-assertion: transform inline call", func(t *indratest.T) {
-		t.Transform("inline-call")
+		t.Transform("extract-result-from-assertion")
 		t.End()
 	})
 

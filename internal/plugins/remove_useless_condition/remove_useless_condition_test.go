@@ -11,12 +11,12 @@ var Test = indratest.CreateTest(runtime.Caller(0))
 
 func TestRemoveUselessCondition(t *testing.T) {
 	Test(t, "remove-useless-condition: report Ok(err != nil)", func(t *indratest.T) {
-		t.Report("ok-not-nil", "remove useless condition: Ok(err != nil) → Ok(err)")
+		t.Report("remove-useless-condition", "remove useless condition: Ok(err != nil) → Ok(err)")
 		t.End()
 	})
 
 	Test(t, "remove-useless-condition: transform Ok(err != nil) to Ok(err)", func(t *indratest.T) {
-		t.Transform("ok-not-nil")
+		t.Transform("remove-useless-condition")
 		t.End()
 	})
 
