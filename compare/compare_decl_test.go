@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"coderaiser/indra/compare"
+
 	. "github.com/coderaiser/go-tape"
 )
 

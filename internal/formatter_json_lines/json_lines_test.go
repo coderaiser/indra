@@ -7,6 +7,7 @@ import (
 
 	jsonlines "coderaiser/indra/internal/formatter_json_lines"
 	"coderaiser/indra/types"
+
 	. "github.com/coderaiser/go-tape"
 )
 

@@ -8,6 +8,7 @@ import (
 	dump "coderaiser/indra/internal/formatter_dump"
 	jsonlines "coderaiser/indra/internal/formatter_json_lines"
 	pb "coderaiser/indra/internal/formatter_progress_bar"
+
 	. "github.com/coderaiser/go-tape"
 )
 

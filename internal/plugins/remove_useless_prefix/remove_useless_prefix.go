@@ -159,7 +159,7 @@ func replaceSelectors(v reflect.Value, alias string) {
 			return
 		}
 		replaceSelectors(elem, alias)
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if v.IsNil() {
 			return
 		}
@@ -194,7 +194,7 @@ func replaceInStruct(v reflect.Value, alias string) {
 			continue
 		}
 		switch f.Kind() {
-		case reflect.Interface, reflect.Ptr, reflect.Slice:
+		case reflect.Interface, reflect.Pointer, reflect.Slice:
 			replaceSelectors(f, alias)
 		}
 	}
@@ -218,7 +218,7 @@ func maybeReplaceSel(f reflect.Value, alias string) bool {
 			return false
 		}
 		iface = f.Interface()
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if f.IsNil() {
 			return false
 		}

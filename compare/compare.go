@@ -143,10 +143,10 @@ func matchChildren(pat ast.Node, real ast.Node, vars Vars) bool {
 	rp := reflect.ValueOf(pat)
 	rr := reflect.ValueOf(real)
 
-	if rp.Kind() != reflect.Ptr || rp.Elem().Kind() != reflect.Struct {
+	if rp.Kind() != reflect.Pointer || rp.Elem().Kind() != reflect.Struct {
 		return true
 	}
-	if rr.Kind() != reflect.Ptr || rr.Elem().Kind() != reflect.Struct {
+	if rr.Kind() != reflect.Pointer || rr.Elem().Kind() != reflect.Struct {
 		return false
 	}
 
@@ -185,7 +185,7 @@ func matchField(name string, pf, rf reflect.Value, vars Vars) bool {
 			return rf.IsNil()
 		}
 		return matchSliceLike(pf, rf, vars)
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if pf.IsNil() {
 			return rf.IsNil()
 		}
@@ -235,7 +235,7 @@ func matchSliceLike(pf, rf reflect.Value, vars Vars) bool {
 	}
 
 	for i := 0; i < pf.Len(); i++ {
-		if pf.Index(i).Kind() == reflect.Ptr || pf.Index(i).Kind() == reflect.Interface {
+		if pf.Index(i).Kind() == reflect.Pointer || pf.Index(i).Kind() == reflect.Interface {
 			if !matchNode(pf.Index(i).Interface().(ast.Node), rf.Index(i).Interface().(ast.Node), vars) {
 				return false
 			}

@@ -35,7 +35,7 @@ func TestNestedHoldsSubPlugins(t *testing.T) {
 
 // TestFindFnShape verifies FindFn is assignable from a node+push callback.
 func TestFindFnShape(t *testing.T) {
-	var fn FindFn = func(node ast.Node, push func(ast.Node)) {
+	var fn = func(node ast.Node, push func(ast.Node)) {
 		push(node)
 	}
 	var got ast.Node
@@ -47,7 +47,7 @@ func TestFindFnShape(t *testing.T) {
 
 // TestReportFnShape verifies ReportFn has the required signature.
 func TestReportFnShape(t *testing.T) {
-	var fn ReportFn = func(node ast.Node) string { return "msg" }
+	var fn = func(node ast.Node) string { return "msg" }
 	if fn(nil) != "msg" {
 		t.Fatal("unexpected report result")
 	}
@@ -55,7 +55,7 @@ func TestReportFnShape(t *testing.T) {
 
 // TestFixFnShape verifies FixFn has the required signature.
 func TestFixFnShape(t *testing.T) {
-	var fn FixFn = func(node ast.Node, options map[string]any) {}
+	var fn = func(node ast.Node, options map[string]any) {}
 	fn(nil, nil)
 }
 

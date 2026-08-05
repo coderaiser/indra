@@ -6,6 +6,7 @@ import (
 
 	pb "coderaiser/indra/internal/formatter_progress_bar"
 	"coderaiser/indra/types"
+
 	. "github.com/coderaiser/go-tape"
 )
 
