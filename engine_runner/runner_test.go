@@ -326,9 +326,11 @@ func TestRunRenderArgSlice(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tuse(f, g)\n}\n"
 	file, fset := parse(t, src)
 	funcs := []loader.PluginFuncs{{
-		Name:    "args",
-		Report:  func() string { return "m" },
-		Match:   func() types.Matcher { return types.Matcher{"use(__args)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }} },
+		Name:   "args",
+		Report: func() string { return "m" },
+		Match: func() types.Matcher {
+			return types.Matcher{"use(__args)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}
+		},
 		Replace: func() types.Replacer { return types.Replacer{"use(__args)": "wrap(__args)"} },
 	}}
 	pl := items(funcs)
@@ -377,9 +379,11 @@ func TestApplyRewritesMultipleInBlock(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tmakeSlices(x)\n\tmakeSlices(y)\n}\n"
 	file, fset := parse(t, src)
 	funcs := []loader.PluginFuncs{{
-		Name:    "multi",
-		Report:  func() string { return "m" },
-		Match:   func() types.Matcher { return types.Matcher{"makeSlices(__x)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }} },
+		Name:   "multi",
+		Report: func() string { return "m" },
+		Match: func() types.Matcher {
+			return types.Matcher{"makeSlices(__x)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}
+		},
 		Replace: func() types.Replacer { return types.Replacer{"makeSlices(__x)": "v := __x"} },
 	}}
 	pl := items(funcs)

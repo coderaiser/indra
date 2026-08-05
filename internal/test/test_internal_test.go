@@ -315,10 +315,12 @@ func TestCreateItemsFromTopLevelLeaf(t *testing.T) {
 	tape.Test(t, "createItemsFrom: top-level leaf returns loadItems", func(t *tape.T) {
 		fakeAll := []loader.PluginFuncs{
 			{
-				Name:    "fake-leaf",
-				Path:    "coderaiser/indra/fake/leaf",
-				Report:  func() string { return "fake" },
-				Match:   func() types.Matcher { return types.Matcher{"f()": func(v types.Vars, _ *ast.BlockStmt) bool { return true }} },
+				Name:   "fake-leaf",
+				Path:   "coderaiser/indra/fake/leaf",
+				Report: func() string { return "fake" },
+				Match: func() types.Matcher {
+					return types.Matcher{"f()": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}
+				},
 				Replace: func() types.Replacer { return types.Replacer{"f()": "g()"} },
 			},
 		}
