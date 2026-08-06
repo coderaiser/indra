@@ -10,7 +10,7 @@ import (
 var Test = indratest.For("add-t-end", add_t_end.Plugin{})
 
 func TestAddTEnd(t *testing.T) {
-	Test(t, "add-t-end: report missing End in Test", func(t *indratest.T) {
+	Test(t, "add-t-end: report: missing-end", func(t *indratest.T) {
 		t.Report("missing-end", "tape: missing t.End()")
 		t.End()
 	})
@@ -35,7 +35,7 @@ func TestAddTEnd(t *testing.T) {
 		t.End()
 	})
 
-	Test(t, "add-t-end: transform adds End to Test", func(t *indratest.T) {
+	Test(t, "add-t-end: transform: add-t-end", func(t *indratest.T) {
 		t.Transform("add-t-end")
 		t.End()
 	})
