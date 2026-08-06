@@ -6,7 +6,8 @@ func Report() string { return "remove useless condition: Ok(err != nil) → Ok(e
 
 func Replace() Replacer {
 	return Replacer{
-		"__a.Ok(__b != nil)": "__a.Ok(__b)",
+		"__a.Ok(__b != nil)":    "__a.Ok(__b)",
+		"__a.NotOk(__b == nil)": "__a.NotOk(__b)",
 	}
 }
 

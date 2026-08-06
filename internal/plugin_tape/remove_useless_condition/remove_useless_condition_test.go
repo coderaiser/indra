@@ -29,4 +29,24 @@ func TestRemoveUselessCondition(t *testing.T) {
 		t.NoTransform("ok-direct")
 		t.End()
 	})
+
+	Test(t, "remove-useless-condition: report NotOk(err == nil)", func(t *indratest.T) {
+		t.Report("not-ok-nil", "remove useless condition: Ok(err != nil) → Ok(err)")
+		t.End()
+	})
+
+	Test(t, "remove-useless-condition: transform NotOk(err == nil) to NotOk(err)", func(t *indratest.T) {
+		t.Transform("not-ok-nil")
+		t.End()
+	})
+
+	Test(t, "remove-useless-condition: no report for NotOk(err)", func(t *indratest.T) {
+		t.NoReport("not-ok-direct")
+		t.End()
+	})
+
+	Test(t, "remove-useless-condition: no transform for NotOk(err)", func(t *indratest.T) {
+		t.NoTransform("not-ok-direct")
+		t.End()
+	})
 }
