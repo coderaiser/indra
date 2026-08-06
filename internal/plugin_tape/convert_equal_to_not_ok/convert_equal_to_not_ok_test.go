@@ -11,7 +11,7 @@ var Test = indratest.For("convert-equal-to-not-ok", convert_equal_to_not_ok.Plug
 
 func TestConvertEqualToNotOk(t *testing.T) {
 	Test(t, "convert-equal-to-not-ok: report Equal(err, nil)", func(t *indratest.T) {
-		t.Report("convert-equal-to-not-ok", "convert Equal(err, nil) to NotOk(err)")
+		t.Report("convert-equal-to-not-ok", "convert Equal(x, nil/false) to NotOk(x)")
 		t.End()
 	})
 
@@ -31,7 +31,7 @@ func TestConvertEqualToNotOk(t *testing.T) {
 	})
 
 	Test(t, "convert-equal-to-not-ok: report Equal(x, false)", func(t *indratest.T) {
-		t.Report("convert-equal-false-to-not-ok", "convert Equal(err, nil) to NotOk(err)")
+		t.Report("convert-equal-false-to-not-ok", "convert Equal(x, nil/false) to NotOk(x)")
 		t.End()
 	})
 

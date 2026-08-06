@@ -2,7 +2,7 @@ package convert_equal_to_not_ok
 
 import . "coderaiser/indra/types"
 
-func Report() string { return "convert Equal(err, nil) to NotOk(err)" }
+func Report() string { return "convert Equal(x, nil/false) to NotOk(x)" }
 
 func Replace() Replacer {
 	return Replacer{
