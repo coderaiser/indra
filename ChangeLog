@@ -1,3 +1,26 @@
+2026.08.07, v1.0.2
+
+fix:
+- 3ff7a41 indra: wire convert-for-to-create-test to convert_for_create package
+- a63c534 tape/remove-useless-condition: shorten report string
+- 158e6b0 tape/convert-equal-to-not-ok: update report string to Equal(x, nil/false)
+- 3b6463c rm static check
+
+feature:
+- b420d3d indra: simplify
+- 253c6c0 plugin-indra: convert-for-to-create
+- aabcff7 indra: convert-for-to-create-test
+- eebd5b2 indra/convert-for-to-create-test: convert indratest.For to createTest
+- 29bd7f4 indra: convert-for-to-create-test
+- 073ac5d remove-unused-variables: merge import+variable, add const
+- 8555cb0 tape remove-useless-condition: add NotOk(err == nil) to NotOk(err)
+- 81d91d8 tape convert-equal-to-not-ok: add Equal(x, false) to NotOk(x)
+- 40244bc tape convert-equal-to-ok: Equal(x, true) to Ok(x)
+- fb9e363 registry
+- 32b8ea1 plugins: add prefix
+- df72d62 config: add plugins array and match section
+- 73a11a8 matchfn: pass block to guard funcs
+
 2026.08.05, v1.0.1
 
 fix:
