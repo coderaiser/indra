@@ -1,6 +1,5 @@
 [rules]
-"remove-unused-import" = "on"
-"remove-unused-variable" = "on"
+"remove-unused-variables" = "on"
 
 [match]
 "*_test.go" = { "tape" = "on" }
