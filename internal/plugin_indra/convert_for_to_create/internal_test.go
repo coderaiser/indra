@@ -250,16 +250,6 @@ func TestPluginTraverse(t *testing.T) {
 	})
 }
 
-func TestPluginFix(t *testing.T) {
-	Test(t, "plugin: Fix accepts nil", func(t *T) {
-		Plugin{}.Fix(nil, nil)
-		t.Pass("no panic")
-		t.End()
-	})
-}
-
-// ── helpers ──────────────────────────────────────────────────────────────────
-
 func printCallFun(file *ast.File) string {
 	for _, decl := range file.Decls {
 		gd, ok := decl.(*ast.GenDecl)

@@ -2,3 +2,5 @@ github.com/BurntSushi/toml v1.6.0 h1:dRaEfpa2VI55EwlIW72hMRHdWouJeRF7TPYhI+AUQjk
 github.com/BurntSushi/toml v1.6.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/coderaiser/go-tape v1.2.3 h1:rHMW53nWXyy2GdkZ8RSwas3TOMd/k2cpc9u86WC6p6c=
 github.com/coderaiser/go-tape v1.2.3/go.mod h1:EDGRX/ljXUmSVWnrojx+wFOSoAeJSZtxib/zqiN0HZQ=
+github.com/coderaiser/go-tape v1.3.1 h1:oRIJM3sCkXTPwEfHI6Jcw+Z0N/x4Xdfc9Qowppb+cBI=
+github.com/coderaiser/go-tape v1.3.1/go.mod h1:vWPIJ9ptAyqv/cnDa5L5JZymJEbF9lntopYeQ2cIy1o=

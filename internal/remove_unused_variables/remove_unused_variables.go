@@ -7,9 +7,6 @@ import (
 )
 
 func Report(node ast.Node) string {
-	if node == nil {
-		return "remove unused variable"
-	}
 	switch n := node.(type) {
 	case *ast.File:
 		imports := collectImports(n)

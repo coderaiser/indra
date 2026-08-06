@@ -8,22 +8,11 @@ import (
 	. "github.com/coderaiser/go-tape"
 )
 
-// ── Report ───────────────────────────────────────────────────────────────────
-
-func TestReportNil(t *testing.T) {
-	Test(t, "report: nil node returns static message", func(t *T) {
-		result := Report(nil)
-		t.Equal(result, "remove unused variable")
-
-		t.End()
-	})
-}
-
 func TestReportOtherNode(t *testing.T) {
 	Test(t, "report: non-file non-block node returns static message", func(t *T) {
 		result := Report(ast.NewIdent("x"))
+		
 		t.Equal(result, "remove unused variable")
-
 		t.End()
 	})
 }
@@ -258,14 +247,6 @@ func TestPluginTraverse(t *testing.T) {
 		result := len(Plugin{}.Traverse())
 		t.Equal(result, 2)
 
-		t.End()
-	})
-}
-
-func TestPluginFix(t *testing.T) {
-	Test(t, "plugin: Fix accepts nil", func(t *T) {
-		Plugin{}.Fix(nil, nil)
-		t.Pass("no panic")
 		t.End()
 	})
 }

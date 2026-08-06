@@ -8,7 +8,6 @@ import (
 	"coderaiser/indra/internal/remove_unused_variables"
 	. "coderaiser/indra/internal/test"
 
-	tape "github.com/coderaiser/go-tape"
 )
 
 var Test = CreateTest("remove-unused-variables", remove_unused_variables.Plugin{})
@@ -16,14 +15,7 @@ var Test = CreateTest("remove-unused-variables", remove_unused_variables.Plugin{
 // TestReportDirect covers Report branches that are not reachable through the
 // fixture harness (nil node, and a block whose vars are all used).
 func TestReportDirect(t *testing.T) {
-	tape.Test(t, "report: nil node returns static message", func(t *tape.T) {
-		result := remove_unused_variables.Report(nil)
-		t.Equal(result, "remove unused variable")
-
-		t.End()
-	})
-
-	tape.Test(t, "report: no unused var returns static message", func(t *tape.T) {
+	Test(t, "report: no unused var returns static message", func(t *T) {
 		block := &ast.BlockStmt{List: []ast.Stmt{
 			&ast.AssignStmt{
 				Tok: token.DEFINE,
@@ -33,8 +25,8 @@ func TestReportDirect(t *testing.T) {
 			&ast.ExprStmt{X: ast.NewIdent("x")},
 		}}
 		result := remove_unused_variables.Report(block)
+		
 		t.Equal(result, "remove unused variable")
-
 		t.End()
 	})
 }
