@@ -10,7 +10,7 @@ const testImportPath = `"coderaiser/indra/internal/test"`
 
 func Report(node ast.Node) string {
 	_ = node
-	return "convert indratest.For to createTest"
+	return "convert indratest.For to CreateTest"
 }
 
 func Traverse() Traverser {
@@ -84,7 +84,7 @@ func rewriteCalls(file *ast.File) {
 		}
 		id, ok := sel.X.(*ast.Ident)
 		if ok && id.Name == "indratest" && sel.Sel != nil && sel.Sel.Name == "For" {
-			call.Fun = ast.NewIdent("createTest")
+			call.Fun = ast.NewIdent("CreateTest")
 		}
 		return true
 	})

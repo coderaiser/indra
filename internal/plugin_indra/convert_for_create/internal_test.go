@@ -25,7 +25,7 @@ func parse(t *testing.T, src string) *ast.File {
 func TestReportString(t *testing.T) {
 	Test(t, "report: returns conversion message", func(t *T) {
 		result := Report(nil)
-		t.Equal(result, "convert indratest.For to createTest")
+		t.Equal(result, "convert indratest.For to CreateTest")
 
 		t.End()
 	})
@@ -141,11 +141,11 @@ func TestRewriteImportAliasMismatch(t *testing.T) {
 // ── rewriteCalls ─────────────────────────────────────────────────────────────
 
 func TestRewriteCallsChanges(t *testing.T) {
-	Test(t, "rewriteCalls: replaces indratest.For with createTest", func(t *T) {
+	Test(t, "rewriteCalls: replaces indratest.For with CreateTest", func(t *T) {
 		file := parse(t.TB(), "package fixture\nvar x = indratest.For(\"a\", f)\n")
 		rewriteCalls(file)
 		result := printCallFun(file)
-		t.Equal(result, "createTest")
+		t.Equal(result, "CreateTest")
 
 		t.End()
 	})
@@ -235,7 +235,7 @@ func TestRewriteTNotT(t *testing.T) {
 func TestPluginReport(t *testing.T) {
 	Test(t, "plugin: Report delegates", func(t *T) {
 		result := Plugin{}.Report(nil)
-		t.Equal(result, "convert indratest.For to createTest")
+		t.Equal(result, "convert indratest.For to CreateTest")
 
 		t.End()
 	})

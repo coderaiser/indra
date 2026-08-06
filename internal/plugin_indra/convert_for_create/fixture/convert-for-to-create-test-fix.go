@@ -4,4 +4,4 @@ package fixture
 
 import . "coderaiser/indra/internal/test"
 
-var Test = createTest("some-rule", somePlugin{})
+var Test = CreateTest("some-rule", somePlugin{})

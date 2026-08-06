@@ -43,6 +43,10 @@ func For(rule string, plugin any) func(*testing.T, string, func(*T)) {
 	})
 }
 
+// CreateTest is the exported alias for For, used by the
+// convert-for-to-create-test plugin and by migrated plugin test files.
+var CreateTest = For
+
 // ForGroup returns a test runner for every rule of a group. It is used by a
 // group's own test file to exercise all sub-rules at once (e.g. tape.Rules()).
 func ForGroup(name string, rules []types.Rule) func(*testing.T, string, func(*T)) {
