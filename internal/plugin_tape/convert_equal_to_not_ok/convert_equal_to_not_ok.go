@@ -6,7 +6,8 @@ func Report() string { return "convert Equal(err, nil) to NotOk(err)" }
 
 func Replace() Replacer {
 	return Replacer{
-		"__a.Equal(__b, nil)": "__a.NotOk(__b)",
+		"__a.Equal(__b, nil)":   "__a.NotOk(__b)",
+		"__a.Equal(__b, false)": "__a.NotOk(__b)",
 	}
 }
 

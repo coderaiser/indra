@@ -29,4 +29,14 @@ func TestConvertEqualToNotOk(t *testing.T) {
 		t.NoTransform("not-ok")
 		t.End()
 	})
+
+	Test(t, "convert-equal-to-not-ok: report Equal(x, false)", func(t *indratest.T) {
+		t.Report("convert-equal-false-to-not-ok", "convert Equal(err, nil) to NotOk(err)")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-not-ok: transform Equal(x, false) to NotOk", func(t *indratest.T) {
+		t.Transform("convert-equal-false-to-not-ok")
+		t.End()
+	})
 }
