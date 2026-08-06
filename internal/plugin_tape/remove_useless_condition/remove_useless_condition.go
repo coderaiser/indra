@@ -2,7 +2,7 @@ package remove_useless_condition
 
 import . "coderaiser/indra/types"
 
-func Report() string { return "remove useless condition: Ok(err != nil) → Ok(err)" }
+func Report() string { return "remove useless condition" }
 
 func Replace() Replacer {
 	return Replacer{

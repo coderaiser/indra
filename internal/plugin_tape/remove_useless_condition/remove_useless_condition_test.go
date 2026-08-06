@@ -11,7 +11,7 @@ var Test = indratest.For("remove-useless-condition", remove_useless_condition.Pl
 
 func TestRemoveUselessCondition(t *testing.T) {
 	Test(t, "remove-useless-condition: report Ok(err != nil)", func(t *indratest.T) {
-		t.Report("remove-useless-condition", "remove useless condition: Ok(err != nil) → Ok(err)")
+		t.Report("remove-useless-condition", "remove useless condition")
 		t.End()
 	})
 
@@ -31,7 +31,7 @@ func TestRemoveUselessCondition(t *testing.T) {
 	})
 
 	Test(t, "remove-useless-condition: report NotOk(err == nil)", func(t *indratest.T) {
-		t.Report("not-ok-nil", "remove useless condition: Ok(err != nil) → Ok(err)")
+		t.Report("not-ok-nil", "remove useless condition")
 		t.End()
 	})
 
