@@ -1,6 +1,6 @@
 [rules]
 "remove-unused-variables" = "on"
+"indra" = "on"
 
 [match]
 "*_test.go" = { "tape" = "on" }
-"*.go" = { "indra" = "on" }
