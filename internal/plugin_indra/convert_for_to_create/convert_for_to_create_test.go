@@ -1,13 +1,13 @@
-package convert_for_create_test
+package convert_for_to_create_test
 
 import (
 	"testing"
 
-	"coderaiser/indra/internal/plugin_indra/convert_for_create"
+	"coderaiser/indra/internal/plugin_indra/convert_for_to_create"
 	. "coderaiser/indra/internal/test"
 )
 
-var Test = CreateTest("convert-for-to-create-test", convert_for_create.Plugin{})
+var Test = CreateTest("convert-for-to-create-test", convert_for_to_create.Plugin{})
 
 func TestConvertForToCreateTest(t *testing.T) {
 	Test(t, "convert-for-to-create-test: report indratest.For call", func(t *T) {
