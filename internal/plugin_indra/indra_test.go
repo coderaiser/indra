@@ -16,14 +16,16 @@ func TestRules(t *testing.T) {
 				found = true
 			}
 		}
-		t.Equal(found, true)
+		t.Ok(found)
+
 		t.End()
 	})
 
 	Test(t, "plugin-indra: remove-useless-match is Disabled by default", func(t *T) {
 		for _, r := range Rules() {
 			if r.Name == "remove-useless-match" {
-				t.Equal(r.Disabled, true)
+				t.Ok(r.Disabled)
+
 			}
 		}
 		t.End()

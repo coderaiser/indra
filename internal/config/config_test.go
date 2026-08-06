@@ -191,7 +191,8 @@ func TestToLoaderConfigOnEnabled(t *testing.T) {
 	Test(t, "ToLoaderConfig: on maps to Enabled true", func(t *T) {
 		cfg := config.Config{Rules: map[string]string{"tape": "on"}}
 		lc := cfg.ToLoaderConfig()
-		t.Equal(lc["tape"].Enabled, true)
+		t.Ok(lc["tape"].Enabled)
+
 		t.End()
 	})
 }
@@ -200,7 +201,8 @@ func TestToLoaderConfigOffDisabled(t *testing.T) {
 	Test(t, "ToLoaderConfig: off maps to Enabled false", func(t *T) {
 		cfg := config.Config{Rules: map[string]string{"tape": "off"}}
 		lc := cfg.ToLoaderConfig()
-		t.Equal(lc["tape"].Enabled, false)
+		t.NotOk(lc["tape"].Enabled)
+
 		t.End()
 	})
 }

@@ -13,7 +13,7 @@ import (
 func TestStmtsContainEnd(t *testing.T) {
 	Test(t, "stmtsContainEnd: nil list returns false", func(t *T) {
 		result := stmtsContainEnd(nil)
-		t.Equal(result, false)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -23,28 +23,28 @@ func TestStmtsContainEnd(t *testing.T) {
 			Fun: &ast.SelectorExpr{X: ast.NewIdent("t"), Sel: ast.NewIdent("End")},
 		}}}
 		result := stmtsContainEnd(stmts)
-		t.Equal(result, true)
+		t.Ok(result)
 
 		t.End()
 	})
 
 	Test(t, "stmtsContainEnd: AssignStmt returns false", func(t *T) {
 		result := stmtsContainEnd([]ast.Stmt{&ast.AssignStmt{}})
-		t.Equal(result, false)
+		t.NotOk(result)
 
 		t.End()
 	})
 
 	Test(t, "stmtsContainEnd: ExprStmt with non-CallExpr returns false", func(t *T) {
 		result := stmtsContainEnd([]ast.Stmt{&ast.ExprStmt{X: ast.NewIdent("foo")}})
-		t.Equal(result, false)
+		t.NotOk(result)
 
 		t.End()
 	})
 
 	Test(t, "stmtsContainEnd: CallExpr with non-SelectorExpr returns false", func(t *T) {
 		result := stmtsContainEnd([]ast.Stmt{&ast.ExprStmt{X: &ast.CallExpr{Fun: ast.NewIdent("foo")}}})
-		t.Equal(result, false)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -54,7 +54,7 @@ func TestStmtsContainEnd(t *testing.T) {
 			Fun: &ast.SelectorExpr{X: ast.NewIdent("t"), Sel: ast.NewIdent("Equal")},
 		}}}
 		result := stmtsContainEnd(stmts)
-		t.Equal(result, false)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -69,14 +69,14 @@ func TestGuard(t *testing.T) {
 
 	Test(t, "guard: non-BodySlice __body returns false", func(t *T) {
 		result := guard(Vars{"__body": ast.NewIdent("x")}, nil)
-		t.Equal(result, false)
+		t.NotOk(result)
 
 		t.End()
 	})
 
 	Test(t, "guard: empty BodySlice returns true", func(t *T) {
 		result := guard(Vars{"__body": compare.BodySlice{Stmts: []ast.Stmt{}}}, nil)
-		t.Equal(result, true)
+		t.Ok(result)
 
 		t.End()
 	})

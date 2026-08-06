@@ -20,7 +20,7 @@ func TestBlockDeclares(t *testing.T) {
 			},
 		}}
 		result := blockDeclares(block, "result")
-		t.Equal(result, true)
+		t.Ok(result)
 
 		t.End()
 	})
@@ -34,7 +34,7 @@ func TestBlockDeclares(t *testing.T) {
 			},
 		}}
 		result := blockDeclares(block, "result")
-		t.Equal(result, false)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -48,7 +48,7 @@ func TestBlockDeclares(t *testing.T) {
 			},
 		}}
 		result := blockDeclares(block, "result")
-		t.Equal(result, false)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -58,7 +58,7 @@ func TestBlockDeclares(t *testing.T) {
 			&ast.ExprStmt{X: ast.NewIdent("result")},
 		}}
 		result := blockDeclares(block, "result")
-		t.Equal(result, false)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -72,7 +72,7 @@ func TestBlockDeclares(t *testing.T) {
 			},
 		}}
 		result := blockDeclares(block, "result")
-		t.Equal(result, false)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -86,7 +86,7 @@ func TestMatchGuardBlock(t *testing.T) {
 			break
 		}
 		result := guard(Vars{}, nil)
-		t.Equal(result, true)
+		t.Ok(result)
 
 		t.End()
 	})
@@ -99,7 +99,7 @@ func TestMatchGuardBlock(t *testing.T) {
 		}
 		block := &ast.BlockStmt{List: []ast.Stmt{&ast.ExprStmt{X: ast.NewIdent("f()")}}}
 		result := guard(Vars{}, block)
-		t.Equal(result, true)
+		t.Ok(result)
 
 		t.End()
 	})
@@ -116,7 +116,7 @@ func TestMatchGuardBlock(t *testing.T) {
 			Rhs: []ast.Expr{ast.NewIdent("x")},
 		}}}
 		result := guard(Vars{}, block)
-		t.Equal(result, false)
+		t.NotOk(result)
 
 		t.End()
 	})

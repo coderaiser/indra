@@ -1,10 +1,10 @@
 package main
 
 import (
-	engine_loader         "coderaiser/indra/engine_loader"
-	plugin_indra          "coderaiser/indra/internal/plugin_indra"
-	plugin_tape           "coderaiser/indra/internal/plugin_tape"
-	remove_unused_import  "coderaiser/indra/internal/remove_unused_import"
+	engine_loader "coderaiser/indra/engine_loader"
+	plugin_indra "coderaiser/indra/internal/plugin_indra"
+	plugin_tape "coderaiser/indra/internal/plugin_tape"
+	remove_unused_import "coderaiser/indra/internal/remove_unused_import"
 	remove_unused_variable "coderaiser/indra/internal/remove_unused_variable"
 )
 

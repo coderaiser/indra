@@ -30,7 +30,7 @@ func TestConfigureMinBelowThreshold(t *testing.T) {
 		cfg = Config{Color: defaultColor, MinCount: 0}
 		Configure(Config{Color: defaultColor, MinCount: 5})
 		result := ShouldShow(4)
-		t.Equal(result, false)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -41,7 +41,7 @@ func TestConfigureMinAtThreshold(t *testing.T) {
 		cfg = Config{Color: defaultColor, MinCount: 0}
 		Configure(Config{Color: defaultColor, MinCount: 5})
 		result := ShouldShow(5)
-		t.Equal(result, true)
+		t.Ok(result)
 
 		t.End()
 	})
@@ -53,7 +53,7 @@ func TestShouldShowEnv1Overrides(t *testing.T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
 		Configure(Config{Color: defaultColor, MinCount: 999})
 		result := ShouldShow(1)
-		t.Equal(result, true)
+		t.Ok(result)
 
 		t.End()
 	})
@@ -65,7 +65,7 @@ func TestShouldShowEnv0Overrides(t *testing.T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
 		Configure(Config{Color: defaultColor, MinCount: 0})
 		result := ShouldShow(999)
-		t.Equal(result, false)
+		t.NotOk(result)
 
 		t.End()
 	})

@@ -52,7 +52,8 @@ func TestConfigForFileNoOverride(t *testing.T) {
 	Test(t, "configForFile: keeps base rules with no match", func(t *T) {
 		cfg := config.Config{Rules: map[string]string{"tape": "on"}}
 		lc := configForFile(cfg, "plain.go")
-		t.Equal(lc["tape"].Enabled, true)
+		t.Ok(lc["tape"].Enabled)
+
 		t.End()
 	})
 }
@@ -64,7 +65,8 @@ func TestConfigForFileOverrideUnmatched(t *testing.T) {
 			Match: config.MatchConfig{"skip_*.go": {"tape": "off"}},
 		}
 		lc := configForFile(cfg, "plain.go")
-		t.Equal(lc["tape"].Enabled, true)
+		t.Ok(lc["tape"].Enabled)
+
 		t.End()
 	})
 }
@@ -76,7 +78,8 @@ func TestConfigForFileOverrideOff(t *testing.T) {
 			Match: config.MatchConfig{"skip_*.go": {"tape": "off"}},
 		}
 		lc := configForFile(cfg, "skip_a.go")
-		t.Equal(lc["tape"].Enabled, false)
+		t.NotOk(lc["tape"].Enabled)
+
 		t.End()
 	})
 }
@@ -88,7 +91,8 @@ func TestConfigForFileOverrideOn(t *testing.T) {
 			Match: config.MatchConfig{"skip_*.go": {"tape": "on"}},
 		}
 		lc := configForFile(cfg, "skip_a.go")
-		t.Equal(lc["tape"].Enabled, true)
+		t.Ok(lc["tape"].Enabled)
+
 		t.End()
 	})
 }
