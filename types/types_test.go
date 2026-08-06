@@ -19,23 +19,14 @@ func (traverserLike) Report() string                         { return "t" }
 func (traverserLike) Traverse() Traverser                    { return nil }
 func (traverserLike) Fix(node ast.Node, opts map[string]any) {}
 
-// TestRuleDefaults verifies the Rule struct carries a plugin and its
-// default-disabled flag.
+// TestRuleDefaults verifies the Rule struct carries a name and plugin.
 func TestRuleDefaults(t *testing.T) {
 	r := Rule{Name: "remove-skip", Plugin: replacerLike{}}
-	if r.Name != "remove-skip" || r.Disabled {
+	if r.Name != "remove-skip" {
 		t.Fatalf("unexpected Rule defaults: %+v", r)
 	}
 	if _, ok := r.Plugin.(replacerLike); !ok {
 		t.Fatalf("expected replacer plugin, got %T", r.Plugin)
-	}
-}
-
-// TestRuleDisabled verifies a Rule can be disabled by default.
-func TestRuleDisabled(t *testing.T) {
-	r := Rule{Name: "meta", Plugin: traverserLike{}, Disabled: true}
-	if !r.Disabled {
-		t.Fatal("expected Rule to be disabled by default")
 	}
 }
 

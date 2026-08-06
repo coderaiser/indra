@@ -144,50 +144,23 @@ func TestLoadPrefixDisabled(t *testing.T) {
 	}
 }
 
-func TestLoadDisabledDefault(t *testing.T) {
-	// A group rule marked Disabled is off by default.
+func TestLoadGroupRuleOffByConfig(t *testing.T) {
+	// A group rule is on by default; config "off" disables it.
 	plugins := []PluginFuncs{{
 		Name: "indra",
 		Rules: []types.Rule{
-			{Name: "remove-useless-match", Plugin: testTraverser{}, Disabled: true},
+			{Name: "remove-useless-match", Plugin: testTraverser{}},
 			{Name: "other", Plugin: testReplacer{}},
 		},
 	}}
-	got := Load(plugins, Config{})
-	nms := names(got)
-	if nms["indra/remove-useless-match"] {
-		t.Fatalf("expected disabled rule off by default, got %v", nms)
-	}
-	if !nms["indra/other"] {
-		t.Fatalf("expected enabled rule present, got %v", nms)
-	}
-}
-
-func TestLoadDisabledOverriddenOn(t *testing.T) {
-	// Config turning a Disabled rule on overtakes its default.
-	plugins := []PluginFuncs{{
-		Name:  "indra",
-		Rules: []types.Rule{{Name: "remove-useless-match", Plugin: testTraverser{}, Disabled: true}},
-	}}
-	cfg := Config{"indra/remove-useless-match": {Enabled: true}}
+	cfg := Config{"indra/remove-useless-match": {Enabled: false}}
 	got := Load(plugins, cfg)
 	nms := names(got)
-	if !nms["indra/remove-useless-match"] {
-		t.Fatalf("expected disabled rule enabled by config, got %v", nms)
+	if nms["indra/remove-useless-match"] {
+		t.Fatalf("expected rule off by config, got %v", nms)
 	}
-}
-
-func TestLoadGroupOnEnablesDisabledRule(t *testing.T) {
-	// A group-level "on" overtakes a rule's Disabled-by-default flag, as used
-	// by [match] "*.go" = { "indra" = "on" }.
-	plugins := []PluginFuncs{{
-		Name:  "indra",
-		Rules: []types.Rule{{Name: "remove-useless-match", Plugin: testTraverser{}, Disabled: true}},
-	}}
-	got := Load(plugins, Config{"indra": {Enabled: true}})
-	nms := names(got)
-	if !nms["indra/remove-useless-match"] {
-		t.Fatalf("expected group-on to enable disabled rule, got %v", nms)
+	if !nms["indra/other"] {
+		t.Fatalf("expected other rule present, got %v", nms)
 	}
 }
 

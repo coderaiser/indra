@@ -52,7 +52,6 @@ type Place struct {
 
 // Rule is a named plugin entry inside a group's Rules() return.
 type Rule struct {
-	Name     string
-	Plugin   any  // carries Report/Match/Replace/Traverse/Fix methods
-	Disabled bool // true = off by default; config can re-enable
+	Name   string
+	Plugin any // carries Report/Match/Replace/Traverse/Fix methods
 }

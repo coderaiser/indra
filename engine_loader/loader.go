@@ -73,9 +73,8 @@ func DefaultConfig() Config { return Config{} }
 
 // candidate is a resolved plugin before config filtering.
 type candidate struct {
-	rule    string
-	kind    PluginKind
-	enabled bool // default-enabled state (from a group Rule's Disabled flag)
+	rule string
+	kind PluginKind
 }
 
 // Load resolves top-level plugins and nested sub-plugins into runnable kinds,
@@ -87,19 +86,18 @@ type candidate struct {
 // Filtering priority:
 //  1. exact config match: "tape/remove-skip" disabled → rule disabled
 //  2. prefix config match: "tape" disabled → all "tape/*" disabled
-//  3. a group Rule's Disabled flag
-//  4. default: enabled
+//  3. default: enabled
 func Load(plugins []PluginFuncs, cfg Config) []PluginKind {
 	var cands []candidate
 	for _, p := range plugins {
 		if p.Rules != nil {
 			for _, r := range p.Rules {
 				rule := p.Name + "/" + r.Name
-				cands = append(cands, candidate{rule: rule, kind: resolve(r.Plugin, rule, p.Name), enabled: !r.Disabled})
+				cands = append(cands, candidate{rule: rule, kind: resolve(r.Plugin, rule, p.Name)})
 			}
 			continue
 		}
-		cands = append(cands, candidate{rule: p.Name, kind: resolve(p.Plugin, p.Name, p.Name), enabled: true})
+		cands = append(cands, candidate{rule: p.Name, kind: resolve(p.Plugin, p.Name, p.Name)})
 	}
 
 	out := make([]PluginKind, 0, len(cands))
@@ -119,14 +117,14 @@ func isEnabled(c candidate, cfg Config) bool {
 		return st.Enabled
 	}
 	// 2. group prefix match: "tape" off → all "tape/*" disabled; "tape" on → all
-	// "tape/*" enabled (this re-enables a group rule disabled by default).
+	// "tape/*" enabled.
 	for key, st := range cfg {
 		if len(key) < len(c.rule) && c.rule[:len(key)] == key && c.rule[len(key)] == '/' {
 			return st.Enabled
 		}
 	}
-	// 3/4. default from group Rule.Disabled, else enabled
-	return c.enabled
+	// 3. default: enabled
+	return true
 }
 
 // resolve detects a plugin's kind from its exported methods, naming it rule.

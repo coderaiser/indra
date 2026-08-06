@@ -6,11 +6,10 @@ import (
 	"coderaiser/indra/types"
 )
 
-// Rules returns the indra meta-rules. All rules are Disabled by default;
-// enable them in .indra.toml: "indra" = "on".
+// Rules returns the indra meta-rules. Enable via .indra.toml: "indra" = "on".
 func Rules() []types.Rule {
 	return []types.Rule{
-		{Name: "remove-useless-match", Plugin: remove_useless_match.Plugin{}, Disabled: true},
-		{Name: "convert-for-to-create-test", Plugin: convert_for_to_create.Plugin{}, Disabled: true},
+		{Name: "remove-useless-match", Plugin: remove_useless_match.Plugin{}},
+		{Name: "convert-for-to-create-test", Plugin: convert_for_to_create.Plugin{}},
 	}
 }
