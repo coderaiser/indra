@@ -16,7 +16,6 @@ import (
 	"coderaiser/indra/internal/config"
 	"coderaiser/indra/internal/formatter"
 	"coderaiser/indra/internal/formatter_progress_bar"
-	"coderaiser/indra/internal/plugins"
 	processor_go "coderaiser/indra/processor-go"
 	"coderaiser/indra/types"
 )
@@ -51,8 +50,8 @@ func loadUsage() string {
 }
 
 // loadPlugins resolves all enabled plugins into runnable items.
-func loadPlugins(lc loader.Config) []runner.PluginItem {
-	kinds := loader.Load(plugins.Registry, lc)
+func loadPlugins(registry []loader.PluginFuncs, lc loader.Config) []runner.PluginItem {
+	kinds := loader.Load(registry, lc)
 	items := make([]runner.PluginItem, 0, len(kinds))
 	for _, k := range kinds {
 		items = append(items, runner.PluginItem{Rule: k.Name(), Plugin: k})
@@ -88,17 +87,17 @@ func configForFile(cfg config.Config, filename string) loader.Config {
 
 // Lint runs all plugins against src.
 // Returns rewritten source, findings, and any parse error.
-func Lint(src []byte, fix bool) ([]byte, []types.Place, error) {
+func Lint(registry []loader.PluginFuncs, src []byte, fix bool) ([]byte, []types.Place, error) {
 	res, err := processor.Process(processor.Params{
 		Src:     src,
 		Fix:     fix,
-		Plugins: loadPlugins(loader.DefaultConfig()),
+		Plugins: loadPlugins(registry, loader.DefaultConfig()),
 	})
 	return res.Out, res.Places, err
 }
 
 // Indra runs the CLI over the given files, printing findings.
-func Indra(args []string, w io.Writer) error {
+func Indra(registry []loader.PluginFuncs, args []string, w io.Writer) error {
 	for _, arg := range args {
 		if arg == "--help" || arg == "-h" {
 			fmt.Fprint(w, loadUsage())
@@ -146,7 +145,7 @@ func Indra(args []string, w io.Writer) error {
 	total := len(allFiles)
 
 	for i, filename := range allFiles {
-		fileItems := loadPlugins(configForFile(cfg, filename))
+		fileItems := loadPlugins(registry, configForFile(cfg, filename))
 		if len(cfg.Plugins) > 0 {
 			fileItems = filterPlugins(fileItems, cfg.Plugins)
 		}

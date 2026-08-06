@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	if err := indra.Indra(os.Args[1:], os.Stderr); err != nil {
+	if err := indra.Indra(Registry, os.Args[1:], os.Stderr); err != nil {
 		os.Exit(1)
 	}
 }

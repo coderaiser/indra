@@ -9,9 +9,21 @@ import (
 	"testing"
 
 	indra "coderaiser/indra"
+	engine_loader "coderaiser/indra/engine_loader"
+	plugin_indra "coderaiser/indra/internal/plugin_indra"
+	plugin_tape "coderaiser/indra/internal/plugin_tape"
+	remove_unused_import "coderaiser/indra/internal/remove_unused_import"
+	remove_unused_variable "coderaiser/indra/internal/remove_unused_variable"
 
 	. "github.com/coderaiser/go-tape"
 )
+
+var testRegistry = []engine_loader.PluginFuncs{
+	{Name: "tape", Rules: plugin_tape.Rules()},
+	{Name: "indra", Rules: plugin_indra.Rules()},
+	{Name: "remove-unused-import", Plugin: remove_unused_import.Plugin{}},
+	{Name: "remove-unused-variable", Plugin: remove_unused_variable.Plugin{}},
+}
 
 func writeFile(t *testing.T, dir, name, content string) string {
 	t.Helper()
@@ -28,13 +40,13 @@ const badSrc = "package p\nfunc (\n"
 
 func TestLintReports(t *testing.T) {
 	Test(t, "lint: Lint returns no error for matching source", func(t *T) {
-		_, _, error := indra.Lint([]byte(matchSrc), false)
+		_, _, error := indra.Lint(testRegistry, []byte(matchSrc), false)
 		t.NotOk(error)
 		t.End()
 	})
 
 	Test(t, "lint: Lint returns places for matching source", func(t *T) {
-		_, places, _ := indra.Lint([]byte(matchSrc), false)
+		_, places, _ := indra.Lint(testRegistry, []byte(matchSrc), false)
 		t.Ok(len(places) > 0)
 		t.End()
 	})
@@ -42,13 +54,13 @@ func TestLintReports(t *testing.T) {
 
 func TestLintClean(t *testing.T) {
 	Test(t, "lint: Lint returns no error for clean source", func(t *T) {
-		_, _, error := indra.Lint([]byte(cleanSrc), false)
+		_, _, error := indra.Lint(testRegistry, []byte(cleanSrc), false)
 		t.NotOk(error)
 		t.End()
 	})
 
 	Test(t, "lint: Lint returns no places for clean source", func(t *T) {
-		_, places, _ := indra.Lint([]byte(cleanSrc), false)
+		_, places, _ := indra.Lint(testRegistry, []byte(cleanSrc), false)
 		result := len(places)
 		t.Equal(result, 0)
 
@@ -58,13 +70,13 @@ func TestLintClean(t *testing.T) {
 
 func TestLintFix(t *testing.T) {
 	Test(t, "lint: Lint fix returns no error", func(t *T) {
-		_, _, error := indra.Lint([]byte(matchSrc), true)
+		_, _, error := indra.Lint(testRegistry, []byte(matchSrc), true)
 		t.NotOk(error)
 		t.End()
 	})
 
 	Test(t, "lint: Lint fix rewrites source", func(t *T) {
-		out, _, _ := indra.Lint([]byte(matchSrc), true)
+		out, _, _ := indra.Lint(testRegistry, []byte(matchSrc), true)
 		t.Ok(strings.Contains(string(out), "expected"))
 		t.End()
 	})
@@ -72,7 +84,7 @@ func TestLintFix(t *testing.T) {
 
 func TestLintParseError(t *testing.T) {
 	Test(t, "lint: Lint returns error for invalid source", func(t *T) {
-		_, _, error := indra.Lint([]byte(badSrc), false)
+		_, _, error := indra.Lint(testRegistry, []byte(badSrc), false)
 		t.Ok(error)
 		t.End()
 	})
@@ -81,28 +93,28 @@ func TestLintParseError(t *testing.T) {
 func TestIndraVersion(t *testing.T) {
 	Test(t, "lint: --version prints version", func(t *T) {
 		var buf bytes.Buffer
-		error := indra.Indra([]string{"--version"}, &buf)
+		error := indra.Indra(testRegistry, []string{"--version"}, &buf)
 		t.NotOk(error)
 		t.End()
 	})
 
 	Test(t, "lint: --version writes output", func(t *T) {
 		var buf bytes.Buffer
-		indra.Indra([]string{"--version"}, &buf)
+		indra.Indra(testRegistry, []string{"--version"}, &buf)
 		t.Ok(buf.Len() > 0)
 		t.End()
 	})
 
 	Test(t, "lint: -v prints version", func(t *T) {
 		var buf bytes.Buffer
-		error := indra.Indra([]string{"-v"}, &buf)
+		error := indra.Indra(testRegistry, []string{"-v"}, &buf)
 		t.NotOk(error)
 		t.End()
 	})
 
 	Test(t, "lint: -v writes output", func(t *T) {
 		var buf bytes.Buffer
-		indra.Indra([]string{"-v"}, &buf)
+		indra.Indra(testRegistry, []string{"-v"}, &buf)
 		t.Ok(buf.Len() > 0)
 		t.End()
 	})
@@ -110,7 +122,7 @@ func TestIndraVersion(t *testing.T) {
 
 func TestIndraNoFiles(t *testing.T) {
 	Test(t, "lint: no files returns nil", func(t *T) {
-		error := indra.Indra([]string{}, io.Discard)
+		error := indra.Indra(testRegistry, []string{}, io.Discard)
 		t.NotOk(error)
 		t.End()
 	})
@@ -118,7 +130,7 @@ func TestIndraNoFiles(t *testing.T) {
 
 func TestIndraUnknownFlag(t *testing.T) {
 	Test(t, "lint: unknown flag with no files returns nil", func(t *T) {
-		error := indra.Indra([]string{"--unknown"}, io.Discard)
+		error := indra.Indra(testRegistry, []string{"--unknown"}, io.Discard)
 		t.NotOk(error)
 		t.End()
 	})
@@ -126,7 +138,7 @@ func TestIndraUnknownFlag(t *testing.T) {
 
 func TestIndraMissingFileError(t *testing.T) {
 	Test(t, "lint: missing file returns error", func(t *T) {
-		error := indra.Indra([]string{"/nonexistent/file.go"}, io.Discard)
+		error := indra.Indra(testRegistry, []string{"/nonexistent/file.go"}, io.Discard)
 		t.Ok(error)
 		t.End()
 	})
@@ -136,7 +148,7 @@ func TestIndraCleanFile(t *testing.T) {
 	Test(t, "lint: clean file returns nil", func(t *T) {
 		dir := t.TB().TempDir()
 		f := writeFile(t.TB(), dir, "clean.go", cleanSrc)
-		error := indra.Indra([]string{f}, io.Discard)
+		error := indra.Indra(testRegistry, []string{f}, io.Discard)
 		t.NotOk(error)
 		t.End()
 	})
@@ -146,7 +158,7 @@ func TestIndraFailsOnIssue(t *testing.T) {
 	Test(t, "lint: file with issue returns error", func(t *T) {
 		dir := t.TB().TempDir()
 		f := writeFile(t.TB(), dir, "bad.go", matchSrc)
-		error := indra.Indra([]string{f}, io.Discard)
+		error := indra.Indra(testRegistry, []string{f}, io.Discard)
 		t.Ok(error)
 		t.End()
 	})
@@ -156,7 +168,7 @@ func TestIndraFixWrites(t *testing.T) {
 	Test(t, "lint: --fix returns nil", func(t *T) {
 		dir := t.TB().TempDir()
 		f := writeFile(t.TB(), dir, "bad.go", matchSrc)
-		error := indra.Indra([]string{"--fix", f}, io.Discard)
+		error := indra.Indra(testRegistry, []string{"--fix", f}, io.Discard)
 		t.NotOk(error)
 		t.End()
 	})
@@ -164,7 +176,7 @@ func TestIndraFixWrites(t *testing.T) {
 	Test(t, "lint: --fix rewrites file", func(t *T) {
 		dir := t.TB().TempDir()
 		f := writeFile(t.TB(), dir, "bad.go", matchSrc)
-		indra.Indra([]string{"--fix", f}, io.Discard)
+		indra.Indra(testRegistry, []string{"--fix", f}, io.Discard)
 		data, _ := os.ReadFile(f)
 		t.Ok(strings.Contains(string(data), "expected"))
 		t.End()
@@ -179,7 +191,7 @@ func TestIndraDumpFormatterReports(t *testing.T) {
 		t.TB().Setenv("CI", "")
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
 		var buf bytes.Buffer
-		error := indra.Indra([]string{dir}, &buf)
+		error := indra.Indra(testRegistry, []string{dir}, &buf)
 		t.Ok(error != nil && buf.Len() > 0)
 		t.End()
 	})
@@ -191,7 +203,7 @@ func TestIndraDumpFormatterReports(t *testing.T) {
 		t.TB().Setenv("CI", "")
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
 		var buf bytes.Buffer
-		indra.Indra([]string{dir}, &buf)
+		indra.Indra(testRegistry, []string{dir}, &buf)
 		t.Ok(strings.Contains(buf.String(), "bad.go"))
 		t.End()
 	})
@@ -204,7 +216,7 @@ func TestIndraJsonLinesFormatter(t *testing.T) {
 		t.TB().Setenv("INDRA_FORMATTER", "json-lines")
 		t.TB().Setenv("CI", "")
 		var buf bytes.Buffer
-		indra.Indra([]string{dir}, &buf)
+		indra.Indra(testRegistry, []string{dir}, &buf)
 		t.Ok(strings.Contains(buf.String(), `"name"`))
 		t.End()
 	})
@@ -217,7 +229,7 @@ func TestIndraDumpFormatterClean(t *testing.T) {
 		t.TB().Setenv("INDRA_FORMATTER", "dump")
 		t.TB().Setenv("CI", "")
 		var buf bytes.Buffer
-		error := indra.Indra([]string{dir}, &buf)
+		error := indra.Indra(testRegistry, []string{dir}, &buf)
 		t.Ok(error == nil && buf.Len() == 0)
 		t.End()
 	})
@@ -228,7 +240,7 @@ func TestIndraNoGoFiles(t *testing.T) {
 		dir := t.TB().TempDir()
 		writeFile(t.TB(), dir, "readme.txt", "hello")
 		var buf bytes.Buffer
-		error := indra.Indra([]string{dir}, &buf)
+		error := indra.Indra(testRegistry, []string{dir}, &buf)
 		t.Ok(error == nil && buf.Len() == 0)
 		t.End()
 	})
@@ -237,42 +249,42 @@ func TestIndraNoGoFiles(t *testing.T) {
 func TestIndraHelp(t *testing.T) {
 	Test(t, "lint: --help returns nil", func(t *T) {
 		var buf bytes.Buffer
-		error := indra.Indra([]string{"--help"}, &buf)
+		error := indra.Indra(testRegistry, []string{"--help"}, &buf)
 		t.NotOk(error)
 		t.End()
 	})
 
 	Test(t, "lint: --help writes output", func(t *T) {
 		var buf bytes.Buffer
-		indra.Indra([]string{"--help"}, &buf)
+		indra.Indra(testRegistry, []string{"--help"}, &buf)
 		t.Ok(buf.Len() > 0)
 		t.End()
 	})
 
 	Test(t, "lint: -h returns nil", func(t *T) {
 		var buf bytes.Buffer
-		error := indra.Indra([]string{"-h"}, &buf)
+		error := indra.Indra(testRegistry, []string{"-h"}, &buf)
 		t.NotOk(error)
 		t.End()
 	})
 
 	Test(t, "lint: -h writes output", func(t *T) {
 		var buf bytes.Buffer
-		indra.Indra([]string{"-h"}, &buf)
+		indra.Indra(testRegistry, []string{"-h"}, &buf)
 		t.Ok(buf.Len() > 0)
 		t.End()
 	})
 
 	Test(t, "lint: --help output contains Usage", func(t *T) {
 		var buf bytes.Buffer
-		indra.Indra([]string{"--help"}, &buf)
+		indra.Indra(testRegistry, []string{"--help"}, &buf)
 		t.Match(buf.String(), "Usage")
 		t.End()
 	})
 
 	Test(t, "lint: --help output contains --fix", func(t *T) {
 		var buf bytes.Buffer
-		indra.Indra([]string{"--help"}, &buf)
+		indra.Indra(testRegistry, []string{"--help"}, &buf)
 		t.Match(buf.String(), "--fix")
 		t.End()
 	})
@@ -288,7 +300,7 @@ func TestIndraPerFileMatchOverride(t *testing.T) {
 	t.Setenv("INDRA_PROGRESS_BAR", "0")
 	t.Chdir(dir)
 	var buf bytes.Buffer
-	error := indra.Indra([]string{"."}, &buf)
+	error := indra.Indra(testRegistry, []string{"."}, &buf)
 	out := buf.String()
 
 	Test(t, "match: override keeps reports for non matched file", func(t *T) {
@@ -311,7 +323,7 @@ func TestIndraPluginsRestriction(t *testing.T) {
 	t.Setenv("INDRA_PROGRESS_BAR", "0")
 	t.Chdir(dir)
 	var buf bytes.Buffer
-	error := indra.Indra([]string{"."}, &buf)
+	error := indra.Indra(testRegistry, []string{"."}, &buf)
 
 	Test(t, "plugins: restriction drops non listed rules", func(t *T) {
 		t.Ok(error == nil && buf.Len() == 0)
@@ -328,7 +340,7 @@ func TestIndraPluginsIncludesRule(t *testing.T) {
 	t.Setenv("INDRA_PROGRESS_BAR", "0")
 	t.Chdir(dir)
 	var buf bytes.Buffer
-	error := indra.Indra([]string{"."}, &buf)
+	error := indra.Indra(testRegistry, []string{"."}, &buf)
 
 	Test(t, "plugins: list keeps listed group active", func(t *T) {
 		t.Ok(error != nil && strings.Contains(buf.String(), "a.go"))
