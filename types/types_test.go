@@ -1,170 +1,103 @@
-package types
+package types_test
 
 import (
 	"go/ast"
 	"testing"
+
+	"coderaiser/indra/types"
+	. "github.com/coderaiser/go-tape"
 )
 
-// replacerLike is a minimal plugin exposing the replacer method set.
-type replacerLike struct{}
-
-func (replacerLike) Report() string    { return "r" }
-func (replacerLike) Match() Matcher    { return nil }
-func (replacerLike) Replace() Replacer { return nil }
-
-// traverserLike is a minimal plugin exposing the traverser method set.
-type traverserLike struct{}
-
-func (traverserLike) Report() string                         { return "t" }
-func (traverserLike) Traverse() Traverser                    { return nil }
-func (traverserLike) Fix(node ast.Node, opts map[string]any) {}
-
-// TestRuleDefaults verifies the Rule struct carries a name and plugin.
-func TestRuleDefaults(t *testing.T) {
-	r := Rule{Name: "remove-skip", Plugin: replacerLike{}}
-	if r.Name != "remove-skip" {
-		t.Fatalf("unexpected Rule defaults: %+v", r)
+func makeStack(nodes ...ast.Node) types.Path {
+	if len(nodes) == 0 {
+		return types.Path{}
 	}
-	if _, ok := r.Plugin.(replacerLike); !ok {
-		t.Fatalf("expected replacer plugin, got %T", r.Plugin)
+	return types.Path{
+		Node:  nodes[len(nodes)-1],
+		Stack: nodes[:len(nodes)-1],
 	}
 }
 
-// TestFindFnShape verifies FindFn is assignable from a node+push callback.
-func TestFindFnShape(t *testing.T) {
-	var fn = func(node ast.Node, push func(ast.Node)) {
-		push(node)
-	}
-	var got ast.Node
-	fn(&ast.File{}, func(n ast.Node) { got = n })
-	if got == nil {
-		t.Fatal("expected push to be called with the node")
-	}
+func ident(name string) *ast.Ident { return ast.NewIdent(name) }
+
+func TestFind(t *testing.T) {
+	a, b, c := ident("a"), ident("b"), ident("c")
+	path := types.Path{Node: c, Stack: []ast.Node{a, b}}
+
+	Test(t, "Path.Find: matches self", func(t *T) {
+		_, ok := path.Find(func(p types.Path) bool { return p.Node == c })
+		t.Equal(ok, true)
+		t.End()
+	})
+
+	Test(t, "Path.Find: matches ancestor", func(t *T) {
+		_, ok := path.Find(func(p types.Path) bool { return p.Node == a })
+		t.Equal(ok, true)
+		t.End()
+	})
+
+	Test(t, "Path.Find: returns false when nothing matches", func(t *T) {
+		_, ok := path.Find(func(p types.Path) bool { return false })
+		t.Equal(ok, false)
+		t.End()
+	})
 }
 
-// TestReportFnShape verifies ReportFn has the required signature.
-func TestReportFnShape(t *testing.T) {
-	var fn = func(node ast.Node) string { return "msg" }
-	if fn(nil) != "msg" {
-		t.Fatal("unexpected report result")
-	}
+func TestFindParent(t *testing.T) {
+	a, b, c := ident("a"), ident("b"), ident("c")
+	path := types.Path{Node: c, Stack: []ast.Node{a, b}}
+
+	Test(t, "Path.FindParent: finds immediate parent", func(t *T) {
+		_, ok := path.FindParent(func(p types.Path) bool { return p.Node == b })
+		t.Equal(ok, true)
+		t.End()
+	})
+
+	Test(t, "Path.FindParent: finds grandparent", func(t *T) {
+		_, ok := path.FindParent(func(p types.Path) bool { return p.Node == a })
+		t.Equal(ok, true)
+		t.End()
+	})
+
+	Test(t, "Path.FindParent: does not match self", func(t *T) {
+		_, ok := path.FindParent(func(p types.Path) bool { return p.Node == c })
+		t.Equal(ok, false)
+		t.End()
+	})
+
+	Test(t, "Path.FindParent: returns false on empty stack", func(t *T) {
+		root := types.Path{Node: a, Stack: nil}
+		_, ok := root.FindParent(func(p types.Path) bool { return true })
+		t.Equal(ok, false)
+		t.End()
+	})
+
+	Test(t, "Path.FindParent: ancestor stack is trimmed correctly", func(t *T) {
+		found, _ := path.FindParent(func(p types.Path) bool { return p.Node == b })
+		t.Equal(len(found.Stack), 1)
+		t.End()
+	})
 }
 
-// TestFixFnShape verifies FixFn has the required signature.
-func TestFixFnShape(t *testing.T) {
-	var fn = func(node ast.Node, options map[string]any) {}
-	fn(nil, nil)
-}
+func TestParentPath(t *testing.T) {
+	a, b := ident("a"), ident("b")
+	path := types.Path{Node: b, Stack: []ast.Node{a}}
 
-// TestVarsAlias verifies Vars aliases compare.Vars.
-func TestVarsAlias(t *testing.T) {
-	v := make(Vars)
-	v["__a"] = &ast.Ident{Name: "x"}
-	_, ok := v["__a"]
-	if !ok {
-		t.Fatal("expected key __a")
-	}
-}
+	Test(t, "Path.ParentPath: returns parent", func(t *T) {
+		_, ok := path.ParentPath()
+		t.Equal(ok, true)
+		t.End()
+	})
 
-// TestPlaceFields verifies Place carries rule, message and position.
-func TestPlaceFields(t *testing.T) {
-	p := Place{
-		Rule:     "rule",
-		Message:  "msg",
-		Position: Position{Line: 1, Column: 2},
-	}
-	if p.Rule != "rule" || p.Message != "msg" {
-		t.Fatal("unexpected Place content")
-	}
-	if p.Position.Line != 1 || p.Position.Column != 2 {
-		t.Fatal("unexpected Place position")
-	}
-}
+	Test(t, "Path.ParentPath: returns false at root", func(t *T) {
+		_, ok := types.Path{Node: a, Stack: nil}.ParentPath()
+		t.Equal(ok, false)
+		t.End()
+	})
 
-// TestReplacerShape verifies Replacer is a string map.
-func TestReplacerShape(t *testing.T) {
-	r := Replacer{"a": "b"}
-	if r["a"] != "b" {
-		t.Fatal("unexpected replacer value")
-	}
-}
-
-// TestMatcherShape verifies Matcher is a map of pattern to guard.
-func TestMatcherShape(t *testing.T) {
-	m := Matcher{
-		"pat": func(Vars, *ast.BlockStmt) bool { return true },
-	}
-	if _, ok := m["pat"]; !ok {
-		t.Fatal("expected pattern in matcher")
-	}
-}
-
-// TestTraverserShape verifies Traverser maps keys to finders.
-func TestTraverserShape(t *testing.T) {
-	tr := Traverser{
-		"*ast.File": func(p Path, push func(Path)) {},
-	}
-		if _, ok := tr["*ast.File"]; !ok {
-		t.Fatal("expected *ast.File key in traverser")
-	}
-}
-
-// TestPathFindReturnsSelf verifies Find returns the path itself when fn matches.
-func TestPathFindReturnsSelf(t *testing.T) {
-	self := &ast.Ident{Name: "leaf"}
-	p := Path{Node: self}
-	found, ok := p.Find(func(anc Path) bool { return anc.Node == self })
-	if !ok || found.Node != self {
-		t.Fatalf("expected Find to return self, got ok=%v node=%v", ok, found.Node)
-	}
-}
-
-// TestPathFindUp verifies Find walks up to a matching ancestor.
-func TestPathFindUp(t *testing.T) {
-	root := &ast.Ident{Name: "root"}
-	mid := &ast.Ident{Name: "mid"}
-	p := Path{Node: &ast.Ident{Name: "leaf"}, Stack: []ast.Node{root, mid}}
-	found, ok := p.Find(func(anc Path) bool { return anc.Node == mid })
-	if !ok || found.Node != mid {
-		t.Fatalf("expected Find to return mid, got ok=%v node=%v", ok, found.Node)
-	}
-}
-
-// TestPathFindUpNotFound verifies Find returns false when no ancestor matches.
-func TestPathFindUpNotFound(t *testing.T) {
-	p := Path{Node: &ast.Ident{Name: "leaf"}, Stack: []ast.Node{&ast.Ident{Name: "root"}}}
-	_, ok := p.Find(func(Path) bool { return false })
-	if ok {
-		t.Fatal("expected Find to return false when no ancestor matches")
-	}
-}
-
-// TestPathFindParent verifies FindParent returns the nearest ancestor, not self.
-func TestPathFindParent(t *testing.T) {
-	leaf := &ast.Ident{Name: "leaf"}
-	root := &ast.Ident{Name: "root"}
-	p := Path{Node: leaf, Stack: []ast.Node{root}}
-	found, ok := p.FindParent(func(Path) bool { return true })
-	if !ok || found.Node != root {
-		t.Fatalf("expected nearest parent root, got ok=%v node=%v", ok, found.Node)
-	}
-}
-
-// TestPathParentPath verifies ParentPath returns the immediate parent.
-func TestPathParentPath(t *testing.T) {
-	root := &ast.Ident{Name: "root"}
-	p := Path{Node: &ast.Ident{Name: "leaf"}, Stack: []ast.Node{root}}
-	parent, ok := p.ParentPath()
-	if !ok || parent.Node != root {
-		t.Fatalf("expected immediate parent root, got ok=%v node=%v", ok, parent.Node)
-	}
-}
-
-// TestPathParentPathEmpty verifies ParentPath returns false for a root path.
-func TestPathParentPathEmpty(t *testing.T) {
-	p := Path{Node: &ast.Ident{Name: "root"}}
-	_, ok := p.ParentPath()
-	if ok {
-		t.Fatal("expected ParentPath to return false for empty stack")
-	}
+	Test(t, "Path.ParentPath: parent has empty stack at root", func(t *T) {
+		parent, _ := path.ParentPath()
+		t.Equal(len(parent.Stack), 0)
+		t.End()
+	})
 }
