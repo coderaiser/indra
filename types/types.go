@@ -3,6 +3,7 @@
 package types
 
 import (
+	"fmt"
 	"go/ast"
 
 	"golang.org/x/tools/go/ast/astutil"
@@ -80,6 +81,27 @@ func (p Path) InsertAfter(n ast.Node) {
 	if p.Cursor != nil {
 		p.Cursor.InsertAfter(n)
 	}
+}
+
+// Traverse walks the sub-tree rooted at p.Node in pre-order, routing each
+// node to the matching visitor by its type key ("*ast.ReturnStmt" etc).
+// Visitor keys use the same format as Traverser.
+// The visitor receives a child Path whose Stack includes p.Node as the
+// immediate parent. There is no early-exit mechanism in this first version;
+// if early exit is needed, use a closed-over bool and return immediately.
+func (p Path) Traverse(visitors map[string]func(Path)) {
+	astutil.Apply(p.Node, func(c *astutil.Cursor) bool {
+		key := fmt.Sprintf("%T", c.Node())
+		if fn, ok := visitors[key]; ok {
+			child := Path{
+				Node:   c.Node(),
+				Stack:  append(append([]ast.Node{}, p.Stack...), p.Node),
+				Cursor: c,
+			}
+			fn(child)
+		}
+		return true
+	}, nil)
 }
 
 // Find walks up from this path (inclusive) and returns the first Path where fn

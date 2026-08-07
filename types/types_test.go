@@ -278,3 +278,48 @@ func TestPathCursorMethodsNoOpWhenNil(t *testing.T) {
 		t.End()
 	})
 }
+
+func TestPathTraverse(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tx := 1\n\treturn\n}\n"
+	fset := token.NewFileSet()
+	file, _ := parser.ParseFile(fset, "", src, 0)
+	funcDecl := file.Decls[0].(*ast.FuncDecl)
+	p := types.Path{Node: funcDecl.Body}
+
+	Test(t, "Path.Traverse: visits matching node type", func(t *T) {
+		count := 0
+		p.Traverse(map[string]func(types.Path){
+			"*ast.ReturnStmt": func(_ types.Path) { count++ },
+		})
+		t.Equal(count, 1)
+		t.End()
+	})
+
+	Test(t, "Path.Traverse: skips non-matching node types", func(t *T) {
+		count := 0
+		p.Traverse(map[string]func(types.Path){
+			"*ast.ReturnStmt": func(_ types.Path) { count++ },
+		})
+		// only ReturnStmt, not AssignStmt
+		t.Equal(count, 1)
+		t.End()
+	})
+
+	Test(t, "Path.Traverse: visited path carries parent in stack", func(t *T) {
+		var stack []ast.Node
+		p.Traverse(map[string]func(types.Path){
+			"*ast.ReturnStmt": func(child types.Path) {
+				stack = child.Stack
+			},
+		})
+		t.Ok(len(stack) > 0)
+		t.End()
+	})
+
+	Test(t, "Path.Traverse: no-op for empty visitors map", func(t *T) {
+		// must not panic
+		p.Traverse(map[string]func(types.Path){})
+		t.Ok(true)
+		t.End()
+	})
+}
