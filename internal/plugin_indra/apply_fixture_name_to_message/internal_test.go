@@ -40,55 +40,73 @@ func TestExtractRuleName(t *testing.T) {
 	base := parseFile(t, baseSrc)
 
 	Test(t, "extractRuleName: returns rule name from CreateTest", func(t *T) {
-		t.Equal(extractRuleName(types.Path{Node: base}), "remove-skip")
+		result := extractRuleName(types.Path{Node: base})
+		t.Equal(result, "remove-skip")
+
 		t.End()
 	})
 
 	Test(t, "extractRuleName: empty when no var Test", func(t *T) {
 		src := "package p\nvar Other = CreateTest(\"x\", nil)\n"
-		t.Equal(extractRuleName(types.Path{Node: parseFile(t.TB(), src)}), "")
+		result := extractRuleName(types.Path{Node: parseFile(t.TB(), src)})
+		t.Equal(result, "")
+
 		t.End()
 	})
 
 	Test(t, "extractRuleName: skip when value is not a call", func(t *T) {
 		src := "package p\nvar Test = 5\n"
-		t.Equal(extractRuleName(types.Path{Node: parseFile(t.TB(), src)}), "")
+		result := extractRuleName(types.Path{Node: parseFile(t.TB(), src)})
+		t.Equal(result, "")
+
 		t.End()
 	})
 
 	Test(t, "extractRuleName: skip when fun is not an ident", func(t *T) {
 		src := "package p\nvar Test = x.CreateTest(\"y\")\n"
-		t.Equal(extractRuleName(types.Path{Node: parseFile(t.TB(), src)}), "")
+		result := extractRuleName(types.Path{Node: parseFile(t.TB(), src)})
+		t.Equal(result, "")
+
 		t.End()
 	})
 
 	Test(t, "extractRuleName: skip when fun is not CreateTest", func(t *T) {
 		src := "package p\nvar Test = Foo(\"y\")\n"
-		t.Equal(extractRuleName(types.Path{Node: parseFile(t.TB(), src)}), "")
+		result := extractRuleName(types.Path{Node: parseFile(t.TB(), src)})
+		t.Equal(result, "")
+
 		t.End()
 	})
 
 	Test(t, "extractRuleName: skip when no args", func(t *T) {
 		src := "package p\nvar Test = CreateTest()\n"
-		t.Equal(extractRuleName(types.Path{Node: parseFile(t.TB(), src)}), "")
+		result := extractRuleName(types.Path{Node: parseFile(t.TB(), src)})
+		t.Equal(result, "")
+
 		t.End()
 	})
 
 	Test(t, "extractRuleName: skip when arg is not a literal", func(t *T) {
 		src := "package p\nvar Test = CreateTest(x)\n"
-		t.Equal(extractRuleName(types.Path{Node: parseFile(t.TB(), src)}), "")
+		result := extractRuleName(types.Path{Node: parseFile(t.TB(), src)})
+		t.Equal(result, "")
+
 		t.End()
 	})
 
 	Test(t, "extractRuleName: empty literal yields empty rule", func(t *T) {
 		src := "package p\nvar Test = CreateTest(\"\")\n"
-		t.Equal(extractRuleName(types.Path{Node: parseFile(t.TB(), src)}), "")
+		result := extractRuleName(types.Path{Node: parseFile(t.TB(), src)})
+		t.Equal(result, "")
+
 		t.End()
 	})
 
 	Test(t, "extractRuleName: skips index beyond values", func(t *T) {
 		src := "package p\nvar X, Test = 5\n"
-		t.Equal(extractRuleName(types.Path{Node: parseFile(t.TB(), src)}), "")
+		result := extractRuleName(types.Path{Node: parseFile(t.TB(), src)})
+		t.Equal(result, "")
+
 		t.End()
 	})
 
@@ -98,7 +116,9 @@ func TestExtractRuleName(t *testing.T) {
 		vs := file.Decls[0].(*ast.GenDecl).Specs[0].(*ast.ValueSpec)
 		call := vs.Values[0].(*ast.CallExpr)
 		call.Args[0] = &ast.BasicLit{Kind: token.STRING, Value: "x"}
-		t.Equal(extractRuleName(types.Path{Node: file}), "")
+		result := extractRuleName(types.Path{Node: file})
+		t.Equal(result, "")
+
 		t.End()
 	})
 }
@@ -118,7 +138,8 @@ func f(t *testing.T) {
 }
 `
 		p := types.Path{Node: parseFile(t.TB(), src)}
-		t.Equal(hasMissingPrefix(p, "remove-skip"), false)
+		t.NotOk(hasMissingPrefix(p, "remove-skip"))
+
 		t.End()
 	})
 
@@ -147,7 +168,8 @@ func f(t *testing.T) {
 }
 `
 		p := types.Path{Node: parseFile(t.TB(), src)}
-		t.Equal(hasMissingPrefix(p, "remove-skip"), false)
+		t.NotOk(hasMissingPrefix(p, "remove-skip"))
+
 		t.End()
 	})
 
@@ -158,7 +180,8 @@ func f(t *testing.T) {
 		fn := file.Decls[2].(*ast.FuncDecl)
 		call := fn.Body.List[0].(*ast.ExprStmt).X.(*ast.CallExpr)
 		call.Args[1] = &ast.BasicLit{Kind: token.STRING, Value: "x"}
-		t.Equal(hasMissingPrefix(types.Path{Node: file}, "remove-skip"), false)
+		t.NotOk(hasMissingPrefix(types.Path{Node: file}, "remove-skip"))
+
 		t.End()
 	})
 }

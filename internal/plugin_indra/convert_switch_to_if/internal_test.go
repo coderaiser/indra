@@ -5,8 +5,8 @@ import (
 	"go/token"
 	"testing"
 
-	. "github.com/coderaiser/go-tape"
 	. "coderaiser/indra/types"
+	. "github.com/coderaiser/go-tape"
 )
 
 func switchPath(sw *ast.SwitchStmt) Path {
@@ -26,7 +26,8 @@ func TestHasReturn(t *testing.T) {
 			&ast.ExprStmt{X: ast.NewIdent("x")},
 		}}
 		p := Path{Node: body}
-		t.Equal(hasReturn(p), false)
+		t.NotOk(hasReturn(p))
+
 		t.End()
 	})
 }
@@ -44,7 +45,8 @@ func TestHasFallthrough(t *testing.T) {
 	Test(t, "hasFallthrough: false when no fallthrough", func(t *T) {
 		body := &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{}}}
 		p := Path{Node: body}
-		t.Equal(hasFallthrough(p), false)
+		t.NotOk(hasFallthrough(p))
+
 		t.End()
 	})
 }
@@ -72,14 +74,16 @@ func TestSwitchBlock(t *testing.T) {
 	Test(t, "switchBlock: nil when no parent", func(t *T) {
 		sw := &ast.SwitchStmt{Body: &ast.BlockStmt{}}
 		p := Path{Node: sw}
-		t.Ok(switchBlock(p) == nil)
+		t.NotOk(switchBlock(p))
+
 		t.End()
 	})
 
 	Test(t, "switchBlock: nil when parent is not a block", func(t *T) {
 		sw := &ast.SwitchStmt{Body: &ast.BlockStmt{}}
 		p := Path{Node: sw, Stack: []ast.Node{ast.NewIdent("x")}}
-		t.Ok(switchBlock(p) == nil)
+		t.NotOk(switchBlock(p))
+
 		t.End()
 	})
 
@@ -95,7 +99,8 @@ func TestSwitchBlock(t *testing.T) {
 func TestIsConvertible(t *testing.T) {
 	Test(t, "isConvertible: false when tag is nil", func(t *T) {
 		sw := &ast.SwitchStmt{Body: &ast.BlockStmt{}}
-		t.Equal(isConvertible(switchPath(sw)), false)
+		t.NotOk(isConvertible(switchPath(sw)))
+
 		t.End()
 	})
 
@@ -104,7 +109,8 @@ func TestIsConvertible(t *testing.T) {
 			Tag:  ast.NewIdent("x"),
 			Body: &ast.BlockStmt{},
 		}
-		t.Equal(isConvertible(switchPath(sw)), true)
+		t.Ok(isConvertible(switchPath(sw)))
+
 		t.End()
 	})
 
@@ -115,46 +121,50 @@ func TestIsConvertible(t *testing.T) {
 				&ast.CaseClause{Body: []ast.Stmt{&ast.ReturnStmt{}}},
 			}},
 		}
-		t.Equal(isConvertible(switchPath(sw)), false)
+		t.NotOk(isConvertible(switchPath(sw)))
+
 		t.End()
 	})
 
 	Test(t, "isConvertible: false when case has no return", func(t *T) {
 		sw := &ast.SwitchStmt{
-			Tag:  ast.NewIdent("x"),
+			Tag: ast.NewIdent("x"),
 			Body: &ast.BlockStmt{List: []ast.Stmt{
 				&ast.CaseClause{List: []ast.Expr{ast.NewIdent(`"a"`)}, Body: []ast.Stmt{
 					&ast.ExprStmt{X: ast.NewIdent("println")},
 				}},
 			}},
 		}
-		t.Equal(isConvertible(switchPath(sw)), false)
+		t.NotOk(isConvertible(switchPath(sw)))
+
 		t.End()
 	})
 
 	Test(t, "isConvertible: false when case has fallthrough", func(t *T) {
 		sw := &ast.SwitchStmt{
-			Tag:  ast.NewIdent("x"),
+			Tag: ast.NewIdent("x"),
 			Body: &ast.BlockStmt{List: []ast.Stmt{
 				&ast.CaseClause{List: []ast.Expr{ast.NewIdent(`"a"`)}, Body: []ast.Stmt{
 					&ast.BranchStmt{Tok: token.FALLTHROUGH},
 				}},
 			}},
 		}
-		t.Equal(isConvertible(switchPath(sw)), false)
+		t.NotOk(isConvertible(switchPath(sw)))
+
 		t.End()
 	})
 
 	Test(t, "isConvertible: true for convertible switch", func(t *T) {
 		sw := &ast.SwitchStmt{
-			Tag:  ast.NewIdent("x"),
+			Tag: ast.NewIdent("x"),
 			Body: &ast.BlockStmt{List: []ast.Stmt{
 				&ast.CaseClause{List: []ast.Expr{ast.NewIdent(`"a"`)}, Body: []ast.Stmt{
 					&ast.ReturnStmt{},
 				}},
 			}},
 		}
-		t.Equal(isConvertible(switchPath(sw)), true)
+		t.Ok(isConvertible(switchPath(sw)))
+
 		t.End()
 	})
 }
