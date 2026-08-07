@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"coderaiser/indra/internal/plugin_remove_unused_variables"
+	"coderaiser/indra/types"
 	. "coderaiser/indra/internal/test"
 )
 
@@ -23,7 +24,7 @@ func TestReportDirect(t *testing.T) {
 			},
 			&ast.ExprStmt{X: ast.NewIdent("x")},
 		}}
-		result := remove_unused_variables.Report(block)
+		result := remove_unused_variables.Report(types.Path{Node: block})
 
 		t.Equal(result, "remove unused variable")
 		t.End()

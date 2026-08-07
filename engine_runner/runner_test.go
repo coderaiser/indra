@@ -159,18 +159,18 @@ func TestRunTraverserReturnsPlaces(t *testing.T) {
 }
 
 func TestRunTraverserFixCallsFix(t *testing.T) {
-	src := "package p\n\nfunc f() {}\n"
+	src := "package p\n\nfunc f(){}\n"
 	file, fset := parse(t, src)
 	funcs := loader.PluginFuncs{
 		Name: "file",
 		Plugin: traverser{
 			report: "file issue",
 			tr: types.Traverser{
-				"*ast.File": func(node ast.Node, push func(ast.Node)) {
-					push(node)
+				"*ast.File": func(p types.Path, push func(types.Path)) {
+					push(p)
 				},
 			},
-						fix: func(p types.Path, opts map[string]any) {
+			fix: func(p types.Path, opts map[string]any) {
 				f := p.Node.(*ast.File)
 				f.Name.Name = "q"
 			},
@@ -262,11 +262,11 @@ func TestRunTraverserBlockFix(t *testing.T) {
 		Plugin: traverser{
 			report: "block",
 			tr: types.Traverser{
-				"*ast.BlockStmt": func(node ast.Node, push func(ast.Node)) {
-					push(node)
+				"*ast.BlockStmt": func(p types.Path, push func(types.Path)) {
+					push(p)
 				},
 			},
-						fix: func(p types.Path, opts map[string]any) {
+			fix: func(p types.Path, opts map[string]any) {
 				block := p.Node.(*ast.BlockStmt)
 				block.List = nil
 			},

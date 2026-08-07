@@ -3,7 +3,6 @@
 package engine_loader
 
 import (
-	"go/ast"
 	"reflect"
 
 	"coderaiser/indra/types"
@@ -54,9 +53,9 @@ type TraverserPlugin struct {
 
 func (p TraverserPlugin) Name() string                          { return p.rule }
 func (TraverserPlugin) pluginKind()                             { _ = "traverser" }
-func (p TraverserPlugin) Report(pPath Path) string              { return p.report(pPath) }
-func (p TraverserPlugin) Traverse() types.Traverser             { return p.traverse() }
-func (p TraverserPlugin) Fix(pPath Path, opts map[string]any)   { p.fix(pPath, opts) }
+func (p TraverserPlugin) Report(pPath types.Path) string              { return p.report(pPath) }
+func (p TraverserPlugin) Traverse() types.Traverser                    { return p.traverse() }
+func (p TraverserPlugin) Fix(pPath types.Path, opts map[string]any)    { p.fix(pPath, opts) }
 
 // RuleState is the enabled/disabled state of a rule from config.
 type RuleState struct {

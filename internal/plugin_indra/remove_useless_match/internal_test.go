@@ -2,7 +2,11 @@ package remove_useless_match
 
 import (
 	"go/ast"
+	"go/parser"
+	"go/token"
 	"testing"
+
+	"coderaiser/indra/types"
 )
 
 // matchDecl builds a func Match() Matcher { return <lit> } FuncDecl.
@@ -162,4 +166,45 @@ func TestIsUselessMatchMixedGuards(t *testing.T) {
 	if isUselessMatch(matchDecl(lit)) {
 		t.Fatal("expected mixed guard Matcher to be useful")
 	}
+}
+
+// TestFindUselessMatchNonFile covers the non-*ast.File early return.
+func TestFindUselessMatchNonFile(t *testing.T) {
+	Test(t, "findUselessMatch: non-file node is a no-op", func(t *T) {
+		pushed := false
+		findUselessMatch(types.Path{Node: ast.NewIdent("x")}, func(types.Path) { pushed = true })
+		t.Ok(!pushed)
+		t.End()
+	})
+}
+
+// TestFindUselessMatchNoMatch covers the loop where no Match decl is useless.
+func TestFindUselessMatchNoMatch(t *testing.T) {
+	Test(t, "findUselessMatch: file without useless Match pushes nothing", func(t *T) {
+		pushed := false
+		file := parseFile(t, "package p\nfunc Match() Matcher { return Matcher{}}\n")
+		findUselessMatch(types.Path{Node: file}, func(types.Path) { pushed = true })
+		t.Ok(!pushed)
+		t.End()
+	})
+}
+
+// TestFixNonFile covers the non-*ast.File early return.
+func TestFixNonFile(t *testing.T) {
+	Test(t, "Fix: non-file node is a no-op", func(t *T) {
+		Fix(types.Path{Node: ast.NewIdent("x")}, nil)
+		t.Pass("no panic")
+		t.End()
+	})
+}
+
+// parseFile parses src into an *ast.File for direct helper tests.
+func parseFile(t *testing.T, src string) *ast.File {
+	t.Helper()
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "fixture.go", src, parser.ParseComments)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	return file
 }

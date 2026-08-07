@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"testing"
 
+	"coderaiser/indra/types"
+
 	. "github.com/coderaiser/go-tape"
 )
 
@@ -24,7 +26,7 @@ func TestVisitNoTapeImport(t *testing.T) {
 	Test(t, "findUselessPrefix: no tape import pushes nothing", func(t *T) {
 		file := parseFile(t, "package p\nfunc f() {}\n")
 		pushed := false
-		findUselessPrefix(file, func(n ast.Node) { pushed = true })
+			findUselessPrefix(types.Path{Node: file}, func(n types.Path) { pushed = true })
 		t.Ok(!pushed)
 		t.End()
 	})
@@ -62,7 +64,7 @@ func TestFindTapeImportNamed(t *testing.T) {
 func TestFixNoAlias(t *testing.T) {
 	Test(t, "Fix: no alias leaves file unchanged", func(t *T) {
 		file := parseFile(t, "package p\nimport . \"github.com/coderaiser/go-tape\"\n")
-		Fix(file, nil)
+		Fix(types.Path{Node: file}, nil)
 		// dot import must remain a dot import
 		t.Ok(file.Imports[0].Name == nil || file.Imports[0].Name.Name != "tape")
 		t.End()
@@ -235,14 +237,14 @@ func TestFixAppliesAcrossNestedCall(t *testing.T) {
 	Test(t, "Fix: rewrite nested selector in call arguments", func(t *T) {
 		file := parseFile(t, "package p\n\nimport z \"github.com/coderaiser/go-tape\"\n\nfunc f() {\n\tz.Equal(1, z.T{})\n}\n")
 		pushed := 0
-		findUselessPrefix(file, func(n ast.Node) { pushed++ })
+		findUselessPrefix(types.Path{Node: file}, func(n types.Path) { pushed++ })
 		t.Equal(pushed, 1)
 		t.End()
 	})
 
 	Test(t, "Fix: selectors rewritten and import dotted", func(t *T) {
 		file := parseFile(t, "package p\n\nimport z \"github.com/coderaiser/go-tape\"\n\nfunc f() {\n\tz.Equal(1, z.T{})\n}\n")
-		Fix(file, nil)
+		Fix(types.Path{Node: file}, nil)
 		imp := file.Imports[0]
 		t.Ok(imp.Name != nil && imp.Name.Name == ".")
 		t.End()
@@ -254,7 +256,7 @@ func TestFixAppliesAcrossNestedCall(t *testing.T) {
 func TestFixCollisionSkips(t *testing.T) {
 	Test(t, "Fix: collision leaves alias import unchanged", func(t *T) {
 		file := parseFile(t, "package p\n\nimport z \"github.com/coderaiser/go-tape\"\n\ntype T struct{ inner *z.T }\n")
-		Fix(file, nil)
+		Fix(types.Path{Node: file}, nil)
 		t.Ok(file.Imports[0].Name != nil && file.Imports[0].Name.Name == "z")
 		t.End()
 	})

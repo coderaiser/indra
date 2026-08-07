@@ -54,11 +54,11 @@ func (s synthReplacer) Replace() types.Replacer { return s.replace }
 // synthTraverser is a minimal traverser for harness tests.
 type synthTraverser struct{}
 
-func (synthTraverser) Report(_ ast.Node) string { return "t" }
+func (synthTraverser) Report(_ types.Path) string { return "t" }
 func (synthTraverser) Traverse() types.Traverser {
-	return types.Traverser{"*ast.File": func(ast.Node, func(ast.Node)) {}}
+	return types.Traverser{"*ast.File": func(types.Path, func(types.Path)) {}}
 }
-func (synthTraverser) Fix(_ ast.Node, _ map[string]any) {}
+func (synthTraverser) Fix(_ types.Path, _ map[string]any) {}
 
 // items builds runnable PluginItems from a synthetic replacer plugin.
 func items(report string, match types.Matcher, replace types.Replacer) []runner.PluginItem {

@@ -23,11 +23,11 @@ func (testReplacerMatch) Replace() types.Replacer { return types.Replacer{"p": "
 // testTraverser is a minimal traverser plugin.
 type testTraverser struct{}
 
-func (testTraverser) Report(_ ast.Node) string         { return "t" }
+func (testTraverser) Report(_ types.Path) string        { return "t" }
 func (testTraverser) Traverse() types.Traverser        { return types.Traverser{"*ast.File": fileVisitor} }
-func (testTraverser) Fix(_ ast.Node, _ map[string]any) {}
+func (testTraverser) Fix(_ types.Path, _ map[string]any) {}
 
-func fileVisitor(node ast.Node, push func(ast.Node)) {}
+func fileVisitor(p types.Path, push func(types.Path)) {}
 
 // ── malformed shapes ─────────────────────────────────────────────────────────
 
@@ -194,13 +194,13 @@ func TestResolveTraverserAccessors(t *testing.T) {
 		t.Fatalf("expected TraverserPlugin, got %T", k)
 	}
 	tp.pluginKind()
-	if tp.Name() != "tp" || tp.Report(nil) != "t" {
-		t.Fatalf("unexpected name/report: %q %q", tp.Name(), tp.Report(nil))
+	if tp.Name() != "tp" || tp.Report(types.Path{}) != "t" {
+		t.Fatalf("unexpected name/report: %q %q", tp.Name(), tp.Report(types.Path{}))
 	}
 	if tp.Traverse()["*ast.File"] == nil {
 		t.Fatal("expected Traverse accessor to return visitor")
 	}
-	tp.Fix(nil, nil) // no-op, exercises the wrapper
+	tp.Fix(types.Path{}, nil) // no-op, exercises the wrapper
 }
 
 func TestDefaultConfigEmpty(t *testing.T) {

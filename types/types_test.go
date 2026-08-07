@@ -102,7 +102,7 @@ func TestMatcherShape(t *testing.T) {
 // TestTraverserShape verifies Traverser maps keys to finders.
 func TestTraverserShape(t *testing.T) {
 	tr := Traverser{
-		"*ast.File": func(node ast.Node, push func(ast.Node)) {},
+		"*ast.File": func(p Path, push func(Path)) {},
 	}
 		if _, ok := tr["*ast.File"]; !ok {
 		t.Fatal("expected *ast.File key in traverser")

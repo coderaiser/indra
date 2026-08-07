@@ -5,12 +5,14 @@ import (
 	"go/token"
 	"testing"
 
+	"coderaiser/indra/types"
+
 	. "github.com/coderaiser/go-tape"
 )
 
 func TestReportOtherNode(t *testing.T) {
 	Test(t, "report: non-file non-block node returns static message", func(t *T) {
-		result := Report(ast.NewIdent("x"))
+		result := Report(types.Path{Node: ast.NewIdent("x")})
 
 		t.Equal(result, "remove unused variable")
 		t.End()
@@ -22,7 +24,7 @@ func TestReportUnusedImport(t *testing.T) {
 		file := unusedImportFile()
 		imports := collectImports(file)
 		finding := &importFinding{file: file, spec: imports[0].spec}
-		result := Report(finding)
+		result := Report(types.Path{Node: finding})
 		t.Equal(result, `remove unused import: "fmt"`)
 		t.End()
 	})
@@ -30,7 +32,7 @@ func TestReportUnusedImport(t *testing.T) {
 
 func TestReportNoUnused(t *testing.T) {
 	Test(t, "report: clean file falls through to static message", func(t *T) {
-		result := Report(usedImportFile())
+		result := Report(types.Path{Node: usedImportFile()})
 		t.Equal(result, "remove unused variable")
 
 		t.End()
@@ -39,7 +41,7 @@ func TestReportNoUnused(t *testing.T) {
 
 func TestReportUnusedConst(t *testing.T) {
 	Test(t, "report: file with unused const reports const", func(t *T) {
-		result := Report(unusedConstFile())
+		result := Report(types.Path{Node: unusedConstFile()})
 		t.Equal(result, "remove unused const: timeout")
 
 		t.End()
@@ -48,7 +50,7 @@ func TestReportUnusedConst(t *testing.T) {
 
 func TestReportUnusedVar(t *testing.T) {
 	Test(t, "report: block with unused var reports variable", func(t *T) {
-		result := Report(unusedVarBlock())
+		result := Report(types.Path{Node: unusedVarBlock()})
 		t.Equal(result, "remove unused variable: x")
 
 		t.End()
@@ -57,7 +59,7 @@ func TestReportUnusedVar(t *testing.T) {
 
 func TestReportNoUnusedVar(t *testing.T) {
 	Test(t, "report: block with all used vars returns static message", func(t *T) {
-		result := Report(usedVarBlock())
+		result := Report(types.Path{Node: usedVarBlock()})
 		t.Equal(result, "remove unused variable")
 
 		t.End()
@@ -80,7 +82,7 @@ func TestTraverseKeys(t *testing.T) {
 func TestFindUnusedImportsPushes(t *testing.T) {
 	Test(t, "findUnusedImportsAndConsts: pushes on unused import", func(t *T) {
 		pushed := false
-		findUnusedImportsAndConsts(unusedImportFile(), func(ast.Node) { pushed = true })
+		findUnusedImportsAndConsts(types.Path{Node: unusedImportFile()}, func(types.Path) { pushed = true })
 		t.Ok(pushed)
 
 		t.End()
@@ -90,7 +92,7 @@ func TestFindUnusedImportsPushes(t *testing.T) {
 func TestFindUnusedImportsNoPush(t *testing.T) {
 	Test(t, "findUnusedImportsAndConsts: no push when clean", func(t *T) {
 		pushed := false
-		findUnusedImportsAndConsts(usedImportFile(), func(ast.Node) { pushed = true })
+		findUnusedImportsAndConsts(types.Path{Node: usedImportFile()}, func(types.Path) { pushed = true })
 		t.NotOk(pushed)
 
 		t.End()
@@ -100,7 +102,7 @@ func TestFindUnusedImportsNoPush(t *testing.T) {
 func TestFindUnusedConstsPushes(t *testing.T) {
 	Test(t, "findUnusedImportsAndConsts: pushes on unused const", func(t *T) {
 		pushed := false
-		findUnusedImportsAndConsts(unusedConstFile(), func(ast.Node) { pushed = true })
+		findUnusedImportsAndConsts(types.Path{Node: unusedConstFile()}, func(types.Path) { pushed = true })
 		t.Ok(pushed)
 
 		t.End()
@@ -110,7 +112,7 @@ func TestFindUnusedConstsPushes(t *testing.T) {
 func TestFindUnusedVarsPushes(t *testing.T) {
 	Test(t, "findUnusedVars: pushes on unused var", func(t *T) {
 		pushed := false
-		findUnusedVars(unusedVarBlock(), func(ast.Node) { pushed = true })
+		findUnusedVars(types.Path{Node: unusedVarBlock()}, func(types.Path) { pushed = true })
 		t.Ok(pushed)
 
 		t.End()
@@ -120,7 +122,7 @@ func TestFindUnusedVarsPushes(t *testing.T) {
 func TestFindUnusedVarsNoPush(t *testing.T) {
 	Test(t, "findUnusedVars: no push when vars used", func(t *T) {
 		pushed := false
-		findUnusedVars(usedVarBlock(), func(ast.Node) { pushed = true })
+		findUnusedVars(types.Path{Node: usedVarBlock()}, func(types.Path) { pushed = true })
 		t.NotOk(pushed)
 
 		t.End()
@@ -178,7 +180,7 @@ func TestFixRemovesDecl(t *testing.T) {
 			},
 		}
 		finding := &importFinding{file: file, spec: spec}
-		Fix(finding, nil)
+		Fix(types.Path{Node: finding}, nil)
 		result := len(file.Decls)
 		t.Equal(result, 0)
 		t.End()
@@ -188,7 +190,7 @@ func TestFixRemovesDecl(t *testing.T) {
 func TestFixKeepsUsedImport(t *testing.T) {
 	Test(t, "fix: keeps used import", func(t *T) {
 		file := usedImportFile()
-		Fix(file, nil)
+		Fix(types.Path{Node: file}, nil)
 		result := len(file.Decls)
 		t.Equal(result, 2)
 
@@ -199,7 +201,7 @@ func TestFixKeepsUsedImport(t *testing.T) {
 func TestFixKeepsBlankImport(t *testing.T) {
 	Test(t, "fix: blank import is kept", func(t *T) {
 		file := blankImportFile()
-		Fix(file, nil)
+		Fix(types.Path{Node: file}, nil)
 		result := len(file.Decls)
 		t.Equal(result, 1)
 
@@ -210,7 +212,7 @@ func TestFixKeepsBlankImport(t *testing.T) {
 func TestFixRemovesVars(t *testing.T) {
 	Test(t, "fix: removes unused variables from block", func(t *T) {
 		block := unusedVarBlock()
-		Fix(block, nil)
+		Fix(types.Path{Node: block}, nil)
 		result := len(block.List)
 		t.Equal(result, 0)
 
@@ -221,7 +223,7 @@ func TestFixRemovesVars(t *testing.T) {
 func TestFixKeepsUsedVars(t *testing.T) {
 	Test(t, "fix: keeps used variables in block", func(t *T) {
 		block := usedVarBlock()
-		Fix(block, nil)
+		Fix(types.Path{Node: block}, nil)
 		result := len(block.List)
 		t.Equal(result, 2)
 
@@ -232,7 +234,7 @@ func TestFixKeepsUsedVars(t *testing.T) {
 func TestFixRemovesConsts(t *testing.T) {
 	Test(t, "fix: removes unused const from file", func(t *T) {
 		file := unusedConstFile()
-		Fix(file, nil)
+		Fix(types.Path{Node: file}, nil)
 		result := len(file.Decls)
 		t.Equal(result, 1)
 
@@ -242,7 +244,7 @@ func TestFixRemovesConsts(t *testing.T) {
 
 func TestPluginReport(t *testing.T) {
 	Test(t, "plugin: Report delegates to package func", func(t *T) {
-		result := Plugin{}.Report(nil)
+		result := Plugin{}.Report(types.Path{})
 		t.Equal(result, "remove unused variable")
 
 		t.End()
@@ -260,7 +262,7 @@ func TestPluginTraverse(t *testing.T) {
 
 func TestReportBlankImportFallthrough(t *testing.T) {
 	Test(t, "report: blank import skips to static message", func(t *T) {
-		result := Report(blankImportFile())
+		result := Report(types.Path{Node: blankImportFile()})
 		t.Equal(result, "remove unused variable")
 
 		t.End()

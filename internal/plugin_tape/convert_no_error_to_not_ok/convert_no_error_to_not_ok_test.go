@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"coderaiser/indra/internal/plugin_tape/convert_no_error_to_not_ok"
+	"coderaiser/indra/types"
 	. "coderaiser/indra/internal/test"
 
 	tape "github.com/coderaiser/go-tape"
@@ -16,7 +17,7 @@ var Test = CreateTest("convert-no-error-to-not-ok", convert_no_error_to_not_ok.P
 // import, which is not reachable through the push-based fixture harness.
 func TestFixDirect(t *testing.T) {
 	tape.Test(t, "fix: no-op without go-tape import", func(t *tape.T) {
-		convert_no_error_to_not_ok.Fix(&ast.File{}, nil)
+		convert_no_error_to_not_ok.Fix(types.Path{Node: &ast.File{}}, nil)
 		t.Pass("returned without panic")
 		t.End()
 	})

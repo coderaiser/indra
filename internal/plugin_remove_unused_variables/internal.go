@@ -5,6 +5,8 @@ import (
 	"go/token"
 	"path/filepath"
 	"strings"
+
+	"coderaiser/indra/types"
 )
 
 // ── imports ──────────────────────────────────────────────────────────────────
@@ -85,7 +87,7 @@ func (f *importFinding) End() token.Pos { return f.spec.End() }
 
 // findUnusedImportsAndConsts visits *ast.File nodes during traversal.
 // It calls push once per unused import and once for unused consts.
-func findUnusedImportsAndConsts(p Path, push func(Path)) {
+func findUnusedImportsAndConsts(p types.Path, push func(types.Path)) {
 	file := p.Node.(*ast.File)
 	imports := collectImports(file)
 	used := countIdentUses(file)
@@ -94,7 +96,7 @@ func findUnusedImportsAndConsts(p Path, push func(Path)) {
 			continue
 		}
 		if !importIsUsed(imp.localName, used) {
-			push(Path{Node: &importFinding{file: file, spec: imp.spec}})
+			push(types.Path{Node: &importFinding{file: file, spec: imp.spec}})
 		}
 	}
 	if len(unusedConstNames(file)) > 0 {
@@ -330,7 +332,7 @@ func countIdents(n ast.Node, reads map[string]int) {
 }
 
 // findUnusedVars visits *ast.BlockStmt nodes during traversal.
-func findUnusedVars(p Path, push func(Path)) {
+func findUnusedVars(p types.Path, push func(types.Path)) {
 	block := p.Node.(*ast.BlockStmt)
 	if len(unusedVarNames(block)) > 0 {
 		push(p)

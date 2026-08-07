@@ -8,6 +8,8 @@ import (
 	"go/token"
 	"testing"
 
+	"coderaiser/indra/types"
+
 	. "github.com/coderaiser/go-tape"
 )
 
@@ -24,7 +26,7 @@ func parse(t *testing.T, src string) *ast.File {
 
 func TestReportString(t *testing.T) {
 	Test(t, "report: returns conversion message", func(t *T) {
-		result := Report(nil)
+		result := Report(types.Path{})
 		t.Equal(result, "convert indratest.For to CreateTest")
 
 		t.End()
@@ -45,7 +47,7 @@ func TestTraverseKey(t *testing.T) {
 func TestFindForCallsNonFile(t *testing.T) {
 	Test(t, "findForCalls: skips non-file node", func(t *T) {
 		pushed := false
-		findForCalls(ast.NewIdent("x"), func(ast.Node) { pushed = true })
+		findForCalls(types.Path{Node: ast.NewIdent("x")}, func(types.Path) { pushed = true })
 		t.NotOk(pushed)
 
 		t.End()
@@ -56,7 +58,7 @@ func TestFindForCallsNoFor(t *testing.T) {
 	Test(t, "findForCalls: no push without indratest.For", func(t *T) {
 		pushed := false
 		file := parse(t.TB(), "package fixture\nfunc f() {}\n")
-		findForCalls(file, func(ast.Node) { pushed = true })
+		findForCalls(types.Path{Node: file}, func(types.Path) { pushed = true })
 		t.NotOk(pushed)
 
 		t.End()
@@ -66,8 +68,8 @@ func TestFindForCallsNoFor(t *testing.T) {
 func TestFindForCallsPushes(t *testing.T) {
 	Test(t, "findForCalls: pushes file with indratest.For", func(t *T) {
 		pushed := false
-		file := parse(t.TB(), "package fixture\nvar x = indratest.For(\"a\", f)\n")
-		findForCalls(file, func(ast.Node) { pushed = true })
+				file := parse(t.TB(), "package fixture\nvar x = indratest.For(\"a\", f)\n")
+		findForCalls(types.Path{Node: file}, func(types.Path) { pushed = true })
 		t.Ok(pushed)
 
 		t.End()
@@ -105,7 +107,7 @@ func TestHasForCallNonIdentBase(t *testing.T) {
 
 func TestFixNonFile(t *testing.T) {
 	Test(t, "fix: skips non-file node", func(t *T) {
-		Fix(ast.NewIdent("x"), nil)
+		Fix(types.Path{Node: ast.NewIdent("x")}, nil)
 		t.Pass("no panic")
 		t.End()
 	})
@@ -234,7 +236,7 @@ func TestRewriteTNotT(t *testing.T) {
 
 func TestPluginReport(t *testing.T) {
 	Test(t, "plugin: Report delegates", func(t *T) {
-		result := Plugin{}.Report(nil)
+		result := Plugin{}.Report(types.Path{})
 		t.Equal(result, "convert indratest.For to CreateTest")
 
 		t.End()
