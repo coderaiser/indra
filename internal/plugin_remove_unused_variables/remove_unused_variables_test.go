@@ -87,6 +87,16 @@ func TestRemoveUnusedDeclarations(t *testing.T) {
 		t.End()
 	})
 
+	Test(t, "remove-unused-variables: no report when import package name differs from path basename", func(t *T) {
+		t.NoReport("plugin-named-package")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: fix keeps import when package name differs from path basename", func(t *T) {
+		t.NoTransform("plugin-named-package")
+		t.End()
+	})
+
 	// variable cases
 	Test(t, "remove-unused-variables: report unused var", func(t *T) {
 		t.Report("remove-unused-variable", "remove unused variable: x")

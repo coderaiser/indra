@@ -94,7 +94,7 @@ func findUnusedImportsAndConsts(node ast.Node, push func(ast.Node)) {
 		if imp.blank || imp.dot {
 			continue
 		}
-		if used[imp.localName] == 0 {
+		if !importIsUsed(imp.localName, used) {
 			push(&importFinding{file: file, spec: imp.spec})
 			found = true
 		}
@@ -102,6 +102,22 @@ func findUnusedImportsAndConsts(node ast.Node, push func(ast.Node)) {
 	if !found && len(unusedConstNames(file)) > 0 {
 		push(file)
 	}
+}
+
+// importIsUsed reports whether an import is referenced anywhere in the file.
+// The local name is derived from the import path basename, but the identifier
+// actually bound is the imported package's declared name, which may not match
+// the basename (e.g. a plugin_<name> directory declaring package <name>). So
+// when the basename itself is absent, also accept the basename with a leading
+// plugin_ prefix stripped, since that is how such packages are referenced.
+func importIsUsed(localName string, used map[string]int) bool {
+	if used[localName] > 0 {
+		return true
+	}
+	if strings.HasPrefix(localName, "plugin_") && used[strings.TrimPrefix(localName, "plugin_")] > 0 {
+		return true
+	}
+	return false
 }
 
 // fixOneUnusedImport removes a single import spec from the file's AST.
