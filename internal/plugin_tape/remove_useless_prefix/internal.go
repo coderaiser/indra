@@ -2,7 +2,6 @@ package remove_useless_prefix
 
 import (
 	"go/ast"
-	"reflect"
 )
 
 const goTapePath = `"github.com/coderaiser/go-tape"`
@@ -96,118 +95,9 @@ func declaredNames(file *ast.File) map[string]bool {
 	return names
 }
 
-// astIdentType is used to prune *ast.Ident during reflection walks: identifiers
-// hold Obj back-references that can form cycles if walked.
-// astScopeName identifies ast.Scope by reflection without referencing the
-// deprecated type directly — scopes are semantic and must also be skipped to
-// avoid cycles.
-var (
-	astIdentType    = reflect.TypeOf((*ast.Ident)(nil))
-	astScopePkgPath = "go/ast"
-	astScopeName    = "Scope"
-)
-
-// replaceSelectors walks an AST value via reflection, replacing every
-// *ast.SelectorExpr whose X is an *ast.Ident named alias with just its Sel
-// ident in the containing settable field.
-func replaceSelectors(v reflect.Value, alias string) {
-	if !v.IsValid() {
-		return
-	}
-	switch v.Kind() {
-	case reflect.Interface:
-		if v.IsNil() {
-			return
-		}
-		elem := v.Elem()
-		if sel, ok := elem.Interface().(*ast.SelectorExpr); ok && selMatchesAlias(sel, alias) {
-			if v.CanSet() {
-				v.Set(reflect.ValueOf(sel.Sel))
-			}
-			return
-		}
-		replaceSelectors(elem, alias)
-	case reflect.Pointer:
-		if v.IsNil() {
-			return
-		}
-		// Skip identifiers and scopes: identifiers hold Obj back-references and
-		// scopes are semantic, neither can contain a selector to rewrite.
-		if v.Type() == astIdentType {
-			return
-		}
-		// Identify ast.Scope by package path and name to avoid referencing the
-		// deprecated type directly.
-		if elem := v.Type().Elem(); elem.PkgPath() == astScopePkgPath && elem.Name() == astScopeName {
-			return
-		}
-		replaceInStruct(v.Elem(), alias)
-	case reflect.Slice:
-		for i := 0; i < v.Len(); i++ {
-			elem := v.Index(i)
-			if maybeReplaceSel(elem, alias) {
-				continue
-			}
-			replaceSelectors(elem, alias)
-		}
-	}
-}
-
-// replaceInStruct walks every settable field of a struct value.
-func replaceInStruct(v reflect.Value, alias string) {
-	if v.Kind() != reflect.Struct {
-		return
-	}
-	for i := 0; i < v.NumField(); i++ {
-		f := v.Field(i)
-		if !f.CanSet() {
-			continue
-		}
-		if maybeReplaceSel(f, alias) {
-			continue
-		}
-		switch f.Kind() {
-		case reflect.Interface, reflect.Pointer, reflect.Slice:
-			replaceSelectors(f, alias)
-		}
-	}
-}
-
 // selMatchesAlias reports whether sel is a selector whose X is an *ast.Ident
 // named alias.
 func selMatchesAlias(sel *ast.SelectorExpr, alias string) bool {
 	ident, ok := sel.X.(*ast.Ident)
 	return ok && ident.Name == alias
-}
-
-// maybeReplaceSel checks if a pointer- or interface-typed value holds an
-// *ast.SelectorExpr whose X matches the alias. If the value is settable it is
-// replaced with the Sel ident.
-func maybeReplaceSel(f reflect.Value, alias string) bool {
-	var iface interface{}
-	switch f.Kind() {
-	case reflect.Interface:
-		if f.IsNil() {
-			return false
-		}
-		iface = f.Interface()
-	case reflect.Pointer:
-		if f.IsNil() {
-			return false
-		}
-		iface = f.Interface()
-	default:
-		return false
-	}
-	sel, ok := iface.(*ast.SelectorExpr)
-	if !ok {
-		return false
-	}
-	if !selMatchesAlias(sel, alias) {
-		return false
-	}
-	if f.CanSet() {
-		f.Set(reflect.ValueOf(sel.Sel))
-	}
-	return true
 }

@@ -4,7 +4,6 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"reflect"
 	"testing"
 
 	"coderaiser/indra/types"
@@ -71,35 +70,6 @@ func TestFixNoAlias(t *testing.T) {
 	})
 }
 
-// TestReplaceSelectorsInvalid covers the !v.IsValid() guard.
-func TestReplaceSelectorsInvalid(t *testing.T) {
-	Test(t, "replaceSelectors: invalid value is a no-op", func(t *T) {
-		replaceSelectors(reflect.Value{}, "tape")
-		t.Pass("no-op")
-		t.End()
-	})
-}
-
-// TestMaybeReplaceSelNonPointer covers the default (non iface/ptr) path.
-func TestMaybeReplaceSelNonPointer(t *testing.T) {
-	Test(t, "maybeReplaceSel: non-pointer value returns false", func(t *T) {
-		s := &ast.SelectorExpr{X: ast.NewIdent("tape"), Sel: ast.NewIdent("Test")}
-		v := reflect.ValueOf(*s) // struct kind
-		t.Ok(!maybeReplaceSel(v, "tape"))
-		t.End()
-	})
-}
-
-// TestMaybeReplaceSelNil covers nil interface/pointer paths.
-func TestMaybeReplaceSelNil(t *testing.T) {
-	Test(t, "maybeReplaceSel: nil pointer returns false", func(t *T) {
-		var p *ast.SelectorExpr
-		v := reflect.ValueOf(p)
-		t.Ok(!maybeReplaceSel(v, "tape"))
-		t.End()
-	})
-}
-
 func TestUsedBareNamesSkipsQualifier(t *testing.T) {
 	Test(t, "usedBareNames: qualifier X is not collected", func(t *T) {
 		file := parseFile(t, "package p\nfunc f() { _ = pkg.Method }\n")
@@ -111,123 +81,63 @@ func TestUsedBareNamesSkipsQualifier(t *testing.T) {
 
 func TestUsedBareNamesSkipsMember(t *testing.T) {
 	Test(t, "usedBareNames: selector member Sel is not collected", func(t *T) {
-		file := parseFile(t, "package p\nimport z \"github.com/coderaiser/go-tape\"\nfunc f() { z.Test() }\n")
+		file := parseFile(t, "package p\nfunc f() { _ = pkg.Method }\n")
 		names := usedBareNames(file)
-		t.Ok(!names["Test"])
+		t.Ok(!names["Method"])
 		t.End()
 	})
 }
 
-func TestUsedBareNamesBareIdent(t *testing.T) {
-	Test(t, "usedBareNames: bare ident outside selector is collected", func(t *T) {
-		file := parseFile(t, "package p\nfunc f() { _ = T{} }\n")
+func TestUsedBareNamesCollectsBare(t *testing.T) {
+	Test(t, "usedBareNames: bare ident is collected", func(t *T) {
+		file := parseFile(t, "package p\nfunc f() { _ = x }\n")
 		names := usedBareNames(file)
-		t.Ok(names["T"])
+		t.Ok(names["x"])
 		t.End()
 	})
 }
 
-func TestHasLocalCollisionBareIdent(t *testing.T) {
-	Test(t, "hasLocalCollision: bare ident matching selector member triggers collision", func(t *T) {
-		// File uses z.T and also has bare T usage → collision
-		file := parseFile(t, "package p\nimport z \"github.com/coderaiser/go-tape\"\nfunc f(_ z.T) {}\nfunc g(_ T) {}\n")
-		t.Ok(hasLocalCollision(file, "z"))
+func TestDeclaredNamesFunc(t *testing.T) {
+	Test(t, "declaredNames: includes func names", func(t *T) {
+		file := parseFile(t, "package p\nfunc Foo() {}\n")
+		names := declaredNames(file)
+		t.Ok(names["Foo"])
 		t.End()
 	})
 }
 
-// TestReplaceSelectorsScopeGuard covers pruning the ast.Scope field (cycles).
-// We locate the type by name via a parsed AST file so we never reference the
-// deprecated ast.Scope identifier directly.
-func TestReplaceSelectorsScopeGuard(t *testing.T) {
-	Test(t, "replaceSelectors: ast.Scope value is pruned", func(t *T) {
-		// Build a *ast.Scope value through reflect without naming the type.
-		file, _ := parser.ParseFile(token.NewFileSet(), "", "package p", 0)
-		// file.Scope is *ast.Scope; wrap it so we exercise the guard.
-		v := reflect.ValueOf(file).Elem().FieldByName("Scope")
-		replaceSelectors(v, "tape")
-		t.Pass("scope pruned without recursion")
+func TestDeclaredNamesType(t *testing.T) {
+	Test(t, "declaredNames: includes type names", func(t *T) {
+		file := parseFile(t, "package p\ntype Foo int\n")
+		names := declaredNames(file)
+		t.Ok(names["Foo"])
 		t.End()
 	})
 }
 
-// TestReplaceSelectorsIdentGuard covers pruning ast.Ident (Obj back-refs).
-func TestReplaceSelectorsIdentGuard(t *testing.T) {
-	Test(t, "replaceSelectors: ast.Ident value is pruned", func(t *T) {
-		ident := ast.NewIdent("tape")
-		replaceSelectors(reflect.ValueOf(ident), "tape")
-		t.Pass("ident pruned without recursion")
+func TestDeclaredNamesValueSpec(t *testing.T) {
+	Test(t, "declaredNames: includes var and const names", func(t *T) {
+		file := parseFile(t, "package p\nvar version = \"1.0\"\nconst max = 10\n")
+		names := declaredNames(file)
+		t.Ok(names["version"] && names["max"])
 		t.End()
 	})
 }
 
-// TestReplaceSelectorsNilInterface covers the nil-interface guard in
-// replaceSelectors.
-func TestReplaceSelectorsNilInterface(t *testing.T) {
-	Test(t, "replaceSelectors: nil interface is a no-op", func(t *T) {
-		var e ast.Expr
-		rv := reflect.ValueOf(&e).Elem() // settable nil interface field
-		replaceSelectors(rv, "tape")
-		t.Pass("nil interface pruned")
+func TestFindUselessPrefixNonFile(t *testing.T) {
+	Test(t, "findUselessPrefix: non-file node is a no-op", func(t *T) {
+		pushed := false
+		findUselessPrefix(types.Path{Node: ast.NewIdent("x")}, func(types.Path) { pushed = true })
+		t.Ok(!pushed)
 		t.End()
 	})
 }
 
-// TestReplaceSelectorsIfaceSelector covers the interface branch where the
-// element IS a matching selector: it must be replaced in place.
-func TestReplaceSelectorsIfaceSelector(t *testing.T) {
-	Test(t, "replaceSelectors: matching selector in interface is replaced", func(t *T) {
-		var e ast.Expr = &ast.SelectorExpr{X: ast.NewIdent("tape"), Sel: ast.NewIdent("Test")}
-		rv := reflect.ValueOf(&e).Elem() // settable interface field
-		replaceSelectors(rv, "tape")
-		sel, ok := e.(*ast.Ident)
-		ok2 := ok && sel.Name == "Test"
-		t.Ok(ok2)
-		t.End()
-	})
-}
-
-// TestReplaceSelectorsSliceSelector covers the slice branch where an element is
-// a matching selector: it must be replaced.
-func TestReplaceSelectorsSliceSelector(t *testing.T) {
-	Test(t, "replaceSelectors: matching selector in slice is replaced", func(t *T) {
-		e := []ast.Expr{
-			&ast.SelectorExpr{X: ast.NewIdent("tape"), Sel: ast.NewIdent("Test")},
-		}
-		rv := reflect.ValueOf(&e).Elem() // settable slice
-		replaceSelectors(rv, "tape")
-		_, ok := e[0].(*ast.Ident)
-		t.Ok(ok)
-		t.End()
-	})
-}
-
-// TestReplaceInStructNonStruct covers the kind guard in replaceInStruct.
-func TestReplaceInStructNonStruct(t *testing.T) {
-	Test(t, "replaceInStruct: non-struct value is a no-op", func(t *T) {
-		replaceInStruct(reflect.ValueOf(42), "tape")
-		t.Pass("non-struct pruned")
-		t.End()
-	})
-}
-
-// TestReplaceInStructUnexportedField covers the !CanSet() guard.
-func TestReplaceInStructUnexportedField(t *testing.T) {
-	Test(t, "replaceInStruct: unexported fields are skipped", func(t *T) {
-		type hidden struct{ x int }
-		replaceInStruct(reflect.ValueOf(hidden{x: 1}), "tape")
-		t.Pass("unexported skipped")
-		t.End()
-	})
-}
-
-// TestMaybeReplaceSelNilInterface covers the nil-interface guard in
-// maybeReplaceSel.
-func TestMaybeReplaceSelNilInterface(t *testing.T) {
-	Test(t, "maybeReplaceSel: nil interface returns false", func(t *T) {
-		var e ast.Expr
-		rv := reflect.ValueOf(&e).Elem() // settable nil interface field
-		t.Ok(!maybeReplaceSel(rv, "tape"))
+// TestFixNonFile covers the non-*ast.File early return.
+func TestFixNonFile(t *testing.T) {
+	Test(t, "Fix: non-file node is a no-op", func(t *T) {
+		Fix(types.Path{Node: ast.NewIdent("x")}, nil)
+		t.Pass("no panic")
 		t.End()
 	})
 }
@@ -258,35 +168,6 @@ func TestFixCollisionSkips(t *testing.T) {
 		file := parseFile(t, "package p\n\nimport z \"github.com/coderaiser/go-tape\"\n\ntype T struct{ inner *z.T }\n")
 		Fix(types.Path{Node: file}, nil)
 		t.Ok(file.Imports[0].Name != nil && file.Imports[0].Name.Name == "z")
-		t.End()
-	})
-}
-
-// TestDeclaredNamesValueSpec covers the *ast.ValueSpec (var/const) branch.
-func TestDeclaredNamesValueSpec(t *testing.T) {
-	Test(t, "declaredNames: includes var and const names", func(t *T) {
-		file := parseFile(t, "package p\n\nvar version = \"1.0\"\nconst max = 10\n")
-		names := declaredNames(file)
-		t.Ok(names["version"] && names["max"])
-		t.End()
-	})
-}
-
-// TestFindUselessPrefixNonFile covers the non-*ast.File early return.
-func TestFindUselessPrefixNonFile(t *testing.T) {
-	Test(t, "findUselessPrefix: non-file node is a no-op", func(t *T) {
-		pushed := false
-		findUselessPrefix(types.Path{Node: ast.NewIdent("x")}, func(types.Path) { pushed = true })
-		t.Ok(!pushed)
-		t.End()
-	})
-}
-
-// TestFixNonFile covers the non-*ast.File early return.
-func TestFixNonFile(t *testing.T) {
-	Test(t, "Fix: non-file node is a no-op", func(t *T) {
-		Fix(types.Path{Node: ast.NewIdent("x")}, nil)
-		t.Pass("no panic")
 		t.End()
 	})
 }

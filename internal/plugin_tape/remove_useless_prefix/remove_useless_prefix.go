@@ -2,7 +2,8 @@ package remove_useless_prefix
 
 import (
 	"go/ast"
-	"reflect"
+
+	"golang.org/x/tools/go/ast/astutil"
 
 	. "coderaiser/indra/types"
 )
@@ -43,7 +44,13 @@ func Fix(p Path, _ map[string]any) {
 		return
 	}
 	spec.Name = &ast.Ident{Name: ".", NamePos: spec.Name.NamePos}
-	replaceSelectors(reflect.ValueOf(file), alias)
+
+	astutil.Apply(file, func(c *astutil.Cursor) bool {
+		if sel, ok := c.Node().(*ast.SelectorExpr); ok && selMatchesAlias(sel, alias) {
+			c.Replace(sel.Sel)
+		}
+		return true
+	}, nil)
 }
 
 // Plugin wraps the rule for the registry: an AST-walking plugin.
