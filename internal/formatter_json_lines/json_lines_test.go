@@ -100,4 +100,13 @@ func TestJsonLines(t *testing.T) {
 
 		t.End()
 	})
+
+	Test(t, "json-lines: place rule key is lowercase (putout-compatible)", func(t *T) {
+		out := jsonlines.Format("foo.go", nil, places1, 0, 1, 1, 1)
+		var m map[string]any
+		json.Unmarshal([]byte(strings.TrimSpace(out)), &m)
+		first := m["places"].([]any)[0].(map[string]any)
+		t.Equal(first["rule"], "tape/remove-skip")
+		t.End()
+	})
 }

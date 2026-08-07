@@ -122,15 +122,15 @@ func Indra(registry []loader.PluginFuncs, args []string, w io.Writer) error {
 		switch {
 		case a == "--fix":
 			fix = true
-		case a == "-f", a == "--formatter":
+		case a == "-f", a == "--format":
 			if i+1 < len(args) {
 				i++
 				formatterName = args[i]
 			}
 		case strings.HasPrefix(a, "-f="):
 			formatterName = strings.TrimPrefix(a, "-f=")
-		case strings.HasPrefix(a, "--formatter="):
-			formatterName = strings.TrimPrefix(a, "--formatter=")
+		case strings.HasPrefix(a, "--format="):
+			formatterName = strings.TrimPrefix(a, "--format=")
 		case strings.HasPrefix(a, "-"):
 			unknownFlags = append(unknownFlags, a)
 		default:

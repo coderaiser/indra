@@ -83,15 +83,16 @@ func (p Path) ParentPath() (Path, bool) {
 
 // Position is a source location — line and column only, matching putout's shape.
 type Position struct {
-	Line   int
-	Column int
+	Line   int `json:"line"`
+	Column int `json:"column"`
 }
 
-// Place is a single lint finding.
+// Place is a single lint finding. JSON tags mirror putout's formatter shape
+// (rule/message/position) so json-lines output is drop-in compatible.
 type Place struct {
-	Rule     string
-	Message  string
-	Position Position
+	Rule     string   `json:"rule"`
+	Message  string   `json:"message"`
+	Position Position `json:"position"`
 }
 
 // Rule is a named plugin entry inside a group's Rules() return.
