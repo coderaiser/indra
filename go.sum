@@ -4,3 +4,5 @@ github.com/coderaiser/go-tape v1.2.3 h1:rHMW53nWXyy2GdkZ8RSwas3TOMd/k2cpc9u86WC6
 github.com/coderaiser/go-tape v1.2.3/go.mod h1:EDGRX/ljXUmSVWnrojx+wFOSoAeJSZtxib/zqiN0HZQ=
 github.com/coderaiser/go-tape v1.3.1 h1:oRIJM3sCkXTPwEfHI6Jcw+Z0N/x4Xdfc9Qowppb+cBI=
 github.com/coderaiser/go-tape v1.3.1/go.mod h1:vWPIJ9ptAyqv/cnDa5L5JZymJEbF9lntopYeQ2cIy1o=
+golang.org/x/tools v0.48.0 h1:3+hClM1aLL5mjMKm5ovokw9epgRXPuu2tILgismM6RE=
+golang.org/x/tools v0.48.0/go.mod h1:08xX0orndb/F7jJxGDicx061tyd5pcMto75YMAXr6lk=
