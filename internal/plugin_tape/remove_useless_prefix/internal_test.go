@@ -271,3 +271,22 @@ func TestDeclaredNamesValueSpec(t *testing.T) {
 		t.End()
 	})
 }
+
+// TestFindUselessPrefixNonFile covers the non-*ast.File early return.
+func TestFindUselessPrefixNonFile(t *testing.T) {
+	Test(t, "findUselessPrefix: non-file node is a no-op", func(t *T) {
+		pushed := false
+		findUselessPrefix(types.Path{Node: ast.NewIdent("x")}, func(types.Path) { pushed = true })
+		t.Ok(!pushed)
+		t.End()
+	})
+}
+
+// TestFixNonFile covers the non-*ast.File early return.
+func TestFixNonFile(t *testing.T) {
+	Test(t, "Fix: non-file node is a no-op", func(t *T) {
+		Fix(types.Path{Node: ast.NewIdent("x")}, nil)
+		t.Pass("no panic")
+		t.End()
+	})
+}

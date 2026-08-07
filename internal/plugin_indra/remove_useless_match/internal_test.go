@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"coderaiser/indra/types"
+
+	. "github.com/coderaiser/go-tape"
 )
 
 // matchDecl builds a func Match() Matcher { return <lit> } FuncDecl.
@@ -182,7 +184,7 @@ func TestFindUselessMatchNonFile(t *testing.T) {
 func TestFindUselessMatchNoMatch(t *testing.T) {
 	Test(t, "findUselessMatch: file without useless Match pushes nothing", func(t *T) {
 		pushed := false
-		file := parseFile(t, "package p\nfunc Match() Matcher { return Matcher{}}\n")
+		file := parseFile(t.TB(), "package p\nfunc Match() Matcher { return Matcher{\"p\": f} }\n")
 		findUselessMatch(types.Path{Node: file}, func(types.Path) { pushed = true })
 		t.Ok(!pushed)
 		t.End()
