@@ -81,6 +81,9 @@ func ShouldShow(count int) bool {
 	case "0":
 		return false
 	}
+	if ci := os.Getenv("CI"); ci == "1" || ci == "true" {
+		return false
+	}
 	return count >= cfg.MinCount
 }
 

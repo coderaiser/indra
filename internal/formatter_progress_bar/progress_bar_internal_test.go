@@ -70,3 +70,34 @@ func TestShouldShowEnv0Overrides(t *testing.T) {
 		t.End()
 	})
 }
+
+func TestShouldShowCI1HidesBar(t *testing.T) {
+	Test(t, "ShouldShow: CI=1 hides progress bar", func(t *T) {
+		cfg = Config{Color: defaultColor, MinCount: 0}
+		t.TB().Setenv("CI", "1")
+		result := ShouldShow(999)
+		t.NotOk(result)
+		t.End()
+	})
+}
+
+func TestShouldShowCITrueHidesBar(t *testing.T) {
+	Test(t, "ShouldShow: CI=true hides progress bar", func(t *T) {
+		cfg = Config{Color: defaultColor, MinCount: 0}
+		t.TB().Setenv("CI", "true")
+		result := ShouldShow(999)
+		t.NotOk(result)
+		t.End()
+	})
+}
+
+func TestShouldShowEnv1OverridesCI(t *testing.T) {
+	Test(t, "ShouldShow: INDRA_PROGRESS_BAR=1 overrides CI", func(t *T) {
+		cfg = Config{Color: defaultColor, MinCount: 0}
+		t.TB().Setenv("CI", "true")
+		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
+		result := ShouldShow(1)
+		t.Ok(result)
+		t.End()
+	})
+}
