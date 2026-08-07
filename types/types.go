@@ -37,6 +37,48 @@ type FixFn = func(node ast.Node, options map[string]any)
 // Keys: "*ast.File", "*ast.BlockStmt"
 type Traverser map[string]FindFn
 
+// Path is a node together with its ancestor stack, matching Babel's path API.
+// Stack holds ancestors root-first, excluding Node itself; it is populated by
+// the engine's PreorderStack walk and is engine-internal. Plugins reach
+// ancestors only through Find / FindParent / ParentPath.
+type Path struct {
+	Node  ast.Node
+	Stack []ast.Node // ancestors root-first, excluding Node; engine-internal
+}
+
+// Find walks up from this path (inclusive) and returns the first Path where fn
+// returns true. Returns a zero Path and false when no ancestor matches.
+// Matches Babel's path.find(fn).
+func (p Path) Find(fn func(Path) bool) (Path, bool) {
+	if fn(p) {
+		return p, true
+	}
+	return p.FindParent(fn)
+}
+
+// FindParent walks up from p's parent (exclusive of self) and returns the
+// nearest ancestor Path where fn returns true. Matches Babel's
+// path.findParent(fn).
+func (p Path) FindParent(fn func(Path) bool) (Path, bool) {
+	for i := len(p.Stack) - 1; i >= 0; i-- {
+		ancestor := Path{Node: p.Stack[i], Stack: p.Stack[:i]}
+		if fn(ancestor) {
+			return ancestor, true
+		}
+	}
+	return Path{}, false
+}
+
+// ParentPath returns the immediate parent Path, or a zero Path and false when
+// this path has no parent. Matches Babel's path.parentPath.
+func (p Path) ParentPath() (Path, bool) {
+	if len(p.Stack) == 0 {
+		return Path{}, false
+	}
+	parent := p.Stack[len(p.Stack)-1]
+	return Path{Node: parent, Stack: p.Stack[:len(p.Stack)-1]}, true
+}
+
 // Position is a source location — line and column only, matching putout's shape.
 type Position struct {
 	Line   int

@@ -104,7 +104,67 @@ func TestTraverserShape(t *testing.T) {
 	tr := Traverser{
 		"*ast.File": func(node ast.Node, push func(ast.Node)) {},
 	}
-	if _, ok := tr["*ast.File"]; !ok {
+		if _, ok := tr["*ast.File"]; !ok {
 		t.Fatal("expected *ast.File key in traverser")
+	}
+}
+
+// TestPathFindReturnsSelf verifies Find returns the path itself when fn matches.
+func TestPathFindReturnsSelf(t *testing.T) {
+	self := &ast.Ident{Name: "leaf"}
+	p := Path{Node: self}
+	found, ok := p.Find(func(anc Path) bool { return anc.Node == self })
+	if !ok || found.Node != self {
+		t.Fatalf("expected Find to return self, got ok=%v node=%v", ok, found.Node)
+	}
+}
+
+// TestPathFindUp verifies Find walks up to a matching ancestor.
+func TestPathFindUp(t *testing.T) {
+	root := &ast.Ident{Name: "root"}
+	mid := &ast.Ident{Name: "mid"}
+	p := Path{Node: &ast.Ident{Name: "leaf"}, Stack: []ast.Node{root, mid}}
+	found, ok := p.Find(func(anc Path) bool { return anc.Node == mid })
+	if !ok || found.Node != mid {
+		t.Fatalf("expected Find to return mid, got ok=%v node=%v", ok, found.Node)
+	}
+}
+
+// TestPathFindUpNotFound verifies Find returns false when no ancestor matches.
+func TestPathFindUpNotFound(t *testing.T) {
+	p := Path{Node: &ast.Ident{Name: "leaf"}, Stack: []ast.Node{&ast.Ident{Name: "root"}}}
+	_, ok := p.Find(func(Path) bool { return false })
+	if ok {
+		t.Fatal("expected Find to return false when no ancestor matches")
+	}
+}
+
+// TestPathFindParent verifies FindParent returns the nearest ancestor, not self.
+func TestPathFindParent(t *testing.T) {
+	leaf := &ast.Ident{Name: "leaf"}
+	root := &ast.Ident{Name: "root"}
+	p := Path{Node: leaf, Stack: []ast.Node{root}}
+	found, ok := p.FindParent(func(Path) bool { return true })
+	if !ok || found.Node != root {
+		t.Fatalf("expected nearest parent root, got ok=%v node=%v", ok, found.Node)
+	}
+}
+
+// TestPathParentPath verifies ParentPath returns the immediate parent.
+func TestPathParentPath(t *testing.T) {
+	root := &ast.Ident{Name: "root"}
+	p := Path{Node: &ast.Ident{Name: "leaf"}, Stack: []ast.Node{root}}
+	parent, ok := p.ParentPath()
+	if !ok || parent.Node != root {
+		t.Fatalf("expected immediate parent root, got ok=%v node=%v", ok, parent.Node)
+	}
+}
+
+// TestPathParentPathEmpty verifies ParentPath returns false for a root path.
+func TestPathParentPathEmpty(t *testing.T) {
+	p := Path{Node: &ast.Ident{Name: "root"}}
+	_, ok := p.ParentPath()
+	if ok {
+		t.Fatal("expected ParentPath to return false for empty stack")
 	}
 }
