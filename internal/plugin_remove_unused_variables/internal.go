@@ -85,22 +85,20 @@ func (f *importFinding) End() token.Pos { return f.spec.End() }
 
 // findUnusedImportsAndConsts visits *ast.File nodes during traversal.
 // It calls push once per unused import and once for unused consts.
-func findUnusedImportsAndConsts(node ast.Node, push func(ast.Node)) {
-	file := node.(*ast.File)
+func findUnusedImportsAndConsts(p Path, push func(Path)) {
+	file := p.Node.(*ast.File)
 	imports := collectImports(file)
 	used := countIdentUses(file)
-	found := false
 	for _, imp := range imports {
 		if imp.blank || imp.dot {
 			continue
 		}
 		if !importIsUsed(imp.localName, used) {
-			push(&importFinding{file: file, spec: imp.spec})
-			found = true
+			push(Path{Node: &importFinding{file: file, spec: imp.spec}})
 		}
 	}
-	if !found && len(unusedConstNames(file)) > 0 {
-		push(file)
+	if len(unusedConstNames(file)) > 0 {
+		push(p)
 	}
 }
 
@@ -332,10 +330,10 @@ func countIdents(n ast.Node, reads map[string]int) {
 }
 
 // findUnusedVars visits *ast.BlockStmt nodes during traversal.
-func findUnusedVars(node ast.Node, push func(ast.Node)) {
-	block := node.(*ast.BlockStmt)
+func findUnusedVars(p Path, push func(Path)) {
+	block := p.Node.(*ast.BlockStmt)
 	if len(unusedVarNames(block)) > 0 {
-		push(block)
+		push(p)
 	}
 }
 

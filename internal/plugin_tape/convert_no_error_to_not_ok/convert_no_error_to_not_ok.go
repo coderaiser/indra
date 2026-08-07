@@ -8,14 +8,17 @@ import (
 
 const goTapePath = `"github.com/coderaiser/go-tape"`
 
-func Report(_ ast.Node) string { return "convert NoError(err) to NotOk(err)" }
+func Report(_ Path) string { return "convert NoError(err) to NotOk(err)" }
 
 func Traverse() Traverser {
 	return Traverser{"*ast.File": findNoErrorCalls}
 }
 
-func findNoErrorCalls(node ast.Node, push func(ast.Node)) {
-	file := node.(*ast.File)
+func findNoErrorCalls(p Path, push func(Path)) {
+	file, ok := p.Node.(*ast.File)
+	if !ok {
+		return
+	}
 	if !hasGoTapeImport(file) {
 		return
 	}
@@ -36,12 +39,15 @@ func findNoErrorCalls(node ast.Node, push func(ast.Node)) {
 		return true
 	})
 	if found {
-		push(file)
+		push(p)
 	}
 }
 
-func Fix(node ast.Node, _ map[string]any) {
-	file := node.(*ast.File)
+func Fix(p Path, _ map[string]any) {
+	file, ok := p.Node.(*ast.File)
+	if !ok {
+		return
+	}
 	if !hasGoTapeImport(file) {
 		return
 	}
@@ -73,6 +79,6 @@ func hasGoTapeImport(file *ast.File) bool {
 // Plugin wraps the rule for the registry: an AST-walking plugin.
 type Plugin struct{}
 
-func (Plugin) Report(node ast.Node) string            { return Report(node) }
-func (Plugin) Traverse() Traverser                    { return Traverse() }
-func (Plugin) Fix(node ast.Node, opts map[string]any) { Fix(node, opts) }
+func (Plugin) Report(p Path) string            { return Report(p) }
+func (Plugin) Traverse() Traverser             { return Traverse() }
+func (Plugin) Fix(p Path, opts map[string]any) { Fix(p, opts) }

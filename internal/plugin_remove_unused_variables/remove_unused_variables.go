@@ -6,8 +6,8 @@ import (
 	. "coderaiser/indra/types"
 )
 
-func Report(node ast.Node) string {
-	switch n := node.(type) {
+func Report(p Path) string {
+	switch n := p.Node.(type) {
 	case *importFinding:
 		return "remove unused import: " + n.spec.Path.Value
 	case *ast.File:
@@ -31,8 +31,8 @@ func Traverse() Traverser {
 	}
 }
 
-func Fix(node ast.Node, _ map[string]any) {
-	switch n := node.(type) {
+func Fix(p Path, _ map[string]any) {
+	switch n := p.Node.(type) {
 	case *importFinding:
 		fixOneUnusedImport(n.file, n.spec)
 	case *ast.File:
@@ -44,6 +44,6 @@ func Fix(node ast.Node, _ map[string]any) {
 
 type Plugin struct{}
 
-func (Plugin) Report(node ast.Node) string            { return Report(node) }
-func (Plugin) Traverse() Traverser                    { return Traverse() }
-func (Plugin) Fix(node ast.Node, opts map[string]any) { Fix(node, opts) }
+func (Plugin) Report(p Path) string            { return Report(p) }
+func (Plugin) Traverse() Traverser             { return Traverse() }
+func (Plugin) Fix(p Path, opts map[string]any) { Fix(p, opts) }

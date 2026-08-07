@@ -6,21 +6,24 @@ import (
 	. "coderaiser/indra/types"
 )
 
-func Report(_ ast.Node) string { return "remove useless Match" }
+func Report(_ Path) string { return "remove useless Match" }
 
 func Traverse() Traverser {
 	return Traverser{"*ast.File": findUselessMatch}
 }
 
-func findUselessMatch(node ast.Node, push func(ast.Node)) {
-	file := node.(*ast.File)
+func findUselessMatch(p Path, push func(Path)) {
+	file, ok := p.Node.(*ast.File)
+	if !ok {
+		return
+	}
 	for _, decl := range file.Decls {
 		fn, ok := decl.(*ast.FuncDecl)
 		if !ok || fn.Name == nil || fn.Name.Name != "Match" {
 			continue
 		}
 		if isUselessMatch(fn) {
-			push(file)
+			push(p)
 			break
 		}
 	}
@@ -28,8 +31,11 @@ func findUselessMatch(node ast.Node, push func(ast.Node)) {
 
 // Fix removes useless Match() decls from file.Decls. node is *ast.File;
 // options is unused.
-func Fix(node ast.Node, _ map[string]any) {
-	file := node.(*ast.File)
+func Fix(p Path, _ map[string]any) {
+	file, ok := p.Node.(*ast.File)
+	if !ok {
+		return
+	}
 	kept := file.Decls[:0]
 	for _, decl := range file.Decls {
 		fn, ok := decl.(*ast.FuncDecl)
@@ -44,6 +50,6 @@ func Fix(node ast.Node, _ map[string]any) {
 // Plugin wraps the rule for the registry: an AST-walking plugin.
 type Plugin struct{}
 
-func (Plugin) Report(node ast.Node) string            { return Report(node) }
-func (Plugin) Traverse() Traverser                    { return Traverse() }
-func (Plugin) Fix(node ast.Node, opts map[string]any) { Fix(node, opts) }
+func (Plugin) Report(p Path) string            { return Report(p) }
+func (Plugin) Traverse() Traverser             { return Traverse() }
+func (Plugin) Fix(p Path, opts map[string]any) { Fix(p, opts) }

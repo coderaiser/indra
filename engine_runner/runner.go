@@ -78,33 +78,33 @@ func runOnce(p RunParams) []types.Place {
 		if !ok {
 			continue
 		}
-		// reportFound builds the Place for a found node and fixes it if enabled.
-		reportFound := func(found ast.Node) {
-			msg := tp.Report(found)
+				// reportFound builds the Place for a found path and fixes it if enabled.
+		reportFound := func(pPath types.Path) {
+			msg := tp.Report(pPath)
 			if item.Msg != "" {
 				msg = item.Msg
 			}
-			pos := p.Fset.Position(found.Pos())
+			pos := p.Fset.Position(pPath.Node.Pos())
 			places = append(places, types.Place{
 				Rule:     item.Rule,
 				Message:  msg,
 				Position: types.Position{Line: pos.Line, Column: pos.Column},
 			})
 			if p.Fix {
-				tp.Fix(found, item.Options)
+				tp.Fix(pPath, item.Options)
 			}
 		}
 		for key, visitor := range tp.Traverse() {
 			switch key {
 			case "*ast.File":
-				visitor(p.File, reportFound)
+				visitor(types.Path{Node: p.File}, reportFound)
 			case "*ast.BlockStmt":
 				ast.Inspect(p.File, func(n ast.Node) bool {
 					block, ok := n.(*ast.BlockStmt)
 					if !ok {
 						return true
 					}
-					visitor(block, reportFound)
+					visitor(types.Path{Node: block}, reportFound)
 					return true
 				})
 			}

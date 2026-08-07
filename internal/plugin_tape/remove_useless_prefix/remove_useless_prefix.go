@@ -7,14 +7,17 @@ import (
 	. "coderaiser/indra/types"
 )
 
-func Report(_ ast.Node) string { return "remove useless tape prefix" }
+func Report(_ Path) string { return "remove useless tape prefix" }
 
 func Traverse() Traverser {
 	return Traverser{"*ast.File": findUselessPrefix}
 }
 
-func findUselessPrefix(node ast.Node, push func(ast.Node)) {
-	file := node.(*ast.File)
+func findUselessPrefix(p Path, push func(Path)) {
+	file, ok := p.Node.(*ast.File)
+	if !ok {
+		return
+	}
 	alias, _ := findTapeImport(file)
 	if alias == "" {
 		return
@@ -22,13 +25,16 @@ func findUselessPrefix(node ast.Node, push func(ast.Node)) {
 	if hasLocalCollision(file, alias) {
 		return
 	}
-	push(node)
+	push(p)
 }
 
 // Fix rewrites a named go-tape import to a dot import and drops the alias
 // prefix from every selector use (tape.X → X).
-func Fix(node ast.Node, _ map[string]any) {
-	file := node.(*ast.File)
+func Fix(p Path, _ map[string]any) {
+	file, ok := p.Node.(*ast.File)
+	if !ok {
+		return
+	}
 	alias, spec := findTapeImport(file)
 	if alias == "" {
 		return
@@ -43,6 +49,6 @@ func Fix(node ast.Node, _ map[string]any) {
 // Plugin wraps the rule for the registry: an AST-walking plugin.
 type Plugin struct{}
 
-func (Plugin) Report(node ast.Node) string            { return Report(node) }
-func (Plugin) Traverse() Traverser                    { return Traverse() }
-func (Plugin) Fix(node ast.Node, opts map[string]any) { Fix(node, opts) }
+func (Plugin) Report(p Path) string            { return Report(p) }
+func (Plugin) Traverse() Traverser             { return Traverse() }
+func (Plugin) Fix(p Path, opts map[string]any) { Fix(p, opts) }

@@ -24,14 +24,16 @@ type Matcher map[string]MatchFn
 type Replacer map[string]string
 
 // FindFn is called by the engine for each traversed node. It calls push once
-// per finding with the node the engine should pass to Fix and Report.
-type FindFn = func(node ast.Node, push func(ast.Node))
+// per finding with the Path the engine should pass to Fix and Report.
+// A Path carries the found node and its ancestor stack, so plugins can reach
+// parent selectors via Path.Find / FindParent / ParentPath.
+type FindFn = func(p Path, push func(Path))
 
-// ReportFn produces the lint message for a found node.
-type ReportFn = func(node ast.Node) string
+// ReportFn produces the lint message for a found path.
+type ReportFn = func(p Path) string
 
-// FixFn fixes one found node. options is per-plugin config from PluginItem.Options.
-type FixFn = func(node ast.Node, options map[string]any)
+// FixFn fixes one found path. options is per-plugin config from PluginItem.Options.
+type FixFn = func(p Path, options map[string]any)
 
 // Traverser maps AST node type key → finder. Returned by Traverse().
 // Keys: "*ast.File", "*ast.BlockStmt"

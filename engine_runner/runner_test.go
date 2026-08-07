@@ -30,14 +30,12 @@ func (x replacer) Replace() types.Replacer { return x.replace }
 type traverser struct {
 	report string
 	tr     types.Traverser
-	fix    func(node ast.Node, opts map[string]any)
+	fix    func(p types.Path, opts map[string]any)
 }
 
-func (x traverser) Report(_ ast.Node) string  { return x.report }
-func (x traverser) Traverse() types.Traverser { return x.tr }
-func (x traverser) Fix(node ast.Node, opts map[string]any) {
-	x.fix(node, opts)
-}
+func (x traverser) Report(_ types.Path) string            { return x.report }
+func (x traverser) Traverse() types.Traverser             { return x.tr }
+func (x traverser) Fix(p types.Path, opts map[string]any) { x.fix(p, opts) }
 
 func parse(t *testing.T, src string) (*ast.File, *token.FileSet) {
 	t.Helper()
@@ -75,11 +73,11 @@ func traverserFuncs(name, key string) loader.PluginFuncs {
 		Plugin: traverser{
 			report: "issue",
 			tr: types.Traverser{
-				key: func(node ast.Node, push func(ast.Node)) {
-					push(node)
+				key: func(p types.Path, push func(types.Path)) {
+					push(p)
 				},
 			},
-			fix: func(node ast.Node, opts map[string]any) {},
+			fix: func(p types.Path, opts map[string]any) {},
 		},
 	}
 }
@@ -172,8 +170,8 @@ func TestRunTraverserFixCallsFix(t *testing.T) {
 					push(node)
 				},
 			},
-			fix: func(node ast.Node, opts map[string]any) {
-				f := node.(*ast.File)
+						fix: func(p types.Path, opts map[string]any) {
+				f := p.Node.(*ast.File)
 				f.Name.Name = "q"
 			},
 		},
@@ -268,8 +266,8 @@ func TestRunTraverserBlockFix(t *testing.T) {
 					push(node)
 				},
 			},
-			fix: func(node ast.Node, opts map[string]any) {
-				block := node.(*ast.BlockStmt)
+						fix: func(p types.Path, opts map[string]any) {
+				block := p.Node.(*ast.BlockStmt)
 				block.List = nil
 			},
 		},

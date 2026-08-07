@@ -52,11 +52,11 @@ type TraverserPlugin struct {
 	fix      types.FixFn
 }
 
-func (p TraverserPlugin) Name() string                           { return p.rule }
-func (TraverserPlugin) pluginKind()                              { _ = "traverser" }
-func (p TraverserPlugin) Report(node ast.Node) string            { return p.report(node) }
-func (p TraverserPlugin) Traverse() types.Traverser              { return p.traverse() }
-func (p TraverserPlugin) Fix(node ast.Node, opts map[string]any) { p.fix(node, opts) }
+func (p TraverserPlugin) Name() string                          { return p.rule }
+func (TraverserPlugin) pluginKind()                             { _ = "traverser" }
+func (p TraverserPlugin) Report(pPath Path) string              { return p.report(pPath) }
+func (p TraverserPlugin) Traverse() types.Traverser             { return p.traverse() }
+func (p TraverserPlugin) Fix(pPath Path, opts map[string]any)   { p.fix(pPath, opts) }
 
 // RuleState is the enabled/disabled state of a rule from config.
 type RuleState struct {

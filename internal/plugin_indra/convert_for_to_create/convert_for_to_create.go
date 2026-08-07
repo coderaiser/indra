@@ -8,8 +8,7 @@ import (
 
 const testImportPath = `"coderaiser/indra/internal/test"`
 
-func Report(node ast.Node) string {
-	_ = node
+func Report(_ Path) string {
 	return "convert indratest.For to CreateTest"
 }
 
@@ -17,13 +16,13 @@ func Traverse() Traverser {
 	return Traverser{"*ast.File": findForCalls}
 }
 
-func findForCalls(node ast.Node, push func(ast.Node)) {
-	file, ok := node.(*ast.File)
+func findForCalls(p Path, push func(Path)) {
+	file, ok := p.Node.(*ast.File)
 	if !ok {
 		return
 	}
 	if hasForCall(file) {
-		push(file)
+		push(p)
 	}
 }
 
@@ -47,8 +46,8 @@ func hasForCall(file *ast.File) bool {
 
 // Fix rewrites indratest.For usages (call site, import alias, and *T type)
 // to the createTest form. node is *ast.File; options is unused.
-func Fix(node ast.Node, _ map[string]any) {
-	file, ok := node.(*ast.File)
+func Fix(p Path, _ map[string]any) {
+	file, ok := p.Node.(*ast.File)
 	if !ok {
 		return
 	}
@@ -112,6 +111,6 @@ func rewriteT(file *ast.File) {
 // Plugin wraps the rule for the registry: an AST-walking plugin.
 type Plugin struct{}
 
-func (Plugin) Report(node ast.Node) string            { return Report(node) }
-func (Plugin) Traverse() Traverser                    { return Traverse() }
-func (Plugin) Fix(node ast.Node, opts map[string]any) { Fix(node, opts) }
+func (Plugin) Report(p Path) string            { return Report(p) }
+func (Plugin) Traverse() Traverser             { return Traverse() }
+func (Plugin) Fix(p Path, opts map[string]any) { Fix(p, opts) }
