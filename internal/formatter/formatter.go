@@ -12,11 +12,12 @@ import (
 )
 
 // Func is called once per file with running totals.
+// source is the file's raw content (nil if unread).
 // index is 0-based. count is total number of files.
 // filesWithIssues and errorsCount are running totals before this call.
 // Detects last file via index == count-1.
 // Returns the string to write to output (empty = nothing to write yet).
-type Func func(name string, places []types.Place, index, count, filesWithIssues, errorsCount int) string
+type Func func(name string, source []byte, places []types.Place, index, count, filesWithIssues, errorsCount int) string
 
 // Choose returns the active formatter based on environment.
 // CI=true → dump. INDRA_FORMATTER=json-lines|dump → that one. Default: progress-bar.

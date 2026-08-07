@@ -19,7 +19,7 @@ type record struct {
 
 // Format emits one JSON record per file call, newline-terminated.
 // Stateless — no accumulation between calls.
-func Format(name string, places []types.Place, index, count, filesWithIssues, errorsCount int) string {
+func Format(name string, _ []byte, places []types.Place, index, count, filesWithIssues, errorsCount int) string {
 	if places == nil {
 		places = []types.Place{}
 	}

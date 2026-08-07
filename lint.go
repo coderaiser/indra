@@ -167,18 +167,22 @@ func Indra(registry []loader.PluginFuncs, args []string, w io.Writer) error {
 		if len(cfg.Plugins) > 0 {
 			fileItems = filterPlugins(fileItems, cfg.Plugins)
 		}
+		src, readErr := os.ReadFile(filename)
 		places, err := processor_go.ProcessFile(filename, processor_go.Opt(fileItems, fix))
 		if err != nil {
 			fmt.Fprintf(w, "file://%s: %v\n", filename, err)
 			failed = true
 			continue
 		}
+		if readErr != nil {
+			src = nil
+		}
 		if len(places) > 0 {
 			filesWithIssues++
 			errorsCount += len(places)
 			failed = true
 		}
-		out := format(filename, places, i, total, filesWithIssues, errorsCount)
+		out := format(filename, src, places, i, total, filesWithIssues, errorsCount)
 		if out != "" {
 			fmt.Fprint(w, out)
 		}

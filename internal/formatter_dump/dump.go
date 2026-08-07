@@ -13,7 +13,7 @@ import (
 // It returns the rendered block for the given file, or "" when there is
 // nothing to print (no places mid-run, or a clean last file). On the last
 // file it appends a summary of errors.
-func Format(name string, places []types.Place, index, count, filesWithIssues, errorsCount int) string {
+func Format(name string, _ []byte, places []types.Place, index, count, filesWithIssues, errorsCount int) string {
 	last := index == count-1
 
 	if len(places) == 0 {

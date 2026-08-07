@@ -41,8 +41,8 @@ func Configure(c Config) {
 
 // Format is the progress-bar formatter. It writes a live bar to stderr
 // mid-run and returns the dump output on the last file.
-func Format(name string, places []types.Place, index, count, filesWithIssues, errorsCount int) string {
-	result := dump.Format(name, places, index, count, filesWithIssues, errorsCount)
+func Format(name string, _ []byte, places []types.Place, index, count, filesWithIssues, errorsCount int) string {
+	result := dump.Format(name, nil, places, index, count, filesWithIssues, errorsCount)
 
 	if !ShouldShow(count) {
 		return result

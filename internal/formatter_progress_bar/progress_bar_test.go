@@ -17,7 +17,7 @@ var places1 = []types.Place{
 func TestProgressBarMidRunReturnsEmpty(t *testing.T) {
 	Test(t, "progress-bar: mid-run returns empty string", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
-		out := pb.Format("foo.go", nil, 0, 10, 0, 0)
+		out := pb.Format("foo.go", nil, nil, 0, 10, 0, 0)
 		t.Equal(out, "")
 		t.End()
 	})
@@ -26,7 +26,7 @@ func TestProgressBarMidRunReturnsEmpty(t *testing.T) {
 func TestProgressBarLastFileNoIssues(t *testing.T) {
 	Test(t, "progress-bar: last file no issues returns empty", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
-		out := pb.Format("foo.go", nil, 4, 5, 0, 0)
+		out := pb.Format("foo.go", nil, nil, 4, 5, 0, 0)
 		t.Equal(out, "")
 		t.End()
 	})
@@ -35,7 +35,7 @@ func TestProgressBarLastFileNoIssues(t *testing.T) {
 func TestProgressBarLastFileWithIssues(t *testing.T) {
 	Test(t, "progress-bar: last file with issues returns dump output", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
-		out := pb.Format("foo.go", places1, 4, 5, 1, 1)
+		out := pb.Format("foo.go", nil, places1, 4, 5, 1, 1)
 		t.Ok(strings.Contains(out, "1 error in 1 file"))
 		t.End()
 	})
@@ -45,7 +45,7 @@ func TestProgressBarForceShow(t *testing.T) {
 	Test(t, "progress-bar: INDRA_PROGRESS_BAR=1 forces show", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
 		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
-		out := pb.Format("foo.go", nil, 0, 10, 0, 0)
+		out := pb.Format("foo.go", nil, nil, 0, 10, 0, 0)
 		t.Equal(out, "")
 		t.End()
 	})
@@ -97,7 +97,7 @@ func TestProgressBarShowTruncatedLine(t *testing.T) {
 	Test(t, "progress-bar: forced show truncates overlong line", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
 		t.TB().Setenv("INDRA_TERM_WIDTH", "5")
-		out := pb.Format("a-very-long-filename-indeed.go", nil, 2, 3, 0, 0)
+		out := pb.Format("a-very-long-filename-indeed.go", nil, nil, 2, 3, 0, 0)
 		t.Equal(out, "")
 		t.End()
 	})
@@ -107,7 +107,7 @@ func TestProgressBarShowLastFileReturnsDump(t *testing.T) {
 	Test(t, "progress-bar: forced show on last file returns dump output", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
 		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
-		out := pb.Format("foo.go", places1, 4, 5, 1, 1)
+		out := pb.Format("foo.go", nil, places1, 4, 5, 1, 1)
 		t.Ok(strings.Contains(out, "1 error in 1 file"))
 		t.End()
 	})
@@ -117,7 +117,7 @@ func TestProgressBarShowMidRunReturnsEmpty(t *testing.T) {
 	Test(t, "progress-bar: forced show mid-run returns empty", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
 		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
-		out := pb.Format("foo.go", nil, 0, 10, 0, 0)
+		out := pb.Format("foo.go", nil, nil, 0, 10, 0, 0)
 		t.Equal(out, "")
 		t.End()
 	})
@@ -127,7 +127,7 @@ func TestProgressBarShowWithErrors(t *testing.T) {
 	Test(t, "progress-bar: forced show with errors renders count", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
 		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
-		out := pb.Format("foo.go", nil, 3, 10, 1, 2)
+		out := pb.Format("foo.go", nil, nil, 3, 10, 1, 2)
 		t.Equal(out, "")
 		t.End()
 	})
