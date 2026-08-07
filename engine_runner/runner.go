@@ -83,32 +83,6 @@ func typeKey(n ast.Node) (string, bool) {
 	return "*" + reflect.TypeOf(n).Elem().String(), true
 }
 
-// preorderStack walks root in pre-order, invoking f for every node together
-// with that node's ancestor stack (root-first, excluding the node itself).
-// The stack is engine-internal and must be copied by f when retained across
-// calls. Returning false from f skips the node's subtree. It underlies
-// Path.Stack, Path.FindParent and Path.ParentPath.
-func preorderStack(root ast.Node, stack []ast.Node, f func(n ast.Node, stack []ast.Node) bool) {
-	var localStack []ast.Node
-	astutil.Apply(root, func(c *astutil.Cursor) bool {
-		n := c.Node()
-		localStack = append(localStack, n)
-		ancestors := append([]ast.Node{}, stack...)
-		ancestors = append(ancestors, localStack[:len(localStack)-1]...)
-		ok := f(n, ancestors)
-		if !ok {
-			localStack = localStack[:len(localStack)-1]
-			return false
-		}
-		return true
-	}, func(c *astutil.Cursor) bool {
-		if len(localStack) > 0 {
-			localStack = localStack[:len(localStack)-1]
-		}
-		return true
-	})
-}
-
 // runOnce runs every plugin once against the file and applies fixes.
 func runOnce(p RunParams) []types.Place {
 	var places []types.Place
