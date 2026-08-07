@@ -5,6 +5,8 @@ package types
 import (
 	"go/ast"
 
+	"golang.org/x/tools/go/ast/astutil"
+
 	"coderaiser/indra/compare"
 )
 
@@ -43,9 +45,41 @@ type Traverser map[string]FindFn
 // Stack holds ancestors root-first, excluding Node itself; it is populated by
 // the engine's PreorderStack walk and is engine-internal. Plugins reach
 // ancestors only through Find / FindParent / ParentPath.
+// Cursor is set by the engine during astutil.Apply and is engine-internal.
+// Plugins call path.Replace / Delete / InsertBefore / InsertAfter, never
+// path.Cursor directly.
 type Path struct {
-	Node  ast.Node
-	Stack []ast.Node // ancestors root-first, excluding Node; engine-internal
+	Node   ast.Node
+	Stack  []ast.Node // ancestors root-first, excluding Node; engine-internal
+	Cursor *astutil.Cursor
+}
+
+// Replace delegates to Cursor.Replace when Cursor is non-nil.
+func (p Path) Replace(n ast.Node) {
+	if p.Cursor != nil {
+		p.Cursor.Replace(n)
+	}
+}
+
+// Delete delegates to Cursor.Delete when Cursor is non-nil.
+func (p Path) Delete() {
+	if p.Cursor != nil {
+		p.Cursor.Delete()
+	}
+}
+
+// InsertBefore delegates to Cursor.InsertBefore when Cursor is non-nil.
+func (p Path) InsertBefore(n ast.Node) {
+	if p.Cursor != nil {
+		p.Cursor.InsertBefore(n)
+	}
+}
+
+// InsertAfter delegates to Cursor.InsertAfter when Cursor is non-nil.
+func (p Path) InsertAfter(n ast.Node) {
+	if p.Cursor != nil {
+		p.Cursor.InsertAfter(n)
+	}
 }
 
 // Find walks up from this path (inclusive) and returns the first Path where fn

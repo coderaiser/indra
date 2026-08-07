@@ -2,7 +2,11 @@ package types_test
 
 import (
 	"go/ast"
+	"go/parser"
+	"go/token"
 	"testing"
+
+	"golang.org/x/tools/go/ast/astutil"
 
 	"coderaiser/indra/types"
 	. "github.com/coderaiser/go-tape"
@@ -111,6 +115,166 @@ func TestParentPath(t *testing.T) {
 		result := len(parent.Stack)
 		t.Equal(result, 0)
 
+		t.End()
+	})
+}
+
+func TestPathReplace(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tx := 1\n\ty := 2\n}\n"
+	fset := token.NewFileSet()
+	file, _ := parser.ParseFile(fset, "", src, 0)
+
+	astutil.Apply(file, func(c *astutil.Cursor) bool {
+		if assign, ok := c.Node().(*ast.AssignStmt); ok {
+			if len(assign.Lhs) > 0 {
+				if ident, ok := assign.Lhs[0].(*ast.Ident); ok && ident.Name == "x" {
+					path := types.Path{Node: assign, Cursor: c}
+					path.Replace(&ast.AssignStmt{
+						Lhs:    []ast.Expr{ast.NewIdent("z")},
+						Rhs:    []ast.Expr{ast.NewIdent("3")},
+						TokPos: assign.TokPos,
+						Tok:    token.DEFINE,
+					})
+					return false
+				}
+			}
+		}
+		return true
+	}, nil)
+
+	funcDecl := file.Decls[0].(*ast.FuncDecl)
+
+	Test(t, "Path.Replace: keeps list length", func(t *T) {
+		result := len(funcDecl.Body.List)
+		t.Equal(result, 2)
+		t.End()
+	})
+
+	Test(t, "Path.Replace: updates first statement lhs", func(t *T) {
+		first := funcDecl.Body.List[0].(*ast.AssignStmt)
+		result := first.Lhs[0].(*ast.Ident).Name
+		t.Equal(result, "z")
+		t.End()
+	})
+}
+
+func TestPathDelete(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tx := 1\n\ty := 2\n}\n"
+	fset := token.NewFileSet()
+	file, _ := parser.ParseFile(fset, "", src, 0)
+
+	astutil.Apply(file, func(c *astutil.Cursor) bool {
+		if assign, ok := c.Node().(*ast.AssignStmt); ok {
+			if len(assign.Lhs) > 0 {
+				if ident, ok := assign.Lhs[0].(*ast.Ident); ok && ident.Name == "x" {
+					path := types.Path{Node: assign, Cursor: c}
+					path.Delete()
+					return false
+				}
+			}
+		}
+		return true
+	}, nil)
+
+	funcDecl := file.Decls[0].(*ast.FuncDecl)
+
+	Test(t, "Path.Delete: removes node via cursor", func(t *T) {
+		result := len(funcDecl.Body.List)
+		t.Equal(result, 1)
+
+		t.End()
+	})
+}
+
+func TestPathInsertBefore(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tx := 1\n}\n"
+	fset := token.NewFileSet()
+	file, _ := parser.ParseFile(fset, "", src, 0)
+
+	astutil.Apply(file, func(c *astutil.Cursor) bool {
+		if assign, ok := c.Node().(*ast.AssignStmt); ok {
+			if len(assign.Lhs) > 0 {
+				if ident, ok := assign.Lhs[0].(*ast.Ident); ok && ident.Name == "x" {
+					path := types.Path{Node: assign, Cursor: c}
+					path.InsertBefore(&ast.AssignStmt{
+						Lhs:    []ast.Expr{ast.NewIdent("z")},
+						Rhs:    []ast.Expr{ast.NewIdent("3")},
+						TokPos: assign.TokPos,
+						Tok:    token.DEFINE,
+					})
+					return false
+				}
+			}
+		}
+		return true
+	}, nil)
+
+	funcDecl := file.Decls[0].(*ast.FuncDecl)
+
+	Test(t, "Path.InsertBefore: keeps list length", func(t *T) {
+		result := len(funcDecl.Body.List)
+		t.Equal(result, 2)
+		t.End()
+	})
+
+	Test(t, "Path.InsertBefore: prepends new statement", func(t *T) {
+		first := funcDecl.Body.List[0].(*ast.AssignStmt)
+		result := first.Lhs[0].(*ast.Ident).Name
+		t.Equal(result, "z")
+		t.End()
+	})
+}
+
+func TestPathInsertAfter(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tx := 1\n}\n"
+	fset := token.NewFileSet()
+	file, _ := parser.ParseFile(fset, "", src, 0)
+
+	astutil.Apply(file, func(c *astutil.Cursor) bool {
+		if assign, ok := c.Node().(*ast.AssignStmt); ok {
+			if len(assign.Lhs) > 0 {
+				if ident, ok := assign.Lhs[0].(*ast.Ident); ok && ident.Name == "x" {
+					path := types.Path{Node: assign, Cursor: c}
+					path.InsertAfter(&ast.AssignStmt{
+						Lhs:    []ast.Expr{ast.NewIdent("z")},
+						Rhs:    []ast.Expr{ast.NewIdent("3")},
+						TokPos: assign.TokPos,
+						Tok:    token.DEFINE,
+					})
+					return false
+				}
+			}
+		}
+		return true
+	}, nil)
+
+	funcDecl := file.Decls[0].(*ast.FuncDecl)
+
+	Test(t, "Path.InsertAfter: keeps list length", func(t *T) {
+		result := len(funcDecl.Body.List)
+		t.Equal(result, 2)
+		t.End()
+	})
+
+	Test(t, "Path.InsertAfter: appends new statement", func(t *T) {
+		second := funcDecl.Body.List[1].(*ast.AssignStmt)
+		result := second.Lhs[0].(*ast.Ident).Name
+		t.Equal(result, "z")
+		t.End()
+	})
+}
+
+func TestPathCursorMethodsNoOpWhenNil(t *testing.T) {
+	path := types.Path{Node: ast.NewIdent("x"), Cursor: nil}
+
+	// Should not panic
+	path.Replace(ast.NewIdent("y"))
+	path.Delete()
+	path.InsertBefore(ast.NewIdent("z"))
+	path.InsertAfter(ast.NewIdent("w"))
+
+	Test(t, "Path cursor methods: no-ops when Cursor is nil", func(t *T) {
+		t.Pass("no panic")
 		t.End()
 	})
 }
