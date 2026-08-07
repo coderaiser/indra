@@ -31,8 +31,18 @@ func Format(name string, source []byte, places []types.Place, index, count, file
 	lines := splitLines(source)
 
 	for _, pl := range places {
-		fmt.Fprintf(&sb, "  \033[90m%d:%d\033[0m  \033[31merror\033[0m   %s   \033[90m%s\033[0m\n\n",
+		fmt.Fprintf(&sb, "  \033[90m%d:%d\033[0m  \033[31merror\033[0m   %s   \033[90m%s\033[0m\n",
 			pl.Position.Line, pl.Position.Column, pl.Message, pl.Rule)
+
+		col := pl.Position.Column
+		if col < 1 {
+			col = 1
+		}
+		indent := strings.Repeat(" ", col-1)
+		numWidth := len(fmt.Sprintf("%d", pl.Position.Line))
+		prefix := strings.Repeat(" ", numWidth+2+1)
+		fmt.Fprintf(&sb, "%s| %s\033[33m^\033[0m %s \033[90m(%s)\033[0m\n",
+			prefix, indent, pl.Message, pl.Rule)
 
 		if source == nil || pl.Position.Line < 1 || pl.Position.Line > len(lines) {
 			continue

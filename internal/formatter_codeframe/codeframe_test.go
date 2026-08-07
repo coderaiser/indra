@@ -101,4 +101,23 @@ func TestCodeframe(t *testing.T) {
 		t.Ok(strings.Contains(strip(out), "> 6"))
 		t.End()
 	})
+
+	Test(t, "codeframe: shows caret under exact column", func(t *T) {
+		out := formcf.Format("a.go", src, []types.Place{place1}, 0, 1, 1, 1)
+		t.Ok(strings.Contains(out, "\033[33m^\033[0m"))
+		t.End()
+	})
+
+	Test(t, "codeframe: caret line contains message and rule", func(t *T) {
+		out := formcf.Format("a.go", src, []types.Place{place1}, 0, 1, 1, 1)
+		t.Ok(strings.Contains(strip(out), "remove unused variable: x (r)"))
+		t.End()
+	})
+
+	Test(t, "codeframe: clamps column to 1 for caret line", func(t *T) {
+		p := types.Place{Rule: "r", Message: "m", Position: types.Position{Line: 4, Column: 0}}
+		out := formcf.Format("a.go", src, []types.Place{p}, 0, 1, 1, 1)
+		t.Ok(strings.Contains(out, "\033[33m^\033[0m"))
+		t.End()
+	})
 }
