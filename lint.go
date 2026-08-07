@@ -21,6 +21,9 @@ import (
 	"coderaiser/indra/types"
 )
 
+// ErrInvalidOption is returned when an unknown flag is passed to Indra.
+var ErrInvalidOption = errors.New("invalid option")
+
 //go:embed cmd/indra/help.toml
 var helpToml []byte
 
@@ -113,30 +116,31 @@ func Indra(registry []loader.PluginFuncs, args []string, w io.Writer) error {
 	fix := false
 	formatterName := os.Getenv("INDRA_FORMATTER")
 	files := []string{}
+	var unknownFlags []string
 	for i := 0; i < len(args); i++ {
 		a := args[i]
-		if a == "--fix" {
+		switch {
+		case a == "--fix":
 			fix = true
-			continue
-		}
-		if a == "-f" || a == "--formatter" {
+		case a == "-f", a == "--formatter":
 			if i+1 < len(args) {
 				i++
 				formatterName = args[i]
 			}
-			continue
-		}
-		if strings.HasPrefix(a, "-f=") {
+		case strings.HasPrefix(a, "-f="):
 			formatterName = strings.TrimPrefix(a, "-f=")
-			continue
-		}
-		if strings.HasPrefix(a, "--formatter=") {
+		case strings.HasPrefix(a, "--formatter="):
 			formatterName = strings.TrimPrefix(a, "--formatter=")
-			continue
-		}
-		if !strings.HasPrefix(a, "-") {
+		case strings.HasPrefix(a, "-"):
+			unknownFlags = append(unknownFlags, a)
+		default:
 			files = append(files, a)
 		}
+	}
+
+	if len(unknownFlags) > 0 {
+		fmt.Fprintf(w, "🐊 Invalid option `%s`.\n", unknownFlags[0])
+		return fmt.Errorf("%w: %s", ErrInvalidOption, unknownFlags[0])
 	}
 
 	if len(files) == 0 {

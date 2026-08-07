@@ -2,6 +2,7 @@ package indra_test
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -127,9 +128,31 @@ func TestIndraNoFiles(t *testing.T) {
 }
 
 func TestIndraUnknownFlag(t *testing.T) {
-	Test(t, "lint: unknown flag with no files returns nil", func(t *T) {
-		error := indra.Indra(testRegistry, []string{"--unknown"}, io.Discard)
-		t.NotOk(error)
+	Test(t, "lint: unknown flag returns non-nil error", func(t *T) {
+		var buf bytes.Buffer
+		error := indra.Indra(testRegistry, []string{"--unknown-flag"}, &buf)
+		t.Ok(error != nil)
+		t.End()
+	})
+
+	Test(t, "lint: unknown flag error wraps ErrInvalidOption", func(t *T) {
+		var buf bytes.Buffer
+		error := indra.Indra(testRegistry, []string{"--unknown-flag"}, &buf)
+		t.Ok(errors.Is(error, indra.ErrInvalidOption))
+		t.End()
+	})
+
+	Test(t, "lint: unknown flag writes error message to writer", func(t *T) {
+		var buf bytes.Buffer
+		indra.Indra(testRegistry, []string{"--unknown-flag"}, &buf)
+		t.Ok(strings.Contains(buf.String(), "🐊 Invalid option `--unknown-flag`."))
+		t.End()
+	})
+
+	Test(t, "lint: unknown flag with no files still returns error", func(t *T) {
+		var buf bytes.Buffer
+		error := indra.Indra(testRegistry, []string{"--unknown-flag"}, &buf)
+		t.Ok(error != nil)
 		t.End()
 	})
 }
