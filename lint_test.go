@@ -347,6 +347,27 @@ func TestIndraHelp(t *testing.T) {
 		t.Match(buf.String(), "--fix")
 		t.End()
 	})
+
+	Test(t, "lint: --help output contains --formatter", func(t *T) {
+		var buf bytes.Buffer
+		indra.Indra(testRegistry, []string{"--help"}, &buf)
+		t.Match(buf.String(), "--formatter")
+		t.End()
+	})
+
+	Test(t, "lint: --help output contains --progress", func(t *T) {
+		var buf bytes.Buffer
+		indra.Indra(testRegistry, []string{"--help"}, &buf)
+		t.Match(buf.String(), "--progress")
+		t.End()
+	})
+
+	Test(t, "lint: --help output contains --no-progress", func(t *T) {
+		var buf bytes.Buffer
+		indra.Indra(testRegistry, []string{"--help"}, &buf)
+		t.Match(buf.String(), "--no-progress")
+		t.End()
+	})
 }
 
 func TestIndraPerFileMatchOverride(t *testing.T) {

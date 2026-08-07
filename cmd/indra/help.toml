@@ -13,6 +13,18 @@ desc = "output version information and exit"
 flag = "--fix"
 desc = "rewrite files in place to fix lint issues"
 
-[[options]]
 flag = "-f, --format"
 desc = "select output formatter: json-lines, dump, progress-bar (default: progress-bar locally, dump on CI)"
+note = "frame, memory, time, json, json-lines, progress"
+
+[[options]]
+flag = "INDRA_FORMATTER=<name>"
+desc = "set formatter via environment variable"
+
+[[options]]
+flag = "--progress"
+desc = "force show progress bar"
+
+[[options]]
+flag = "--no-progress"
+desc = "hide progress bar"
