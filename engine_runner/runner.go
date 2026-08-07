@@ -117,7 +117,7 @@ func (v *stackVisitor) Visit(node ast.Node) ast.Visitor {
 func runOnce(p RunParams) []types.Place {
 	var places []types.Place
 
-		// Build a merged visitor set from all traverser plugins. Type-keyed viewers
+	// Build a merged visitor set from all traverser plugins. Type-keyed viewers
 	// (keys beginning with "*ast.", e.g. "*ast.File") are dispatched by node
 	// type; pattern-keyed visitors are dispatched by matching each visited
 	// node against the pattern with compare.Compare.

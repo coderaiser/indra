@@ -26,7 +26,7 @@ func TestVisitNoTapeImport(t *testing.T) {
 	Test(t, "findUselessPrefix: no tape import pushes nothing", func(t *T) {
 		file := parseFile(t, "package p\nfunc f() {}\n")
 		pushed := false
-			findUselessPrefix(types.Path{Node: file}, func(n types.Path) { pushed = true })
+		findUselessPrefix(types.Path{Node: file}, func(n types.Path) { pushed = true })
 		t.Ok(!pushed)
 		t.End()
 	})

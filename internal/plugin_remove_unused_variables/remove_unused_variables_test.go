@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"coderaiser/indra/internal/plugin_remove_unused_variables"
-	"coderaiser/indra/types"
 	. "coderaiser/indra/internal/test"
+	"coderaiser/indra/types"
 )
 
 var Test = CreateTest("remove-unused-variables", remove_unused_variables.Plugin{})

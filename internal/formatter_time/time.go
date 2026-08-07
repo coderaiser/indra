@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	pb "coderaiser/indra/internal/formatter_progress_bar"
 	dump "coderaiser/indra/internal/formatter_dump"
+	pb "coderaiser/indra/internal/formatter_progress_bar"
 	"coderaiser/indra/types"
 )
 

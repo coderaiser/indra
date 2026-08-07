@@ -131,7 +131,8 @@ func TestIndraUnknownFlag(t *testing.T) {
 	Test(t, "lint: unknown flag returns non-nil error", func(t *T) {
 		var buf bytes.Buffer
 		error := indra.Indra(testRegistry, []string{"--unknown-flag"}, &buf)
-		t.Ok(error != nil)
+		t.Ok(error)
+
 		t.End()
 	})
 
@@ -152,7 +153,8 @@ func TestIndraUnknownFlag(t *testing.T) {
 	Test(t, "lint: unknown flag with no files still returns error", func(t *T) {
 		var buf bytes.Buffer
 		error := indra.Indra(testRegistry, []string{"--unknown-flag"}, &buf)
-		t.Ok(error != nil)
+		t.Ok(error)
+
 		t.End()
 	})
 }

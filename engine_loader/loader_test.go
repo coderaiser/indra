@@ -23,8 +23,8 @@ func (testReplacerMatch) Replace() types.Replacer { return types.Replacer{"p": "
 // testTraverser is a minimal traverser plugin.
 type testTraverser struct{}
 
-func (testTraverser) Report(_ types.Path) string        { return "t" }
-func (testTraverser) Traverse() types.Traverser        { return types.Traverser{"*ast.File": fileVisitor} }
+func (testTraverser) Report(_ types.Path) string         { return "t" }
+func (testTraverser) Traverse() types.Traverser          { return types.Traverser{"*ast.File": fileVisitor} }
 func (testTraverser) Fix(_ types.Path, _ map[string]any) {}
 
 func fileVisitor(p types.Path, push func(types.Path)) {}

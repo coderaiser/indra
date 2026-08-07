@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	pb "coderaiser/indra/internal/formatter_progress_bar"
 	formmem "coderaiser/indra/internal/formatter_memory"
+	pb "coderaiser/indra/internal/formatter_progress_bar"
 	"coderaiser/indra/types"
 	. "github.com/coderaiser/go-tape"
 )

@@ -509,6 +509,99 @@ func TestRunTraverserBlockMsgOverride(t *testing.T) {
 	})
 }
 
+func TestRunTraverserPatternKeyMatch(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tf()\n}\n"
+	file, fset := parse(t, src)
+	funcs := loader.PluginFuncs{
+		Name: "pat",
+		Plugin: traverser{
+			report: "pattern issue",
+			tr: types.Traverser{
+				"f()": func(p types.Path, push func(types.Path)) {
+					push(p)
+				},
+			},
+			fix: func(p types.Path, opts map[string]any) {},
+		},
+	}
+	pl := items([]loader.PluginFuncs{funcs})
+	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
+
+	Test(t, "runner: pattern key matches expr stmt", func(t *T) {
+		result := len(places)
+		t.Equal(result, 1)
+		t.End()
+	})
+}
+
+func TestRunTraverserPatternKeyFix(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tf()\n}\n"
+	file, fset := parse(t, src)
+	funcs := loader.PluginFuncs{
+		Name: "patfix",
+		Plugin: traverser{
+			report: "pattern fix",
+			tr: types.Traverser{
+				"f()": func(p types.Path, push func(types.Path)) {
+					push(p)
+				},
+			},
+			fix: func(p types.Path, opts map[string]any) {
+				expr := p.Node.(*ast.ExprStmt)
+				expr.X = &ast.CallExpr{
+					Fun: &ast.Ident{Name: "g"},
+				}
+			},
+		},
+	}
+	pl := items([]loader.PluginFuncs{funcs})
+	RunPlugins(RunParams{File: file, Fset: fset, Fix: true, FixCount: 1, Plugins: pl})
+	out := printFile(t, file, fset)
+
+	Test(t, "runner: pattern key fix modifies stmt", func(t *T) {
+		t.Ok(strings.Contains(out, "g()"))
+		t.End()
+	})
+}
+
+func TestRunTraverserMultiplePatternKeys(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tf()\n\tg()\n}\n"
+	file, fset := parse(t, src)
+	pl := items([]loader.PluginFuncs{
+		{
+			Name: "fpat",
+			Plugin: traverser{
+				report: "f pattern",
+				tr: types.Traverser{
+					"f()": func(p types.Path, push func(types.Path)) {
+						push(p)
+					},
+				},
+				fix: func(p types.Path, opts map[string]any) {},
+			},
+		},
+		{
+			Name: "gpat",
+			Plugin: traverser{
+				report: "g pattern",
+				tr: types.Traverser{
+					"g()": func(p types.Path, push func(types.Path)) {
+						push(p)
+					},
+				},
+				fix: func(p types.Path, opts map[string]any) {},
+			},
+		},
+	})
+	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
+
+	Test(t, "runner: multiple pattern keys report both", func(t *T) {
+		result := len(places)
+		t.Equal(result, 2)
+		t.End()
+	})
+}
+
 func TestSubstituteAndParseError(t *testing.T) {
 	stmts := substituteAndParse("func (", Vars{})
 
@@ -718,7 +811,8 @@ func TestRunPassesBlockToGuard(t *testing.T) {
 func TestTypeKeyNil(t *testing.T) {
 	_, ok := typeKey(nil)
 	Test(t, "runner: typeKey returns false for nil", func(t *T) {
-		t.Equal(ok, false)
+		t.NotOk(ok)
+
 		t.End()
 	})
 }
@@ -780,9 +874,12 @@ func TestPreorderStackStackIsAncestorChain(t *testing.T) {
 	})
 
 	Test(t, "runner: preorderStack passes ancestor stack to visitor", func(t *T) {
-		// Stack should be [File, FuncDecl, BlockStmt, AssignStmt] — all
-		// ancestors of the "x" identifier, in root-first order.
-		t.Equal(assignStack, []string{"*ast.File", "*ast.FuncDecl", "*ast.BlockStmt", "*ast.AssignStmt"})
+		expected :=
+			// Stack should be [File, FuncDecl, BlockStmt, AssignStmt] — all
+			// ancestors of the "x" identifier, in root-first order.
+			[]string{"*ast.File", "*ast.FuncDecl", "*ast.BlockStmt", "*ast.AssignStmt"}
+		t.DeepEqual(assignStack, expected)
+
 		t.End()
 	})
 }
@@ -824,7 +921,9 @@ func TestStackVisitorNilPopsStack(t *testing.T) {
 	v.Visit(nil)
 
 	Test(t, "runner: stackVisitor nil callback pops without panic", func(t *T) {
-		t.Equal(len(v.stack), 0)
+		result := len(v.stack)
+		t.Equal(result, 0)
+
 		t.End()
 	})
 }

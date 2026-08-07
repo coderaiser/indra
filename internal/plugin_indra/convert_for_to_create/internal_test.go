@@ -68,7 +68,7 @@ func TestFindForCallsNoFor(t *testing.T) {
 func TestFindForCallsPushes(t *testing.T) {
 	Test(t, "findForCalls: pushes file with indratest.For", func(t *T) {
 		pushed := false
-				file := parse(t.TB(), "package fixture\nvar x = indratest.For(\"a\", f)\n")
+		file := parse(t.TB(), "package fixture\nvar x = indratest.For(\"a\", f)\n")
 		findForCalls(types.Path{Node: file}, func(types.Path) { pushed = true })
 		t.Ok(pushed)
 

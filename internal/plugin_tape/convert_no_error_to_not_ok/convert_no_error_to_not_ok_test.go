@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"coderaiser/indra/internal/plugin_tape/convert_no_error_to_not_ok"
-	"coderaiser/indra/types"
 	. "coderaiser/indra/internal/test"
+	"coderaiser/indra/types"
 
 	tape "github.com/coderaiser/go-tape"
 )
