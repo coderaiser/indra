@@ -12,6 +12,7 @@ import (
 	pb "coderaiser/indra/internal/formatter_progress_bar"
 	formcf "coderaiser/indra/internal/formatter_codeframe"
 	formframe "coderaiser/indra/internal/formatter_frame"
+	formmem "coderaiser/indra/internal/formatter_memory"
 	formstream "coderaiser/indra/internal/formatter_stream"
 	"coderaiser/indra/types"
 )
@@ -47,6 +48,8 @@ func ChooseByName(name string) Func {
 		return formcf.Format
 	case "frame":
 		return formframe.Format
+	case "memory":
+		return formmem.Format
 	case "stream":
 		return formstream.Format
 	case "dump":

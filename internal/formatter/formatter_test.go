@@ -12,6 +12,7 @@ import (
 	pb "coderaiser/indra/internal/formatter_progress_bar"
 	formcf "coderaiser/indra/internal/formatter_codeframe"
 	formframe "coderaiser/indra/internal/formatter_frame"
+	formmem "coderaiser/indra/internal/formatter_memory"
 	formstream "coderaiser/indra/internal/formatter_stream"
 
 	. "github.com/coderaiser/go-tape"
@@ -23,6 +24,14 @@ func TestChooseByName(t *testing.T) {
 		f := formatter.ChooseByName("json")
 		result := fmt.Sprintf("%p", f)
 		t.Equal(result, fmt.Sprintf("%p", formjson.Format))
+		t.End()
+	})
+
+	Test(t, "formatter: ChooseByName memory returns memory", func(t *T) {
+		t.TB().Setenv("CI", "")
+		f := formatter.ChooseByName("memory")
+		result := fmt.Sprintf("%p", f)
+		t.Equal(result, fmt.Sprintf("%p", formmem.Format))
 		t.End()
 	})
 
