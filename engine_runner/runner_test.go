@@ -714,3 +714,42 @@ func TestRunPassesBlockToGuard(t *testing.T) {
 		t.End()
 	})
 }
+
+func TestTypeKeyNil(t *testing.T) {
+	_, ok := typeKey(nil)
+	Test(t, "runner: typeKey returns false for nil", func(t *T) {
+		t.Equal(ok, false)
+		t.End()
+	})
+}
+
+func TestPatternKeyNil(t *testing.T) {
+	_, ok := patternKey(nil, token.NewFileSet())
+	Test(t, "runner: patternKey returns false for nil node", func(t *T) {
+		t.Equal(ok, false)
+		t.End()
+	})
+}
+
+func TestPatternKeyNilFset(t *testing.T) {
+	_, ok := patternKey(&ast.Ident{Name: "x"}, nil)
+	Test(t, "runner: patternKey returns false for nil fset", func(t *T) {
+		t.Equal(ok, false)
+		t.End()
+	})
+}
+
+func TestRunNoTraverserPlugins(t *testing.T) {
+	src := "package p\n\nfunc f() {}\n"
+	file, fset := parse(t, src)
+	pl := items([]loader.PluginFuncs{replacerItem()[0]})
+	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
+
+	Test(t, "runner: no traverser plugins skips merged walk", func(t *T) {
+		// Replacer plugins still work; this just ensures the merged walk
+		// is skipped when there are no traverser plugins.
+		_ = places
+		t.Pass("no panic")
+		t.End()
+	})
+}

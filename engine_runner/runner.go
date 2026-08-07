@@ -66,20 +66,57 @@ type rewrite struct {
 	newStmts []ast.Stmt
 }
 
+// visitorCall bundles a traverser plugin item with its visitor function.
+type visitorCall struct {
+	item   PluginItem
+	visit  types.FindFn
+	plugin loader.TraverserPlugin
+}
+
+// typeKey returns the reflect.Type string for an AST node (e.g. "*ast.File").
+func typeKey(n ast.Node) (string, bool) {
+	if n == nil {
+		return "", false
+	}
+	return "*" + reflect.TypeOf(n).Elem().String(), true
+}
+
+// patternKey renders a node to source and returns it as a compare pattern key.
+func patternKey(n ast.Node, fset *token.FileSet) (string, bool) {
+	if n == nil || fset == nil {
+		return "", false
+	}
+	var buf bytes.Buffer
+	if err := format.Node(&buf, fset, n); err != nil {
+		return "", false
+	}
+	return buf.String(), true
+}
+
 // runOnce runs every plugin once against the file and applies fixes.
 func runOnce(p RunParams) []types.Place {
 	var places []types.Place
 
-	// Traverser plugins own whole-file analysis and may fix in place. Each
-	// visitor calls push once per finding; the engine reports and fixes the
-	// pushed node immediately (putout per-item model).
+	// Build a merged visitor map from all traverser plugins. The engine walks
+	// the AST once and calls each visitor for matching nodes.
+	visitors := map[string][]visitorCall{}
 	for _, item := range p.Plugins {
 		tp, ok := item.Plugin.(loader.TraverserPlugin)
 		if !ok {
 			continue
 		}
-				// reportFound builds the Place for a found path and fixes it if enabled.
-		reportFound := func(pPath types.Path) {
+		for key, visit := range tp.Traverse() {
+			visitors[key] = append(visitors[key], visitorCall{
+				item:   item,
+				visit:  visit,
+				plugin: tp,
+			})
+		}
+	}
+
+	if len(visitors) > 0 {
+		// reportFound builds the Place for a found path and fixes it if enabled.
+		reportFound := func(item PluginItem, tp loader.TraverserPlugin, pPath types.Path) {
 			msg := tp.Report(pPath)
 			if item.Msg != "" {
 				msg = item.Msg
@@ -94,21 +131,40 @@ func runOnce(p RunParams) []types.Place {
 				tp.Fix(pPath, item.Options)
 			}
 		}
-		for key, visitor := range tp.Traverse() {
-			switch key {
-			case "*ast.File":
-				visitor(types.Path{Node: p.File}, reportFound)
-			case "*ast.BlockStmt":
-				ast.Inspect(p.File, func(n ast.Node) bool {
-					block, ok := n.(*ast.BlockStmt)
-					if !ok {
-						return true
-					}
-					visitor(types.Path{Node: block}, reportFound)
-					return true
-				})
+
+		// Single merged walk using ast.Inspect. For each node, call all visitors
+		// registered for its type or matching pattern.
+		ast.Inspect(p.File, func(n ast.Node) bool {
+			if n == nil {
+				return true
 			}
-		}
+
+			path := types.Path{Node: n}
+
+			// Call type-keyed visitors (e.g. "*ast.File", "*ast.FuncDecl")
+			if key, ok := typeKey(n); ok {
+				if calls, ok := visitors[key]; ok {
+					for _, call := range calls {
+						call.visit(path, func(pushPath types.Path) {
+							reportFound(call.item, call.plugin, pushPath)
+						})
+					}
+				}
+			}
+
+			// Call pattern-keyed visitors
+			if pattern, ok := patternKey(n, p.Fset); ok {
+				if calls, ok := visitors[pattern]; ok {
+					for _, call := range calls {
+						call.visit(path, func(pushPath types.Path) {
+							reportFound(call.item, call.plugin, pushPath)
+						})
+					}
+				}
+			}
+
+			return true
+		})
 	}
 
 	// Pattern-based (replacer) plugins run over every statement.
