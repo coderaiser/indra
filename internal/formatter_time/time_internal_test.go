@@ -9,17 +9,23 @@ import (
 
 func TestFormatDuration(t *testing.T) {
 	Test(t, "time: formatDuration seconds", func(t *T) {
-		t.Equal(formatDuration(1500*time.Millisecond), "1.50s")
+		result := formatDuration(1500 * time.Millisecond)
+		t.Equal(result, "1.50s")
+
 		t.End()
 	})
 
 	Test(t, "time: formatDuration milliseconds", func(t *T) {
-		t.Equal(formatDuration(5*time.Millisecond), "5ms")
+		result := formatDuration(5 * time.Millisecond)
+		t.Equal(result, "5ms")
+
 		t.End()
 	})
 
 	Test(t, "time: formatDuration microseconds", func(t *T) {
-		t.Equal(formatDuration(10*time.Microsecond), "10µs")
+		result := formatDuration(10 * time.Microsecond)
+		t.Equal(result, "10µs")
+
 		t.End()
 	})
 }

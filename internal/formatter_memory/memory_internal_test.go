@@ -8,17 +8,23 @@ import (
 
 func TestFormatBytes(t *testing.T) {
 	Test(t, "memory: formatBytes small returns bytes", func(t *T) {
-		t.Equal(formatBytes(500), "500 B")
+		result := formatBytes(500)
+		t.Equal(result, "500 B")
+
 		t.End()
 	})
 
 	Test(t, "memory: formatBytes kilobytes", func(t *T) {
-		t.Equal(formatBytes(2048), "2.0 KB")
+		result := formatBytes(2048)
+		t.Equal(result, "2.0 KB")
+
 		t.End()
 	})
 
 	Test(t, "memory: formatBytes megabytes", func(t *T) {
-		t.Equal(formatBytes(3*1<<20), "3.0 MB")
+		result := formatBytes(3 * 1 << 20)
+		t.Equal(result, "3.0 MB")
+
 		t.End()
 	})
 }

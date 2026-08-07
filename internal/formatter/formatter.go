@@ -5,14 +5,14 @@ package formatter
 import (
 	"os"
 
+	formcf "coderaiser/indra/internal/formatter_codeframe"
 	dump "coderaiser/indra/internal/formatter_dump"
+	formframe "coderaiser/indra/internal/formatter_frame"
 	formjson "coderaiser/indra/internal/formatter_json"
 	jsonlines "coderaiser/indra/internal/formatter_json_lines"
+	formmem "coderaiser/indra/internal/formatter_memory"
 	formprog "coderaiser/indra/internal/formatter_progress"
 	pb "coderaiser/indra/internal/formatter_progress_bar"
-	formcf "coderaiser/indra/internal/formatter_codeframe"
-	formframe "coderaiser/indra/internal/formatter_frame"
-	formmem "coderaiser/indra/internal/formatter_memory"
 	formstream "coderaiser/indra/internal/formatter_stream"
 	formtime "coderaiser/indra/internal/formatter_time"
 	"coderaiser/indra/types"

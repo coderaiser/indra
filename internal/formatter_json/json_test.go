@@ -32,7 +32,9 @@ func TestJson(t *testing.T) {
 		var m map[string]any
 		json.Unmarshal([]byte(strings.TrimSpace(out)), &m)
 		errors := m["errors"].([]any)
-		t.Equal(len(errors), 1)
+		result := len(errors)
+		t.Equal(result, 1)
+
 		t.End()
 	})
 
@@ -41,7 +43,9 @@ func TestJson(t *testing.T) {
 		var m map[string]any
 		json.Unmarshal([]byte(strings.TrimSpace(out)), &m)
 		errors := m["errors"].([]any)
-		t.Equal(len(errors), 0)
+		result := len(errors)
+		t.Equal(result, 0)
+
 		t.End()
 	})
 
@@ -78,7 +82,9 @@ func TestJson(t *testing.T) {
 		var m map[string]any
 		json.Unmarshal([]byte(strings.TrimSpace(out)), &m)
 		errors := m["errors"].([]any)
-		t.Equal(len(errors), 0)
+		result := len(errors)
+		t.Equal(result, 0)
+
 		t.End()
 	})
 }

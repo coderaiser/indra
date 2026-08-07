@@ -11,7 +11,7 @@ import (
 func TestReportOtherNode(t *testing.T) {
 	Test(t, "report: non-file non-block node returns static message", func(t *T) {
 		result := Report(ast.NewIdent("x"))
-		
+
 		t.Equal(result, "remove unused variable")
 		t.End()
 	})
