@@ -907,27 +907,6 @@ func TestPreorderStackFalseSkipsSubtree(t *testing.T) {
 	})
 }
 
-func TestStackVisitorNilPopsStack(t *testing.T) {
-	file := &ast.File{}
-
-	v := &stackVisitor{stack: []ast.Node{file}, f: func(n ast.Node, stack []ast.Node) bool {
-		return true
-	}}
-
-	// Simulate ast.Walk's end-of-subtree nil callback. The initial entry
-	// (file) must be popped, leaving an empty stack — no panic on the second
-	// call, which must hit the len(stack) > 0 guard.
-	v.Visit(nil)
-	v.Visit(nil)
-
-	Test(t, "runner: stackVisitor nil callback pops without panic", func(t *T) {
-		result := len(v.stack)
-		t.Equal(result, 0)
-
-		t.End()
-	})
-}
-
 func typeKeyOr(n ast.Node) string {
 	k, ok := typeKey(n)
 	if !ok {

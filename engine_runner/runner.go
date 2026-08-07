@@ -12,6 +12,8 @@ import (
 	"sort"
 	"strings"
 
+	"golang.org/x/tools/go/ast/astutil"
+
 	"coderaiser/indra/compare"
 	loader "coderaiser/indra/engine_loader"
 	"coderaiser/indra/types"
@@ -87,30 +89,24 @@ func typeKey(n ast.Node) (string, bool) {
 // calls. Returning false from f skips the node's subtree. It underlies
 // Path.Stack, Path.FindParent and Path.ParentPath.
 func preorderStack(root ast.Node, stack []ast.Node, f func(n ast.Node, stack []ast.Node) bool) {
-	ast.Walk(&stackVisitor{stack: stack, f: f}, root)
-}
-
-// stackVisitor is an ast.Visitor that tracks the pre-order ancestor stack.
-// ast.Walk invokes Visit(node) before a node's children and Visit(nil) after;
-// the nil callback pops the node pushed when descending into it.
-type stackVisitor struct {
-	stack []ast.Node
-	f     func(n ast.Node, stack []ast.Node) bool
-}
-
-func (v *stackVisitor) Visit(node ast.Node) ast.Visitor {
-	if node == nil {
-		// End of a node's subtree: pop the node pushed when descending.
-		if len(v.stack) > 0 {
-			v.stack = v.stack[:len(v.stack)-1]
+	var localStack []ast.Node
+	astutil.Apply(root, func(c *astutil.Cursor) bool {
+		n := c.Node()
+		localStack = append(localStack, n)
+		ancestors := append([]ast.Node{}, stack...)
+		ancestors = append(ancestors, localStack[:len(localStack)-1]...)
+		ok := f(n, ancestors)
+		if !ok {
+			localStack = localStack[:len(localStack)-1]
+			return false
 		}
-		return nil
-	}
-	if !v.f(node, v.stack) {
-		return nil
-	}
-	v.stack = append(v.stack, node)
-	return v
+		return true
+	}, func(c *astutil.Cursor) bool {
+		if len(localStack) > 0 {
+			localStack = localStack[:len(localStack)-1]
+		}
+		return true
+	})
 }
 
 // runOnce runs every plugin once against the file and applies fixes.
@@ -166,8 +162,11 @@ func runOnce(p RunParams) []types.Place {
 
 		// Single merged pre-order walk. Each node is visited once with its
 		// ancestor stack (Path.Stack), enabling Path.FindParent/ParentPath.
-		preorderStack(p.File, nil, func(n ast.Node, stack []ast.Node) bool {
-			path := types.Path{Node: n, Stack: stack}
+		var stack []ast.Node
+		astutil.Apply(p.File, func(c *astutil.Cursor) bool {
+			n := c.Node()
+			stack = append(stack, n)
+			path := types.Path{Node: n, Stack: append([]ast.Node{}, stack[:len(stack)-1]...), Cursor: c}
 
 			// Call type-keyed visitors (e.g. "*ast.File", "*ast.FuncDecl").
 			if key, ok := typeKey(n); ok {
@@ -189,6 +188,11 @@ func runOnce(p RunParams) []types.Place {
 				}
 			}
 
+			return true
+		}, func(c *astutil.Cursor) bool {
+			if len(stack) > 0 {
+				stack = stack[:len(stack)-1]
+			}
 			return true
 		})
 	}
