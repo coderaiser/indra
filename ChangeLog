@@ -1,3 +1,24 @@
+2026.08.07, v1.0.3
+
+fix:
+- 515055c indra: progress-bar: CI
+- 1bcc587 indra: remove-unused-variables: keep plugin imports whose declared package name differs from path basename
+- 2a3c238 remove-unused-variables: rename
+
+feature:
+- 4d6e7fd Traverer: improve
+- e566dd5 indra: Traverser
+- 8d4695e types: Path type with Find FindParent ParentPath
+- 8cb225a time: dump plus elapsed duration after run
+- 6a173e1 memory: dump plus heap stats after run
+- 3fe63d8 frame: codeframe plus percent progress
+- dc58af9 codeframe: show source context at error line
+- 800c260 stream: table with column separators
+- 358467f progress: carriage return percent progress
+- d9c77bb json: accumulate all errors, dump single JSON blob
+- 382c0ac formatter: -f
+- 830f36a remove-unused-variables: var
+
 2026.08.07, v1.0.2
 
 fix:
