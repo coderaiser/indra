@@ -14,6 +14,7 @@ import (
 	formframe "coderaiser/indra/internal/formatter_frame"
 	formmem "coderaiser/indra/internal/formatter_memory"
 	formstream "coderaiser/indra/internal/formatter_stream"
+	formtime "coderaiser/indra/internal/formatter_time"
 	"coderaiser/indra/types"
 )
 
@@ -50,6 +51,8 @@ func ChooseByName(name string) Func {
 		return formframe.Format
 	case "memory":
 		return formmem.Format
+	case "time":
+		return formtime.Format
 	case "stream":
 		return formstream.Format
 	case "dump":

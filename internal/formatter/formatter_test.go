@@ -14,6 +14,7 @@ import (
 	formframe "coderaiser/indra/internal/formatter_frame"
 	formmem "coderaiser/indra/internal/formatter_memory"
 	formstream "coderaiser/indra/internal/formatter_stream"
+	formtime "coderaiser/indra/internal/formatter_time"
 
 	. "github.com/coderaiser/go-tape"
 )
@@ -24,6 +25,14 @@ func TestChooseByName(t *testing.T) {
 		f := formatter.ChooseByName("json")
 		result := fmt.Sprintf("%p", f)
 		t.Equal(result, fmt.Sprintf("%p", formjson.Format))
+		t.End()
+	})
+
+	Test(t, "formatter: ChooseByName time returns time", func(t *T) {
+		t.TB().Setenv("CI", "")
+		f := formatter.ChooseByName("time")
+		result := fmt.Sprintf("%p", f)
+		t.Equal(result, fmt.Sprintf("%p", formtime.Format))
 		t.End()
 	})
 
