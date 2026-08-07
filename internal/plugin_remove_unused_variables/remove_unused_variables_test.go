@@ -5,7 +5,7 @@ import (
 	"go/token"
 	"testing"
 
-	"coderaiser/indra/internal/remove_unused_variables"
+	"coderaiser/indra/internal/plugin_remove_unused_variables"
 	. "coderaiser/indra/internal/test"
 
 )

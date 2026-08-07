@@ -12,7 +12,7 @@ import (
 	engine_loader "coderaiser/indra/engine_loader"
 	plugin_indra "coderaiser/indra/internal/plugin_indra"
 	plugin_tape "coderaiser/indra/internal/plugin_tape"
-	remove_unused_variables "coderaiser/indra/internal/remove_unused_variables"
+	remove_unused_variables "coderaiser/indra/internal/plugin_remove_unused_variables"
 
 	. "github.com/coderaiser/go-tape"
 )
