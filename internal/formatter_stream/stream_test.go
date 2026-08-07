@@ -59,4 +59,16 @@ func TestStream(t *testing.T) {
 		t.Ok(strings.Contains(out, "2 errors"))
 		t.End()
 	})
+
+	Test(t, "stream: first of two files with errors shows filename", func(t *T) {
+		out := formstream.Format("a.go", nil, []types.Place{place1}, 0, 2, 1, 1)
+		t.Ok(strings.Contains(out, "a.go"))
+		t.End()
+	})
+
+	Test(t, "stream: first of two files with errors shows line:col", func(t *T) {
+		out := formstream.Format("a.go", nil, []types.Place{place1}, 0, 2, 1, 1)
+		t.Ok(strings.Contains(out, "5:2"))
+		t.End()
+	})
 }
