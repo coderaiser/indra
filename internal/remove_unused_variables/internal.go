@@ -73,40 +73,39 @@ func countIdentUses(file *ast.File) map[string]int {
 	return used
 }
 
+// importFinding is a synthetic ast.Node that pairs a file with one unused
+// import spec so Report and Fix can act on the specific spec.
+type importFinding struct {
+	file *ast.File
+	spec *ast.ImportSpec
+}
+
+func (f *importFinding) Pos() token.Pos { return f.spec.Pos() }
+func (f *importFinding) End() token.Pos { return f.spec.End() }
+
 // findUnusedImportsAndConsts visits *ast.File nodes during traversal.
+// It calls push once per unused import and once for unused consts.
 func findUnusedImportsAndConsts(node ast.Node, push func(ast.Node)) {
 	file := node.(*ast.File)
 	imports := collectImports(file)
 	used := countIdentUses(file)
+	found := false
 	for _, imp := range imports {
 		if imp.blank || imp.dot {
 			continue
 		}
 		if used[imp.localName] == 0 {
-			push(file)
-			return
+			push(&importFinding{file: file, spec: imp.spec})
+			found = true
 		}
 	}
-	if len(unusedConstNames(file)) > 0 {
+	if !found && len(unusedConstNames(file)) > 0 {
 		push(file)
 	}
 }
 
-// fixUnusedImports removes unused imports from the AST in place.
-func fixUnusedImports(file *ast.File) {
-	imports := collectImports(file)
-	used := countIdentUses(file)
-
-	unused := make(map[string]bool)
-	for _, imp := range imports {
-		if imp.blank || imp.dot {
-			continue
-		}
-		if used[imp.localName] == 0 {
-			unused[imp.path] = true
-		}
-	}
-
+// fixOneUnusedImport removes a single import spec from the file's AST.
+func fixOneUnusedImport(file *ast.File, target *ast.ImportSpec) {
 	for _, decl := range file.Decls {
 		genDecl, ok := decl.(*ast.GenDecl)
 		if !ok || genDecl.Tok != token.IMPORT {
@@ -114,13 +113,13 @@ func fixUnusedImports(file *ast.File) {
 		}
 		kept := genDecl.Specs[:0]
 		for _, spec := range genDecl.Specs {
-			imp := spec.(*ast.ImportSpec)
-			if !unused[imp.Path.Value] {
+			if spec != target {
 				kept = append(kept, spec)
 			}
 		}
 		genDecl.Specs = kept
 	}
+	// drop empty import blocks
 	kept := file.Decls[:0]
 	for _, decl := range file.Decls {
 		genDecl, ok := decl.(*ast.GenDecl)
@@ -130,6 +129,14 @@ func fixUnusedImports(file *ast.File) {
 		kept = append(kept, decl)
 	}
 	file.Decls = kept
+	// sync file.Imports
+	newImports := file.Imports[:0]
+	for _, imp := range file.Imports {
+		if imp != target {
+			newImports = append(newImports, imp)
+		}
+	}
+	file.Imports = newImports
 }
 
 // ── consts ───────────────────────────────────────────────────────────────────
@@ -215,25 +222,47 @@ func fixUnusedConsts(file *ast.File) {
 
 // ── variables ────────────────────────────────────────────────────────────────
 
-// unusedVarNames returns the names declared via `:=` in block that are never
-// read afterwards.
+// unusedVarNames returns the names declared via `:=` or `var` in block that
+// are never read afterwards.
 func unusedVarNames(block *ast.BlockStmt) []string {
 	var decls []string
 	seen := map[string]bool{}
 
 	for _, stmt := range block.List {
-		assign, ok := stmt.(*ast.AssignStmt)
-		if !ok || assign.Tok != token.DEFINE {
+		// handle: x := expr
+		if assign, ok := stmt.(*ast.AssignStmt); ok && assign.Tok == token.DEFINE {
+			for _, lhs := range assign.Lhs {
+				ident, ok := lhs.(*ast.Ident)
+				if !ok || ident.Name == "_" {
+					continue
+				}
+				if !seen[ident.Name] {
+					seen[ident.Name] = true
+					decls = append(decls, ident.Name)
+				}
+			}
 			continue
 		}
-		for _, lhs := range assign.Lhs {
-			ident, ok := lhs.(*ast.Ident)
-			if !ok || ident.Name == "_" {
+		// handle: var x = expr  or  var x int
+		if declStmt, ok := stmt.(*ast.DeclStmt); ok {
+			genDecl, ok := declStmt.Decl.(*ast.GenDecl)
+			if !ok || genDecl.Tok != token.VAR {
 				continue
 			}
-			if !seen[ident.Name] {
-				seen[ident.Name] = true
-				decls = append(decls, ident.Name)
+			for _, spec := range genDecl.Specs {
+				vs, ok := spec.(*ast.ValueSpec)
+				if !ok {
+					continue
+				}
+				for _, name := range vs.Names {
+					if name.Name == "_" {
+						continue
+					}
+					if !seen[name.Name] {
+						seen[name.Name] = true
+						decls = append(decls, name.Name)
+					}
+				}
 			}
 		}
 	}
@@ -244,12 +273,25 @@ func unusedVarNames(block *ast.BlockStmt) []string {
 
 	reads := map[string]int{}
 	for _, stmt := range block.List {
-		assign, ok := stmt.(*ast.AssignStmt)
-		if ok && assign.Tok == token.DEFINE {
+		// :=  — only count RHS, not the declared names
+		if assign, ok := stmt.(*ast.AssignStmt); ok && assign.Tok == token.DEFINE {
 			for _, rhs := range assign.Rhs {
 				countIdents(rhs, reads)
 			}
 			continue
+		}
+		// var x = expr — only count RHS values, not the declared names
+		if declStmt, ok := stmt.(*ast.DeclStmt); ok {
+			if genDecl, ok := declStmt.Decl.(*ast.GenDecl); ok && genDecl.Tok == token.VAR {
+				for _, spec := range genDecl.Specs {
+					if vs, ok := spec.(*ast.ValueSpec); ok {
+						for _, val := range vs.Values {
+							countIdents(val, reads)
+						}
+					}
+				}
+				continue
+			}
 		}
 		countIdents(stmt, reads)
 	}
@@ -289,28 +331,56 @@ func fixUnusedVars(block *ast.BlockStmt) {
 	}
 	kept := block.List[:0]
 	for _, stmt := range block.List {
-		assign, ok := stmt.(*ast.AssignStmt)
-		if !ok || assign.Tok != token.DEFINE {
+		// handle: x := expr
+		if assign, ok := stmt.(*ast.AssignStmt); ok && assign.Tok == token.DEFINE {
+			allUnused := true
+			for _, lhs := range assign.Lhs {
+				ident, ok := lhs.(*ast.Ident)
+				if !ok || ident.Name == "_" {
+					continue
+				}
+				if !unused[ident.Name] {
+					allUnused = false
+				}
+			}
+			if allUnused {
+				continue // drop statement
+			}
+			for _, lhs := range assign.Lhs {
+				ident, ok := lhs.(*ast.Ident)
+				if ok && unused[ident.Name] {
+					ident.Name = "_"
+				}
+			}
 			kept = append(kept, stmt)
 			continue
 		}
-		allUnused := true
-		for _, lhs := range assign.Lhs {
-			ident, ok := lhs.(*ast.Ident)
-			if !ok || ident.Name == "_" {
+		// handle: var x = expr
+		if declStmt, ok := stmt.(*ast.DeclStmt); ok {
+			genDecl, ok := declStmt.Decl.(*ast.GenDecl)
+			if ok && genDecl.Tok == token.VAR {
+				newSpecs := genDecl.Specs[:0]
+				for _, spec := range genDecl.Specs {
+					vs, ok := spec.(*ast.ValueSpec)
+					if !ok {
+						newSpecs = append(newSpecs, spec)
+						continue
+					}
+					allUnused := true
+					for _, name := range vs.Names {
+						if name.Name != "_" && !unused[name.Name] {
+							allUnused = false
+						}
+					}
+					if !allUnused {
+						newSpecs = append(newSpecs, spec)
+					}
+				}
+				genDecl.Specs = newSpecs
+				if len(genDecl.Specs) > 0 {
+					kept = append(kept, stmt)
+				}
 				continue
-			}
-			if !unused[ident.Name] {
-				allUnused = false
-			}
-		}
-		if allUnused {
-			continue // drop statement
-		}
-		for _, lhs := range assign.Lhs {
-			ident, ok := lhs.(*ast.Ident)
-			if ok && unused[ident.Name] {
-				ident.Name = "_"
 			}
 		}
 		kept = append(kept, stmt)

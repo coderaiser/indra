@@ -140,6 +140,28 @@ func TestRemoveUnusedDeclarations(t *testing.T) {
 		t.End()
 	})
 
+	// var declaration cases
+	Test(t, "remove-unused-variables: report unused var decl", func(t *T) {
+		t.Report("var-decl", "remove unused variable: a")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: fix removes unused var decl", func(t *T) {
+		t.Transform("var-decl")
+		t.End()
+	})
+
+	// multiple unused imports
+	Test(t, "remove-unused-variables: report first of multiple unused imports", func(t *T) {
+		t.Report("multi-unused-import", `remove unused import: "encoding/json"`)
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: fix removes all unused imports", func(t *T) {
+		t.Transform("multi-unused-import")
+		t.End()
+	})
+
 	// happy-path fixture (import + var + const all removed)
 	Test(t, "remove-unused-variables: transform removes all unused variables, imports, and consts", func(t *T) {
 		t.Transform("remove-unused-variables")

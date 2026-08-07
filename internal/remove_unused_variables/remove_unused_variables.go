@@ -8,17 +8,9 @@ import (
 
 func Report(node ast.Node) string {
 	switch n := node.(type) {
+	case *importFinding:
+		return "remove unused import: " + n.spec.Path.Value
 	case *ast.File:
-		imports := collectImports(n)
-		used := countIdentUses(n)
-		for _, imp := range imports {
-			if imp.blank || imp.dot {
-				continue
-			}
-			if used[imp.localName] == 0 {
-				return "remove unused import: " + imp.path
-			}
-		}
 		consts := unusedConstNames(n)
 		if len(consts) > 0 {
 			return "remove unused const: " + consts[0]
@@ -41,8 +33,9 @@ func Traverse() Traverser {
 
 func Fix(node ast.Node, _ map[string]any) {
 	switch n := node.(type) {
+	case *importFinding:
+		fixOneUnusedImport(n.file, n.spec)
 	case *ast.File:
-		fixUnusedImports(n)
 		fixUnusedConsts(n)
 	case *ast.BlockStmt:
 		fixUnusedVars(n)

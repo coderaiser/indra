@@ -18,10 +18,12 @@ func TestReportOtherNode(t *testing.T) {
 }
 
 func TestReportUnusedImport(t *testing.T) {
-	Test(t, "report: file returns unused import message", func(t *T) {
-		result := Report(unusedImportFile())
+	Test(t, "report: importFinding returns unused import message", func(t *T) {
+		file := unusedImportFile()
+		imports := collectImports(file)
+		finding := &importFinding{file: file, spec: imports[0].spec}
+		result := Report(finding)
 		t.Equal(result, `remove unused import: "fmt"`)
-
 		t.End()
 	})
 }
@@ -164,16 +166,21 @@ func TestCollectImportsPath(t *testing.T) {
 
 func TestFixRemovesDecl(t *testing.T) {
 	Test(t, "fix: removes GenDecl when all specs removed", func(t *T) {
-		file := &ast.File{Name: ast.NewIdent("fixture"), Decls: []ast.Decl{
-			&ast.GenDecl{
-				Tok:   token.IMPORT,
-				Specs: []ast.Spec{&ast.ImportSpec{Path: &ast.BasicLit{Kind: token.STRING, Value: `"fmt"`}}},
+		spec := &ast.ImportSpec{Path: &ast.BasicLit{Kind: token.STRING, Value: `"fmt"`}}
+		file := &ast.File{
+			Name:    ast.NewIdent("fixture"),
+			Imports: []*ast.ImportSpec{spec},
+			Decls: []ast.Decl{
+				&ast.GenDecl{
+					Tok:   token.IMPORT,
+					Specs: []ast.Spec{spec},
+				},
 			},
-		}}
-		Fix(file, nil)
+		}
+		finding := &importFinding{file: file, spec: spec}
+		Fix(finding, nil)
 		result := len(file.Decls)
 		t.Equal(result, 0)
-
 		t.End()
 	})
 }
@@ -391,4 +398,171 @@ func usedVarBlock() *ast.BlockStmt {
 		},
 		&ast.ExprStmt{X: ast.NewIdent("x")},
 	}}
+}
+
+func TestImportFindingEnd(t *testing.T) {
+	Test(t, "importFinding: End returns spec end position", func(t *T) {
+		spec := &ast.ImportSpec{Path: &ast.BasicLit{Kind: token.STRING, Value: `"fmt"`}}
+		file := &ast.File{Name: ast.NewIdent("p"), Imports: []*ast.ImportSpec{spec}}
+		finding := &importFinding{file: file, spec: spec}
+		result := finding.End()
+		t.Equal(result, spec.End())
+		t.End()
+	})
+}
+
+func TestUnusedVarNamesNonIdentLhs(t *testing.T) {
+	Test(t, "unusedVarNames: non-ident lhs in := is skipped", func(t *T) {
+		// e.g. a.b := 1 — not valid Go but AST can represent it
+		block := &ast.BlockStmt{List: []ast.Stmt{
+			&ast.AssignStmt{
+				Tok: token.DEFINE,
+				Lhs: []ast.Expr{&ast.SelectorExpr{
+					X:   ast.NewIdent("a"),
+					Sel: ast.NewIdent("b"),
+				}},
+				Rhs: []ast.Expr{ast.NewIdent("1")},
+			},
+		}}
+		result := unusedVarNames(block)
+		t.Equal(len(result), 0)
+		t.End()
+	})
+}
+
+func TestFixUnusedVarsNonValueSpec(t *testing.T) {
+	Test(t, "fixUnusedVars: non-ValueSpec inside var GenDecl is kept", func(t *T) {
+		// Construct a var GenDecl with a non-*ast.ValueSpec spec (defensive branch)
+		block := &ast.BlockStmt{List: []ast.Stmt{
+			&ast.AssignStmt{
+				Tok: token.DEFINE,
+				Lhs: []ast.Expr{ast.NewIdent("x")},
+				Rhs: []ast.Expr{ast.NewIdent("1")},
+			},
+			&ast.DeclStmt{Decl: &ast.GenDecl{
+				Tok:   token.VAR,
+				Specs: []ast.Spec{&ast.ImportSpec{Path: &ast.BasicLit{Kind: token.STRING, Value: `"fmt"`}}},
+			}},
+		}}
+		fixUnusedVars(block)
+		// non-ValueSpec kept, AssignStmt with unused x dropped
+		result := len(block.List)
+		t.Equal(result, 1)
+		t.End()
+	})
+}
+
+func TestUnusedVarNamesNonGenDecl(t *testing.T) {
+	Test(t, "unusedVarNames: non-GenDecl inside DeclStmt is skipped", func(t *T) {
+		block := &ast.BlockStmt{List: []ast.Stmt{
+			&ast.DeclStmt{Decl: &ast.FuncDecl{Name: ast.NewIdent("f"), Type: &ast.FuncType{}, Body: &ast.BlockStmt{}}},
+		}}
+		result := unusedVarNames(block)
+		t.Equal(len(result), 0)
+		t.End()
+	})
+}
+
+func TestUnusedVarNamesNonValueSpecInVar(t *testing.T) {
+	Test(t, "unusedVarNames: non-ValueSpec inside var GenDecl is skipped", func(t *T) {
+		block := &ast.BlockStmt{List: []ast.Stmt{
+			&ast.DeclStmt{Decl: &ast.GenDecl{
+				Tok:   token.VAR,
+				Specs: []ast.Spec{&ast.ImportSpec{Path: &ast.BasicLit{Kind: token.STRING, Value: `"fmt"`}}},
+			}},
+		}}
+		result := unusedVarNames(block)
+		t.Equal(len(result), 0)
+		t.End()
+	})
+}
+
+func TestFixUnusedVarsNonGenDecl(t *testing.T) {
+	Test(t, "fixUnusedVars: non-GenDecl DeclStmt is kept", func(t *T) {
+		block := &ast.BlockStmt{List: []ast.Stmt{
+			&ast.AssignStmt{
+				Tok: token.DEFINE,
+				Lhs: []ast.Expr{ast.NewIdent("x")},
+				Rhs: []ast.Expr{ast.NewIdent("1")},
+			},
+			&ast.DeclStmt{Decl: &ast.FuncDecl{Name: ast.NewIdent("f"), Type: &ast.FuncType{}, Body: &ast.BlockStmt{}}},
+		}}
+		fixUnusedVars(block)
+		result := len(block.List)
+		t.Equal(result, 1)
+		t.End()
+	})
+}
+
+func TestUnusedVarNamesDuplicateDecl(t *testing.T) {
+	Test(t, "unusedVarNames: duplicate var name in block counted once", func(t *T) {
+		block := &ast.BlockStmt{List: []ast.Stmt{
+			&ast.DeclStmt{Decl: &ast.GenDecl{
+				Tok: token.VAR,
+				Specs: []ast.Spec{
+					&ast.ValueSpec{Names: []*ast.Ident{ast.NewIdent("x"), ast.NewIdent("x")}},
+				},
+			}},
+		}}
+		result := unusedVarNames(block)
+		t.Equal(len(result), 1)
+		t.End()
+	})
+}
+
+func TestFixUnusedVarsPartialTupleUsed(t *testing.T) {
+	Test(t, "fixUnusedVars: tuple with one used var keeps statement", func(t *T) {
+		block := &ast.BlockStmt{List: []ast.Stmt{
+			&ast.AssignStmt{
+				Tok: token.DEFINE,
+				Lhs: []ast.Expr{ast.NewIdent("x"), ast.NewIdent("y")},
+				Rhs: []ast.Expr{ast.NewIdent("f")},
+			},
+			&ast.ExprStmt{X: ast.NewIdent("y")},
+		}}
+		fixUnusedVars(block)
+		result := len(block.List)
+		t.Equal(result, 2)
+		t.End()
+	})
+}
+
+func TestFixUnusedVarsPartialVarSpecUsed(t *testing.T) {
+	Test(t, "fixUnusedVars: var decl with one used spec keeps it", func(t *T) {
+		block := &ast.BlockStmt{List: []ast.Stmt{
+			&ast.AssignStmt{
+				Tok: token.DEFINE,
+				Lhs: []ast.Expr{ast.NewIdent("x")},
+				Rhs: []ast.Expr{ast.NewIdent("1")},
+			},
+			&ast.DeclStmt{Decl: &ast.GenDecl{
+				Tok: token.VAR,
+				Specs: []ast.Spec{
+					&ast.ValueSpec{Names: []*ast.Ident{ast.NewIdent("y")}},
+				},
+			}},
+			&ast.ExprStmt{X: ast.NewIdent("y")},
+		}}
+		fixUnusedVars(block)
+		// x removed, var y kept (used), ExprStmt kept
+		result := len(block.List)
+		t.Equal(result, 2)
+		t.End()
+	})
+}
+
+func TestUnusedVarNamesBlankVarName(t *testing.T) {
+	Test(t, "unusedVarNames: blank var name is skipped", func(t *T) {
+		block := &ast.BlockStmt{List: []ast.Stmt{
+			&ast.DeclStmt{Decl: &ast.GenDecl{
+				Tok: token.VAR,
+				Specs: []ast.Spec{
+					&ast.ValueSpec{Names: []*ast.Ident{ast.NewIdent("_")}},
+				},
+			}},
+		}}
+		result := unusedVarNames(block)
+		t.Equal(len(result), 0)
+		t.End()
+	})
 }
