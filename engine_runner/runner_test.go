@@ -723,20 +723,118 @@ func TestTypeKeyNil(t *testing.T) {
 	})
 }
 
-func TestPatternKeyNil(t *testing.T) {
-	_, ok := patternKey(nil, token.NewFileSet())
-	Test(t, "runner: patternKey returns false for nil node", func(t *T) {
-		t.Equal(ok, false)
+func TestPreorderStackVisitsInOrder(t *testing.T) {
+	src := "package p\n\nfunc _() { x := 1 }\n"
+	file, _ := parse(t, src)
+
+	var got []string
+	preorderStack(file, nil, func(n ast.Node, stack []ast.Node) bool {
+		if n != nil {
+			got = append(got, typeKeyOr(n))
+		}
+		return true
+	})
+
+	Test(t, "runner: preorderStack visits ancestors before descendants", func(t *T) {
+		// In pre-order the root precedes every descendant. Verify the key
+		// nodes appear in the correct relative order in the visit stream.
+		want := []string{"*ast.File", "*ast.BlockStmt", "*ast.AssignStmt", "*ast.BasicLit"}
+		first := map[string]int{}
+		for i, g := range got {
+			if _, has := first[g]; !has {
+				first[g] = i
+			}
+		}
+		ok := true
+		prev := -1
+		for _, k := range want {
+			i, has := first[k]
+			if !has || i <= prev {
+				ok = false
+				break
+			}
+			prev = i
+		}
+		t.Ok(ok)
 		t.End()
 	})
 }
 
-func TestPatternKeyNilFset(t *testing.T) {
-	_, ok := patternKey(&ast.Ident{Name: "x"}, nil)
-	Test(t, "runner: patternKey returns false for nil fset", func(t *T) {
-		t.Equal(ok, false)
+func TestPreorderStackStackIsAncestorChain(t *testing.T) {
+	src := "package p\n\nfunc _() { x := 1 }\n"
+	file, _ := parse(t, src)
+
+	var assignStack []string
+	preorderStack(file, nil, func(n ast.Node, stack []ast.Node) bool {
+		if n == nil {
+			// End-of-subtree callback: the popped node is the last child
+			// visited in this subtree's descent.
+			return true
+		}
+		if ident, ok := n.(*ast.Ident); ok && ident.Name == "x" {
+			for _, k := range stack {
+				assignStack = append(assignStack, typeKeyOr(k))
+			}
+		}
+		return true
+	})
+
+	Test(t, "runner: preorderStack passes ancestor stack to visitor", func(t *T) {
+		// Stack should be [File, FuncDecl, BlockStmt, AssignStmt] — all
+		// ancestors of the "x" identifier, in root-first order.
+		t.Equal(assignStack, []string{"*ast.File", "*ast.FuncDecl", "*ast.BlockStmt", "*ast.AssignStmt"})
 		t.End()
 	})
+}
+
+func TestPreorderStackFalseSkipsSubtree(t *testing.T) {
+	src := "package p\n\nfunc _() { x := 1; y := 2 }\n"
+	file, _ := parse(t, src)
+
+	var sawY bool
+	preorderStack(file, nil, func(n ast.Node, stack []ast.Node) bool {
+		// Returning false for the function-body BlockStmt skips its children
+		// — the entire statement list — so "y := 2" is never visited.
+		if _, ok := n.(*ast.BlockStmt); ok {
+			return false
+		}
+		if ident, ok := n.(*ast.Ident); ok && ident.Name == "y" {
+			sawY = true
+		}
+		return true
+	})
+
+	Test(t, "runner: preorderStack false return skips subtree", func(t *T) {
+		t.NotOk(sawY)
+		t.End()
+	})
+}
+
+func TestStackVisitorNilPopsStack(t *testing.T) {
+	file := &ast.File{}
+
+	v := &stackVisitor{stack: []ast.Node{file}, f: func(n ast.Node, stack []ast.Node) bool {
+		return true
+	}}
+
+	// Simulate ast.Walk's end-of-subtree nil callback. The initial entry
+	// (file) must be popped, leaving an empty stack — no panic on the second
+	// call, which must hit the len(stack) > 0 guard.
+	v.Visit(nil)
+	v.Visit(nil)
+
+	Test(t, "runner: stackVisitor nil callback pops without panic", func(t *T) {
+		t.Equal(len(v.stack), 0)
+		t.End()
+	})
+}
+
+func typeKeyOr(n ast.Node) string {
+	k, ok := typeKey(n)
+	if !ok {
+		return ""
+	}
+	return k
 }
 
 func TestRunNoTraverserPlugins(t *testing.T) {

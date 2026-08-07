@@ -81,40 +81,72 @@ func typeKey(n ast.Node) (string, bool) {
 	return "*" + reflect.TypeOf(n).Elem().String(), true
 }
 
-// patternKey renders a node to source and returns it as a compare pattern key.
-func patternKey(n ast.Node, fset *token.FileSet) (string, bool) {
-	if n == nil || fset == nil {
-		return "", false
+// preorderStack walks root in pre-order, invoking f for every node together
+// with that node's ancestor stack (root-first, excluding the node itself).
+// The stack is engine-internal and must be copied by f when retained across
+// calls. Returning false from f skips the node's subtree. It underlies
+// Path.Stack, Path.FindParent and Path.ParentPath.
+func preorderStack(root ast.Node, stack []ast.Node, f func(n ast.Node, stack []ast.Node) bool) {
+	ast.Walk(&stackVisitor{stack: stack, f: f}, root)
+}
+
+// stackVisitor is an ast.Visitor that tracks the pre-order ancestor stack.
+// ast.Walk invokes Visit(node) before a node's children and Visit(nil) after;
+// the nil callback pops the node pushed when descending into it.
+type stackVisitor struct {
+	stack []ast.Node
+	f     func(n ast.Node, stack []ast.Node) bool
+}
+
+func (v *stackVisitor) Visit(node ast.Node) ast.Visitor {
+	if node == nil {
+		// End of a node's subtree: pop the node pushed when descending.
+		if len(v.stack) > 0 {
+			v.stack = v.stack[:len(v.stack)-1]
+		}
+		return nil
 	}
-	var buf bytes.Buffer
-	if err := format.Node(&buf, fset, n); err != nil {
-		return "", false
+	if !v.f(node, v.stack) {
+		return nil
 	}
-	return buf.String(), true
+	v.stack = append(v.stack, node)
+	return v
 }
 
 // runOnce runs every plugin once against the file and applies fixes.
 func runOnce(p RunParams) []types.Place {
 	var places []types.Place
 
-	// Build a merged visitor map from all traverser plugins. The engine walks
-	// the AST once and calls each visitor for matching nodes.
-	visitors := map[string][]visitorCall{}
+		// Build a merged visitor set from all traverser plugins. Type-keyed viewers
+	// (keys beginning with "*ast.", e.g. "*ast.File") are dispatched by node
+	// type; pattern-keyed visitors are dispatched by matching each visited
+	// node against the pattern with compare.Compare.
+	typeVisitors := map[string][]visitorCall{}
+	patternKeys := []string{}
+	patternVisitors := map[string][]visitorCall{}
 	for _, item := range p.Plugins {
 		tp, ok := item.Plugin.(loader.TraverserPlugin)
 		if !ok {
 			continue
 		}
 		for key, visit := range tp.Traverse() {
-			visitors[key] = append(visitors[key], visitorCall{
+			call := visitorCall{
 				item:   item,
 				visit:  visit,
 				plugin: tp,
-			})
+			}
+			if strings.HasPrefix(key, "*ast.") {
+				typeVisitors[key] = append(typeVisitors[key], call)
+			} else {
+				if _, exists := patternVisitors[key]; !exists {
+					patternKeys = append(patternKeys, key)
+				}
+				patternVisitors[key] = append(patternVisitors[key], call)
+			}
 		}
 	}
 
-	if len(visitors) > 0 {
+	if len(typeVisitors) > 0 || len(patternVisitors) > 0 {
 		// reportFound builds the Place for a found path and fixes it if enabled.
 		reportFound := func(item PluginItem, tp loader.TraverserPlugin, pPath types.Path) {
 			msg := tp.Report(pPath)
@@ -132,30 +164,24 @@ func runOnce(p RunParams) []types.Place {
 			}
 		}
 
-		// Single merged walk using ast.Inspect. For each node, call all visitors
-		// registered for its type or matching pattern.
-		ast.Inspect(p.File, func(n ast.Node) bool {
-			if n == nil {
-				return true
-			}
+		// Single merged pre-order walk. Each node is visited once with its
+		// ancestor stack (Path.Stack), enabling Path.FindParent/ParentPath.
+		preorderStack(p.File, nil, func(n ast.Node, stack []ast.Node) bool {
+			path := types.Path{Node: n, Stack: stack}
 
-			path := types.Path{Node: n}
-
-			// Call type-keyed visitors (e.g. "*ast.File", "*ast.FuncDecl")
+			// Call type-keyed visitors (e.g. "*ast.File", "*ast.FuncDecl").
 			if key, ok := typeKey(n); ok {
-				if calls, ok := visitors[key]; ok {
-					for _, call := range calls {
-						call.visit(path, func(pushPath types.Path) {
-							reportFound(call.item, call.plugin, pushPath)
-						})
-					}
+				for _, call := range typeVisitors[key] {
+					call.visit(path, func(pushPath types.Path) {
+						reportFound(call.item, call.plugin, pushPath)
+					})
 				}
 			}
 
-			// Call pattern-keyed visitors
-			if pattern, ok := patternKey(n, p.Fset); ok {
-				if calls, ok := visitors[pattern]; ok {
-					for _, call := range calls {
+			// Call pattern-keyed visitors whose pattern matches this node.
+			for _, pattern := range patternKeys {
+				if compare.Compare(n, pattern) != nil {
+					for _, call := range patternVisitors[pattern] {
 						call.visit(path, func(pushPath types.Path) {
 							reportFound(call.item, call.plugin, pushPath)
 						})
