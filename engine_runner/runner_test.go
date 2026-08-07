@@ -199,6 +199,58 @@ func TestRunTraverserBlockVisitor(t *testing.T) {
 	})
 }
 
+func TestRunMergedPreorderStackMultipleVisitors(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tx := 1\n}\n"
+	file, fset := parse(t, src)
+	pl := items([]loader.PluginFuncs{
+		traverserFuncs("file", "*ast.File"),
+		traverserFuncs("block", "*ast.BlockStmt"),
+	})
+	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
+
+	Test(t, "runner: merged pass visits both file and block", func(t *T) {
+		result := len(places)
+		t.Equal(result, 2)
+
+		t.End()
+	})
+}
+
+func TestRunPreorderStackPathHasAncestors(t *testing.T) {
+	src := "package p\n\nfunc f() {}\n"
+	file, fset := parse(t, src)
+	var stacks [][]ast.Node
+	funcs := loader.PluginFuncs{
+		Name: "collect",
+		Plugin: traverser{
+			report: "found",
+			tr: types.Traverser{
+				"*ast.FuncDecl": func(p types.Path, push func(types.Path)) {
+					stacks = append(stacks, p.Stack)
+					push(p)
+				},
+			},
+			fix: func(p types.Path, opts map[string]any) {},
+		},
+	}
+	pl := items([]loader.PluginFuncs{funcs})
+	places := RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
+
+	Test(t, "runner: PreorderStack provides ancestor stack", func(t *T) {
+		result := len(stacks)
+		t.Equal(result, 1)
+
+		t.End()
+	})
+
+	Test(t, "runner: PreorderStack visit produces a place", func(t *T) {
+		result := len(places)
+		t.Equal(result, 1)
+
+		t.End()
+	})
+}
+
 func TestRunEmptyPlugins(t *testing.T) {
 	src := "package p\n\nfunc f() {}\n"
 	file, fset := parse(t, src)
