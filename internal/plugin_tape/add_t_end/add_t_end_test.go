@@ -15,22 +15,22 @@ func TestAddTEnd(t *testing.T) {
 		t.End()
 	})
 
-	Test(t, "add-t-end: transform adds End to Test", func(t *T) {
+	Test(t, "add-t-end: transform adds End to Test missing-end", func(t *T) {
 		t.Transform("missing-end")
 		t.End()
 	})
 
-	Test(t, "add-t-end: report missing End in Test.Only", func(t *T) {
+	Test(t, "add-t-end: report missing End in Test.Only missing-end-only", func(t *T) {
 		t.Report("missing-end-only", "tape: missing t.End()")
 		t.End()
 	})
 
-	Test(t, "add-t-end: transform adds End to Test.Only", func(t *T) {
+	Test(t, "add-t-end: transform adds End to Test.Only missing-end-only", func(t *T) {
 		t.Transform("missing-end-only")
 		t.End()
 	})
 
-	Test(t, "add-t-end: report missing End in Test", func(t *T) {
+	Test(t, "add-t-end: report missing End in Test add-t-end", func(t *T) {
 		t.Report("add-t-end", "tape: missing t.End()")
 		t.End()
 	})
@@ -40,12 +40,12 @@ func TestAddTEnd(t *testing.T) {
 		t.End()
 	})
 
-	Test(t, "add-t-end: no report when End present", func(t *T) {
+	Test(t, "add-t-end: no report when End present has-end", func(t *T) {
 		t.NoReport("has-end")
 		t.End()
 	})
 
-	Test(t, "add-t-end: no transform when End present", func(t *T) {
+	Test(t, "add-t-end: no transform when End present has-end", func(t *T) {
 		t.NoTransform("has-end")
 		t.End()
 	})

@@ -15,7 +15,7 @@ var Test = CreateTest("remove-unused-variables", remove_unused_variables.Plugin{
 // TestReportDirect covers Report branches that are not reachable through the
 // fixture harness (nil node, and a block whose vars are all used).
 func TestReportDirect(t *testing.T) {
-	Test(t, "report: no unused var returns static message", func(t *T) {
+	Test(t, "remove-unused-variables: report: no unused var returns static message", func(t *T) {
 		block := &ast.BlockStmt{List: []ast.Stmt{
 			&ast.AssignStmt{
 				Tok: token.DEFINE,
@@ -33,147 +33,147 @@ func TestReportDirect(t *testing.T) {
 
 func TestRemoveUnusedDeclarations(t *testing.T) {
 	// import cases
-	Test(t, "remove-unused-variables: report unused import", func(t *T) {
+	Test(t, "remove-unused-variables: report unused import remove-unused-import", func(t *T) {
 		t.Report("remove-unused-import", `remove unused import: "fmt"`)
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: no report when all imports used", func(t *T) {
+	Test(t, "remove-unused-variables: no report when all imports used used-import", func(t *T) {
 		t.NoReport("used-import")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: no report for blank import", func(t *T) {
+	Test(t, "remove-unused-variables: no report for blank import blank-import", func(t *T) {
 		t.NoReport("blank-import")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: no report for dot import", func(t *T) {
+	Test(t, "remove-unused-variables: no report for dot import dot-import", func(t *T) {
 		t.NoReport("dot-import")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: report unused aliased import", func(t *T) {
+	Test(t, "remove-unused-variables: report unused aliased import alias-unused", func(t *T) {
 		t.Report("alias-unused", `remove unused import: "fmt"`)
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: no report for used alias", func(t *T) {
+	Test(t, "remove-unused-variables: no report for used alias alias-used", func(t *T) {
 		t.NoReport("alias-used")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: fix removes unused import", func(t *T) {
+	Test(t, "remove-unused-variables: fix removes unused import remove-unused-import", func(t *T) {
 		t.Transform("remove-unused-import")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: fix removes unused aliased import", func(t *T) {
+	Test(t, "remove-unused-variables: fix removes unused aliased import alias-unused", func(t *T) {
 		t.Transform("alias-unused")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: fix keeps used import in mixed block", func(t *T) {
+	Test(t, "remove-unused-variables: fix keeps used import in mixed block mixed-imports", func(t *T) {
 		t.Transform("mixed-imports")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: no report for used hyphenated path import", func(t *T) {
+	Test(t, "remove-unused-variables: no report for used hyphenated path import hyphen-import", func(t *T) {
 		t.NoReport("hyphen-import")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: fix keeps used hyphenated path import", func(t *T) {
+	Test(t, "remove-unused-variables: fix keeps used hyphenated path import hyphen-import", func(t *T) {
 		t.Transform("hyphen-import")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: no report when import package name differs from path basename", func(t *T) {
+	Test(t, "remove-unused-variables: no report when import package name differs from path basename plugin-named-package", func(t *T) {
 		t.NoReport("plugin-named-package")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: fix keeps import when package name differs from path basename", func(t *T) {
+	Test(t, "remove-unused-variables: fix keeps import when package name differs from path basename plugin-named-package", func(t *T) {
 		t.NoTransform("plugin-named-package")
 		t.End()
 	})
 
 	// variable cases
-	Test(t, "remove-unused-variables: report unused var", func(t *T) {
+	Test(t, "remove-unused-variables: report unused var remove-unused-variable", func(t *T) {
 		t.Report("remove-unused-variable", "remove unused variable: x")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: no report when all vars used", func(t *T) {
+	Test(t, "remove-unused-variables: no report when all vars used used-var", func(t *T) {
 		t.NoReport("used-var")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: no report for blank in tuple assign", func(t *T) {
+	Test(t, "remove-unused-variables: no report for blank in tuple assign tuple-blank", func(t *T) {
 		t.NoReport("tuple-blank")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: fix removes unused var", func(t *T) {
+	Test(t, "remove-unused-variables: fix removes unused var remove-unused-variable", func(t *T) {
 		t.Transform("remove-unused-variable")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: fix blank the unused var in tuple", func(t *T) {
+	Test(t, "remove-unused-variables: fix blank the unused var in tuple tuple-unused", func(t *T) {
 		t.Transform("tuple-unused")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: fix drops tuple with blank and unused var", func(t *T) {
+	Test(t, "remove-unused-variables: fix drops tuple with blank and unused var tuple-blank-unused", func(t *T) {
 		t.Transform("tuple-blank-unused")
 		t.End()
 	})
 
 	// const cases (new)
-	Test(t, "remove-unused-variables: report unused const", func(t *T) {
+	Test(t, "remove-unused-variables: report unused const unused-const", func(t *T) {
 		t.Report("unused-const", "remove unused const: timeout")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: no report for used const", func(t *T) {
+	Test(t, "remove-unused-variables: no report for used const used-const", func(t *T) {
 		t.NoReport("used-const")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: fix removes unused const", func(t *T) {
+	Test(t, "remove-unused-variables: fix removes unused const unused-const", func(t *T) {
 		t.Transform("unused-const")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: no transform for used const", func(t *T) {
+	Test(t, "remove-unused-variables: no transform for used const used-const", func(t *T) {
 		t.NoTransform("used-const")
 		t.End()
 	})
 
 	// var declaration cases
-	Test(t, "remove-unused-variables: report unused var decl", func(t *T) {
+	Test(t, "remove-unused-variables: report unused var decl var-decl", func(t *T) {
 		t.Report("var-decl", "remove unused variable: a")
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: fix removes unused var decl", func(t *T) {
+	Test(t, "remove-unused-variables: fix removes unused var decl var-decl", func(t *T) {
 		t.Transform("var-decl")
 		t.End()
 	})
 
 	// multiple unused imports
-	Test(t, "remove-unused-variables: report first of multiple unused imports", func(t *T) {
+	Test(t, "remove-unused-variables: report first of multiple unused imports multi-unused-import", func(t *T) {
 		t.Report("multi-unused-import", `remove unused import: "encoding/json"`)
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: fix removes all unused imports", func(t *T) {
+	Test(t, "remove-unused-variables: fix removes all unused imports multi-unused-import", func(t *T) {
 		t.Transform("multi-unused-import")
 		t.End()
 	})
 
 	// happy-path fixture (import + var + const all removed)
-	Test(t, "remove-unused-variables: transform removes all unused variables, imports, and consts", func(t *T) {
+	Test(t, "remove-unused-variables: transform removes all unused variables, imports, and consts remove-unused-variables", func(t *T) {
 		t.Transform("remove-unused-variables")
 		t.End()
 	})

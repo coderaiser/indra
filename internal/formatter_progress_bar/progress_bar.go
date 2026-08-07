@@ -83,10 +83,10 @@ func Format(name string, _ []byte, places []types.Place, index, count, filesWith
 
 // ShouldShow returns true if the progress bar should be displayed.
 func ShouldShow(count int) bool {
-	switch os.Getenv("INDRA_PROGRESS_BAR") {
-	case "1":
+	if os.Getenv("INDRA_PROGRESS_BAR") == "1" {
 		return true
-	case "0":
+	}
+	if os.Getenv("INDRA_PROGRESS_BAR") == "0" {
 		return false
 	}
 	if ci := os.Getenv("CI"); ci == "1" || ci == "true" {
