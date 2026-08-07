@@ -42,4 +42,15 @@ func TestRules(t *testing.T) {
 		t.Ok(found)
 		t.End()
 	})
+
+	Test(t, "plugin-indra: apply-fixture-name-to-message is present", func(t *T) {
+		found := false
+		for _, r := range Rules() {
+			if r.Name == "apply-fixture-name-to-message" {
+				found = true
+			}
+		}
+		t.Ok(found)
+		t.End()
+	})
 }

@@ -204,3 +204,13 @@ func f(t *testing.T) {
 		t.End()
 	})
 }
+
+func TestFix(t *testing.T) {
+	Test(t, "Fix: no-op when no rule name", func(t *T) {
+		src := "package p\nfunc f(t *testing.T) { Test(t, \"x\", func(t *T) {}) }\n"
+		file := parseFile(t.TB(), src)
+		Fix(types.Path{Node: file}, nil)
+		t.Pass("no panic")
+		t.End()
+	})
+}
