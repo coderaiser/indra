@@ -51,3 +51,8 @@ func summary(errorsCount, filesWithIssues int) string {
 	return fmt.Sprintf("\033[1;91m✖ %d %s in %d %s\033[0m\n  fixable with the --fix option\n",
 		errorsCount, errWord, filesWithIssues, fileWord)
 }
+
+// Summary returns the final error count line. Exported for use by other formatters.
+func Summary(errorsCount, filesWithIssues int) string {
+	return summary(errorsCount, filesWithIssues)
+}

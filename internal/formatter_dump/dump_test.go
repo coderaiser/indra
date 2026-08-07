@@ -93,3 +93,11 @@ func TestDumpSummaryFixHint(t *testing.T) {
 		t.End()
 	})
 }
+
+func TestDumpSummaryExported(t *testing.T) {
+	Test(t, "dump: exported Summary returns count line", func(t *T) {
+		out := dump.Summary(2, 1)
+		t.Ok(strings.Contains(out, "2 errors in 1 file"))
+		t.End()
+	})
+}

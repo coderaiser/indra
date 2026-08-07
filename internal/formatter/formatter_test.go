@@ -10,6 +10,7 @@ import (
 	jsonlines "coderaiser/indra/internal/formatter_json_lines"
 	formprog "coderaiser/indra/internal/formatter_progress"
 	pb "coderaiser/indra/internal/formatter_progress_bar"
+	formstream "coderaiser/indra/internal/formatter_stream"
 
 	. "github.com/coderaiser/go-tape"
 )
@@ -20,6 +21,14 @@ func TestChooseByName(t *testing.T) {
 		f := formatter.ChooseByName("json")
 		result := fmt.Sprintf("%p", f)
 		t.Equal(result, fmt.Sprintf("%p", formjson.Format))
+		t.End()
+	})
+
+	Test(t, "formatter: ChooseByName stream returns stream", func(t *T) {
+		t.TB().Setenv("CI", "")
+		f := formatter.ChooseByName("stream")
+		result := fmt.Sprintf("%p", f)
+		t.Equal(result, fmt.Sprintf("%p", formstream.Format))
 		t.End()
 	})
 

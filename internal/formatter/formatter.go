@@ -10,6 +10,7 @@ import (
 	jsonlines "coderaiser/indra/internal/formatter_json_lines"
 	formprog "coderaiser/indra/internal/formatter_progress"
 	pb "coderaiser/indra/internal/formatter_progress_bar"
+	formstream "coderaiser/indra/internal/formatter_stream"
 	"coderaiser/indra/types"
 )
 
@@ -40,6 +41,8 @@ func ChooseByName(name string) Func {
 		return jsonlines.Format
 	case "progress":
 		return formprog.Format
+	case "stream":
+		return formstream.Format
 	case "dump":
 		return dump.Format
 	default:
