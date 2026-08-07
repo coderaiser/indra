@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"slices"
 	"strings"
 
@@ -110,10 +111,27 @@ func Indra(registry []loader.PluginFuncs, args []string, w io.Writer) error {
 	}
 
 	fix := false
+	formatterName := os.Getenv("INDRA_FORMATTER")
 	files := []string{}
-	for _, a := range args {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
 		if a == "--fix" {
 			fix = true
+			continue
+		}
+		if a == "-f" || a == "--formatter" {
+			if i+1 < len(args) {
+				i++
+				formatterName = args[i]
+			}
+			continue
+		}
+		if strings.HasPrefix(a, "-f=") {
+			formatterName = strings.TrimPrefix(a, "-f=")
+			continue
+		}
+		if strings.HasPrefix(a, "--formatter=") {
+			formatterName = strings.TrimPrefix(a, "--formatter=")
 			continue
 		}
 		if !strings.HasPrefix(a, "-") {
@@ -138,7 +156,7 @@ func Indra(registry []loader.PluginFuncs, args []string, w io.Writer) error {
 		return nil
 	}
 
-	format := formatter.Choose()
+	format := formatter.ChooseByName(formatterName)
 	failed := false
 	filesWithIssues := 0
 	errorsCount := 0

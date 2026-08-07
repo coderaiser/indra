@@ -21,10 +21,16 @@ type Func func(name string, places []types.Place, index, count, filesWithIssues,
 // Choose returns the active formatter based on environment.
 // CI=true → dump. INDRA_FORMATTER=json-lines|dump → that one. Default: progress-bar.
 func Choose() Func {
+	return ChooseByName(os.Getenv("INDRA_FORMATTER"))
+}
+
+// ChooseByName returns the formatter for the given name.
+// Empty string or unknown name falls back to env/CI logic.
+func ChooseByName(name string) Func {
 	if os.Getenv("CI") == "true" {
 		return dump.Format
 	}
-	switch os.Getenv("INDRA_FORMATTER") {
+	switch name {
 	case "json-lines":
 		return jsonlines.Format
 	case "dump":

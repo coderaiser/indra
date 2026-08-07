@@ -134,6 +134,44 @@ func TestIndraUnknownFlag(t *testing.T) {
 	})
 }
 
+func TestIndraFormatterFlag(t *testing.T) {
+	Test(t, "lint: -f json-lines sets json-lines formatter", func(t *T) {
+		dir := t.TB().TempDir()
+		writeFile(t.TB(), dir, "bad.go", matchSrc)
+		var buf bytes.Buffer
+		indra.Indra(testRegistry, []string{"-f", "json-lines", dir}, &buf)
+		t.Ok(strings.Contains(buf.String(), `"name"`))
+		t.End()
+	})
+
+	Test(t, "lint: --formatter json-lines sets json-lines formatter", func(t *T) {
+		dir := t.TB().TempDir()
+		writeFile(t.TB(), dir, "bad.go", matchSrc)
+		var buf bytes.Buffer
+		indra.Indra(testRegistry, []string{"--formatter", "json-lines", dir}, &buf)
+		t.Ok(strings.Contains(buf.String(), `"name"`))
+		t.End()
+	})
+
+	Test(t, "lint: --formatter dump sets dump formatter", func(t *T) {
+		dir := t.TB().TempDir()
+		writeFile(t.TB(), dir, "bad.go", matchSrc)
+		var buf bytes.Buffer
+		indra.Indra(testRegistry, []string{"--formatter", "dump", dir}, &buf)
+		t.Ok(strings.Contains(buf.String(), "bad.go"))
+		t.End()
+	})
+
+	Test(t, "lint: -f=json-lines sets json-lines formatter", func(t *T) {
+		dir := t.TB().TempDir()
+		writeFile(t.TB(), dir, "bad.go", matchSrc)
+		var buf bytes.Buffer
+		indra.Indra(testRegistry, []string{"-f=json-lines", dir}, &buf)
+		t.Ok(strings.Contains(buf.String(), `"name"`))
+		t.End()
+	})
+}
+
 func TestIndraMissingFileError(t *testing.T) {
 	Test(t, "lint: missing file returns error", func(t *T) {
 		error := indra.Indra(testRegistry, []string{"/nonexistent/file.go"}, io.Discard)

@@ -12,6 +12,40 @@ import (
 	. "github.com/coderaiser/go-tape"
 )
 
+func TestChooseByName(t *testing.T) {
+	Test(t, "formatter: ChooseByName json-lines returns json-lines", func(t *T) {
+		t.TB().Setenv("CI", "")
+		f := formatter.ChooseByName("json-lines")
+		result := fmt.Sprintf("%p", f)
+		t.Equal(result, fmt.Sprintf("%p", jsonlines.Format))
+		t.End()
+	})
+
+	Test(t, "formatter: ChooseByName dump returns dump", func(t *T) {
+		t.TB().Setenv("CI", "")
+		f := formatter.ChooseByName("dump")
+		result := fmt.Sprintf("%p", f)
+		t.Equal(result, fmt.Sprintf("%p", dump.Format))
+		t.End()
+	})
+
+	Test(t, "formatter: ChooseByName unknown returns progress-bar", func(t *T) {
+		t.TB().Setenv("CI", "")
+		f := formatter.ChooseByName("unknown")
+		result := fmt.Sprintf("%p", f)
+		t.Equal(result, fmt.Sprintf("%p", pb.Format))
+		t.End()
+	})
+
+	Test(t, "formatter: ChooseByName CI=true returns dump regardless of name", func(t *T) {
+		t.TB().Setenv("CI", "true")
+		f := formatter.ChooseByName("json-lines")
+		result := fmt.Sprintf("%p", f)
+		t.Equal(result, fmt.Sprintf("%p", dump.Format))
+		t.End()
+	})
+}
+
 func TestChoose(t *testing.T) {
 	Test(t, "formatter: CI=true returns dump", func(t *T) {
 		t.TB().Setenv("CI", "true")
