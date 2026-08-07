@@ -6,6 +6,7 @@ import (
 	"os"
 
 	dump "coderaiser/indra/internal/formatter_dump"
+	formjson "coderaiser/indra/internal/formatter_json"
 	jsonlines "coderaiser/indra/internal/formatter_json_lines"
 	pb "coderaiser/indra/internal/formatter_progress_bar"
 	"coderaiser/indra/types"
@@ -32,6 +33,8 @@ func ChooseByName(name string) Func {
 		return dump.Format
 	}
 	switch name {
+	case "json":
+		return formjson.Format
 	case "json-lines":
 		return jsonlines.Format
 	case "dump":
