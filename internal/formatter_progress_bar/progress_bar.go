@@ -17,6 +17,10 @@ const (
 	barComplete  = '█'
 	barEmpty     = '░'
 	defaultColor = "#6fbdf1"
+
+	// HideCursor and ShowCursor are ANSI escape sequences exported for tests.
+	HideCursor = "\033[?25l"
+	ShowCursor = "\033[?25h"
 )
 
 // Config holds runtime options for the progress bar.
@@ -48,6 +52,10 @@ func Format(name string, _ []byte, places []types.Place, index, count, filesWith
 		return result
 	}
 
+	if index == 0 {
+		fmt.Fprintf(os.Stderr, "%s", HideCursor)
+	}
+
 	errStr := "👌"
 	if errorsCount > 0 {
 		errStr = fmt.Sprintf("\033[31m%d\033[0m", errorsCount)
@@ -67,7 +75,7 @@ func Format(name string, _ []byte, places []types.Place, index, count, filesWith
 	fmt.Fprintf(os.Stderr, "\r%s", line)
 
 	if index == count-1 {
-		fmt.Fprintf(os.Stderr, "\r\033[2K")
+		fmt.Fprintf(os.Stderr, "\r\033[2K%s", ShowCursor)
 		return result
 	}
 	return ""

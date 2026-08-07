@@ -1,6 +1,9 @@
 package formatter_progress_bar_test
 
 import (
+	"bytes"
+	"io"
+	"os"
 	"strings"
 	"testing"
 
@@ -193,6 +196,107 @@ func TestShouldShowInvalidMinFallback(t *testing.T) {
 	Test(t, "progress-bar: ShouldShow ignores invalid min env", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
 		t.Ok(!pb.ShouldShow(1))
+		t.End()
+	})
+}
+
+func TestProgressBarCursorHideShow(t *testing.T) {
+	captureStderr := func(t *T, fn func()) string {
+		t.TB().Helper()
+		oldStderr := os.Stderr
+		r, w, _ := os.Pipe()
+		os.Stderr = w
+		t.TB().Cleanup(func() {
+			w.Close()
+			os.Stderr = oldStderr
+			r.Close()
+		})
+		fn()
+		w.Close()
+		var buf bytes.Buffer
+		io.Copy(&buf, r)
+		return buf.String()
+	}
+
+	Test(t, "progress-bar: hides cursor on first file", func(t *T) {
+		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
+		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
+
+		out := captureStderr(t, func() {
+			pb.Format("foo.go", nil, nil, 0, 3, 0, 0)
+			pb.Format("bar.go", nil, nil, 1, 3, 0, 0)
+			pb.Format("baz.go", nil, nil, 2, 3, 0, 0)
+		})
+		t.Ok(strings.Contains(out, pb.HideCursor))
+		t.End()
+	})
+
+	Test(t, "progress-bar: shows cursor on last file", func(t *T) {
+		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
+		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
+
+		out := captureStderr(t, func() {
+			pb.Format("foo.go", nil, nil, 0, 3, 0, 0)
+			pb.Format("bar.go", nil, nil, 1, 3, 0, 0)
+			pb.Format("baz.go", nil, nil, 2, 3, 0, 0)
+		})
+		t.Ok(strings.Contains(out, pb.ShowCursor))
+		t.End()
+	})
+
+	Test(t, "progress-bar: hide cursor appears before show cursor", func(t *T) {
+		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
+		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
+
+		out := captureStderr(t, func() {
+			pb.Format("foo.go", nil, nil, 0, 3, 0, 0)
+			pb.Format("bar.go", nil, nil, 1, 3, 0, 0)
+			pb.Format("baz.go", nil, nil, 2, 3, 0, 0)
+		})
+		hideIdx := strings.Index(out, pb.HideCursor)
+		showIdx := strings.Index(out, pb.ShowCursor)
+		t.Ok(hideIdx >= 0 && showIdx >= 0 && hideIdx < showIdx)
+		t.End()
+	})
+}
+
+func TestProgressBarNoCursorWhenHidden(t *testing.T) {
+	captureStderr := func(t *T, fn func()) string {
+		t.TB().Helper()
+		oldStderr := os.Stderr
+		r, w, _ := os.Pipe()
+		os.Stderr = w
+		t.TB().Cleanup(func() {
+			w.Close()
+			os.Stderr = oldStderr
+			r.Close()
+		})
+		fn()
+		w.Close()
+		var buf bytes.Buffer
+		io.Copy(&buf, r)
+		return buf.String()
+	}
+
+	Test(t, "progress-bar: no cursor hide when bar is suppressed", func(t *T) {
+		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
+
+		out := captureStderr(t, func() {
+			pb.Format("foo.go", nil, nil, 0, 3, 0, 0)
+			pb.Format("bar.go", nil, nil, 2, 3, 0, 0)
+		})
+		t.Ok(!strings.Contains(out, pb.HideCursor))
+		t.End()
+	})
+
+	Test(t, "progress-bar: no cursor show when bar is suppressed", func(t *T) {
+		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
+
+		out := captureStderr(t, func() {
+			pb.Format("foo.go", nil, nil, 0, 3, 0, 0)
+			pb.Format("bar.go", nil, nil, 2, 3, 0, 0)
+		})
+		t.Ok(!strings.Contains(out, pb.ShowCursor))
 		t.End()
 	})
 }
