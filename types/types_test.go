@@ -363,7 +363,8 @@ func TestLintContract(t *testing.T) {
 			return types.LintResult{Out: src, Places: nil}, nil
 		})
 		_, err := lint([]byte("x"), false, nil)
-		t.Ok(err == nil)
+		t.NotOk(err)
+
 		t.End()
 	})
 
@@ -372,7 +373,8 @@ func TestLintContract(t *testing.T) {
 			return types.LintResult{Out: src, Places: nil}, nil
 		})
 		result, _ := lint([]byte("x"), false, nil)
-		t.Equal(string(result.Out), "x")
+		got := string(result.Out)
+		t.Equal(got, "x")
 		t.End()
 	})
 }

@@ -1,0 +1,164 @@
+// Package test provides plugin acceptance-test helpers that any linter can
+// drive through a types.Lint function. The engine itself stays external:
+// indra binds its own engine via the internal/test shim, and go-lint binds
+// its own engine the same way.
+//
+//	var CreateTest = indratest.CreateTest(indraLint)
+//
+//	var CreateTest = indratest.CreateTest(golint.Lint)
+package test
+
+import (
+	"os"
+	"path/filepath"
+	"runtime"
+	"testing"
+
+	"coderaiser/indra/types"
+
+	tape "github.com/coderaiser/go-tape"
+)
+
+// PluginArg pairs a rule name with its plugin payload inside the []any slice
+// handed to a types.Lint implementation, so the linter can resolve the fully
+// qualified rule name when it builds runnable plugin items.
+type PluginArg struct {
+	Rule   string
+	Plugin any
+}
+
+// T wraps tape.T with plugin-level lint assertions.
+type T struct {
+	*tape.T
+	lint      types.Lint
+	plugins   []any
+	dir       string
+	fatal     func(format string, args ...any)
+	writeFile func(string, []byte, os.FileMode) error
+}
+
+// New constructs a T for direct use in error-path tests.
+func New(tt *tape.T, lint types.Lint, plugins []any, dir string) *T {
+	return &T{T: tt, lint: lint, plugins: plugins, dir: dir, fatal: tt.TB().Fatalf, writeFile: os.WriteFile}
+}
+
+// CreateTest returns a test runner fixed to a single leaf rule whose plugin is
+// a method-bearing struct (e.g. remove_skip.Plugin{}). The fixture dir is the
+// caller's fixture/ directory.
+//
+//	func TestRemoveSkip(t *testing.T) {
+//		CreateTest(lint)("remove-skip", remove_skip.Plugin{}) ...
+//	}
+func CreateTest(lint types.Lint) func(rule string, plugin any) func(*testing.T, string, func(*T)) {
+	return func(rule string, plugin any) func(*testing.T, string, func(*T)) {
+		plugins := []any{PluginArg{Rule: rule, Plugin: plugin}}
+		dir := callerFixtureDir(1)
+		return tape.Extend(func(base *tape.T) *T {
+			return New(base, lint, plugins, dir)
+		})
+	}
+}
+
+// ForGroup returns a test runner for every rule of a group. It is used by a
+// group's own test file to exercise all sub-rules at once (e.g. tape.Rules()).
+func ForGroup(lint types.Lint) func(name string, rules []types.Rule) func(*testing.T, string, func(*T)) {
+	return func(name string, rules []types.Rule) func(*testing.T, string, func(*T)) {
+		plugins := make([]any, 0, len(rules))
+		for _, rule := range rules {
+			plugins = append(plugins, PluginArg{Rule: rule.Name, Plugin: rule.Plugin})
+		}
+		dir := callerFixtureDir(1)
+		return tape.Extend(func(base *tape.T) *T {
+			return New(base, lint, plugins, dir)
+		})
+	}
+}
+
+// callerFixtureDir returns the fixture/ directory next to the test file that
+// called CreateTest/ForGroup. depth is the position of CreateTest/ForGroup's
+// caller frame.
+func callerFixtureDir(depth int) string {
+	_, file, _, _ := runtime.Caller(depth + 1)
+	return filepath.Join(filepath.Dir(file), "fixture")
+}
+
+// Report asserts the plugin emits at least one place whose first Message
+// equals message when run against fixture file <name>.go.
+func (t *T) Report(name, message string) {
+	t.TB().Helper()
+	src := t.read(name)
+	res, err := t.lint(src, false, t.plugins)
+	if err != nil {
+		t.fatal("Report(%q): parse error: %v", name, err)
+		return
+	}
+	if len(res.Places) == 0 {
+		t.fatal("Report(%q): expected at least one place, got none", name)
+		return
+	}
+	t.Equal(res.Places[0].Message, message)
+}
+
+// NoReport asserts the plugin emits no places for fixture <name>.go.
+func (t *T) NoReport(name string) {
+	t.TB().Helper()
+	src := t.read(name)
+	res, err := t.lint(src, false, t.plugins)
+	if err != nil {
+		t.fatal("NoReport(%q): parse error: %v", name, err)
+		return
+	}
+	if len(res.Places) != 0 {
+		t.fatal("NoReport(%q): expected no places, got %d", name, len(res.Places))
+		return
+	}
+	t.Pass("no report")
+}
+
+// Transform runs the plugin with fix=true on fixture <name>.go and asserts
+// the output matches fixture <name>-fix.go.
+// Set env UPDATE=1 to regenerate the fix fixture.
+func (t *T) Transform(name string) {
+	t.TB().Helper()
+	src := t.read(name)
+	res, err := t.lint(src, true, t.plugins)
+	if err != nil {
+		t.fatal("Transform(%q): parse error: %v", name, err)
+		return
+	}
+	fixPath := filepath.Join(t.dir, name+"-fix.go")
+	if os.Getenv("UPDATE") == "1" {
+		if werr := t.writeFile(fixPath, res.Out, 0644); werr != nil {
+			t.fatal("Transform(%q): write fixture: %v", name, werr)
+			return
+		}
+		t.Pass("fixture updated")
+		return
+	}
+	fixSrc := t.read(name + "-fix")
+	gotStr := string(res.Out)
+	t.Equal(gotStr, string(fixSrc))
+}
+
+// NoTransform asserts that fix=true leaves fixture <name>.go source unchanged.
+func (t *T) NoTransform(name string) {
+	t.TB().Helper()
+	src := t.read(name)
+	res, err := t.lint(src, true, t.plugins)
+	if err != nil {
+		t.fatal("NoTransform(%q): parse error: %v", name, err)
+		return
+	}
+	gotStr := string(res.Out)
+	t.Equal(gotStr, string(src))
+}
+
+func (t *T) read(name string) []byte {
+	t.TB().Helper()
+	data, err := os.ReadFile(filepath.Join(t.dir, name+".go"))
+	if err != nil {
+		t.fatal("read fixture %q: %v", name, err)
+		return nil
+	}
+	return data
+}
