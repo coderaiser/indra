@@ -433,8 +433,8 @@ func TestMergeProgressMinCountUserWins(t *testing.T) {
 
 func TestLoadReturnsDefaultsWhenFileAbsent(t *testing.T) {
 	Test(t, "config: Load returns defaults when file absent", func(t *T) {
-		cfg, err := config.Load("/nonexistent/path")
-		t.Equal(err, nil)
+		_, err := config.Load("/nonexistent/path")
+		t.Ok(err == nil)
 		t.End()
 	})
 }
@@ -454,7 +454,7 @@ func TestLoadMergesUserToml(t *testing.T) {
 [rules]
 "indra" = "on"
 `), 0644)
-		cfg, err := config.Load(dir)
+		_, err := config.Load(dir)
 		t.Ok(err == nil)
 		t.End()
 	})

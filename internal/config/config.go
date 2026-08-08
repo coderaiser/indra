@@ -68,6 +68,7 @@ type ProgressConfig struct {
 
 // defaultToml is the built-in configuration embedded into the binary. It is a
 // var (not const) so tests can drive the malformed-default path in Default().
+//
 //go:embed default.toml
 var defaultToml []byte
 
@@ -110,6 +111,9 @@ func Merge(defaults, user Config) Config {
 
 	// merge ignore — append user patterns after defaults
 	result.Ignore.Patterns = append(result.Ignore.Patterns, user.Ignore.Patterns...)
+
+	// merge plugins — user list appended after defaults
+	result.Plugins = append(result.Plugins, user.Plugins...)
 
 	// merge progress — user wins if non-zero
 	if user.Progress.Color != "" {
