@@ -3,7 +3,7 @@ package remove_useless_condition_test
 import (
 	"testing"
 
-	"coderaiser/indra/internal/plugin_tape/remove_useless_condition"
+	"coderaiser/indra/internal/plugin_conditions/remove_useless_condition"
 	. "coderaiser/indra/internal/test"
 )
 

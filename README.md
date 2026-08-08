@@ -70,6 +70,14 @@ Create `.indra.toml` in your project root:
 | `tape/convert-equal-to-deep-equal` | Use `DeepEqual` for slice args |
 | `tape/extract-result-from-assertion` | Extract inline expressions from assertions |
 
+### 🚦 conditions
+
+Rules enabled for all files — nothing tape-specific.
+
+| Rule | Description |
+|---|---|
+| `conditions/remove-useless-condition` | Remove useless condition inside `Ok`/`NotOk` |
+
 ### 🔧 Single rules
 
 | Rule | Description |

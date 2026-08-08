@@ -10,7 +10,6 @@ Rules for go-tape test files.
 - ✅ [convert-equal-to-not-ok](#convert-equal-to-not-ok)
 - ✅ [convert-ok-to-not-ok](#convert-ok-to-not-ok)
 - ✅ [extract-result-from-assertion](#extract-result-from-assertion)
-- ✅ [remove-useless-condition](#remove-useless-condition)
 - ✅ [remove-useless-prefix](#remove-useless-prefix)
 - ✅ [convert-no-error-to-not-ok](#convert-no-error-to-not-ok)
 
@@ -202,31 +201,6 @@ package fixture
 func f() {
 	result := someFunc(a, b)
 	t.DeepEqual(result, expected)
-
-}
-```
-
-## remove-useless-condition
-
-Removes a useless condition inside Ok().
-
-### ❌ Incorrect
-
-```go
-package fixture
-
-func f() {
-	t.Ok(err != nil)
-}
-```
-
-### ✅ Correct
-
-```go
-package fixture
-
-func f() {
-	t.Ok(err)
 
 }
 ```

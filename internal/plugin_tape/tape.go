@@ -9,7 +9,6 @@ import (
 	"coderaiser/indra/internal/plugin_tape/convert_ok_to_not_ok"
 	"coderaiser/indra/internal/plugin_tape/extract_result_from_assertion"
 	"coderaiser/indra/internal/plugin_tape/remove_skip"
-	"coderaiser/indra/internal/plugin_tape/remove_useless_condition"
 	"coderaiser/indra/internal/plugin_tape/remove_useless_prefix"
 	"coderaiser/indra/types"
 )
@@ -26,7 +25,6 @@ func Rules() []types.Rule {
 		{Name: "convert-equal-to-not-ok", Plugin: convert_equal_to_not_ok.Plugin{}},
 		{Name: "convert-ok-to-not-ok", Plugin: convert_ok_to_not_ok.Plugin{}},
 		{Name: "extract-result-from-assertion", Plugin: extract_result_from_assertion.Plugin{}},
-		{Name: "remove-useless-condition", Plugin: remove_useless_condition.Plugin{}},
 		{Name: "remove-useless-prefix", Plugin: remove_useless_prefix.Plugin{}},
 		{Name: "convert-no-error-to-not-ok", Plugin: convert_no_error_to_not_ok.Plugin{}},
 	}

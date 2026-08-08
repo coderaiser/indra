@@ -30,11 +30,6 @@ func TestTape(t *testing.T) {
 		t.End()
 	})
 
-	Test(t, "tape: transform remove-useless-condition", func(t *T) {
-		t.Transform("remove-useless-condition")
-		t.End()
-	})
-
 	Test(t, "tape: transform remove-useless-prefix", func(t *T) {
 		t.Transform("remove-useless-prefix")
 		t.End()

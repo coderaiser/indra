@@ -2,6 +2,7 @@ package main
 
 import (
 	engine_loader "coderaiser/indra/engine_loader"
+	plugin_conditions "coderaiser/indra/internal/plugin_conditions"
 	plugin_indra "coderaiser/indra/internal/plugin_indra"
 	remove_unused_variables "coderaiser/indra/internal/plugin_remove_unused_variables"
 	plugin_tape "coderaiser/indra/internal/plugin_tape"
@@ -14,5 +15,6 @@ import (
 var Registry = []engine_loader.PluginFuncs{
 	{Name: "tape", Rules: plugin_tape.Rules()},
 	{Name: "indra", Rules: plugin_indra.Rules()},
+	{Name: "conditions", Rules: plugin_conditions.Rules()},
 	{Name: "remove-unused-variables", Plugin: remove_unused_variables.Plugin{}},
 }

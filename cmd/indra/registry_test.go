@@ -23,6 +23,17 @@ func TestRegistry(t *testing.T) {
 		t.End()
 	})
 
+	Test(t, "registry: conditions group carries rules", func(t *T) {
+		found := false
+		for _, p := range Registry {
+			if p.Name == "conditions" {
+				found = p.Rules != nil && len(p.Rules) > 0
+			}
+		}
+		t.Ok(found)
+		t.End()
+	})
+
 	Test(t, "registry: every entry has a name", func(t *T) {
 		ok := true
 		for _, p := range Registry {
