@@ -29,4 +29,19 @@ func TestApplyFixtureNameToMessage(t *testing.T) {
 		t.NoReport("no-create-test")
 		t.End()
 	})
+
+	Test(t, "apply-fixture-name-to-message: no report odd-specs", func(t *T) {
+		t.NoReport("odd-specs")
+		t.End()
+	})
+
+	Test(t, "apply-fixture-name-to-message: no transform odd-specs", func(t *T) {
+		t.NoTransform("odd-specs")
+		t.End()
+	})
+
+	Test(t, "apply-fixture-name-to-message: transform mixed-message", func(t *T) {
+		t.Transform("mixed-message")
+		t.End()
+	})
 }

@@ -25,9 +25,6 @@ func Traverse() Traverser {
 
 func Fix(p Path, _ map[string]any) {
 	ruleName := extractRuleName(p)
-	if ruleName == "" {
-		return
-	}
 	applyPrefix(p, ruleName)
 }
 
