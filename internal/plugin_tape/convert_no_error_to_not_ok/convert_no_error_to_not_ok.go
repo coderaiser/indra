@@ -15,19 +15,13 @@ func Traverse() Traverser {
 }
 
 func findNoErrorCalls(p Path, push func(Path)) {
-	file, ok := p.Node.(*ast.File)
-	if !ok {
-		return
-	}
+	file := p.Node.(*ast.File)
 	if !hasGoTapeImport(file) {
 		return
 	}
 	found := false
 	p.Traverse(map[string]func(Path){
 		"*ast.CallExpr": func(callPath Path) {
-			if found {
-				return
-			}
 			call := callPath.Node.(*ast.CallExpr)
 			sel, ok := call.Fun.(*ast.SelectorExpr)
 			if !ok {
@@ -45,10 +39,7 @@ func findNoErrorCalls(p Path, push func(Path)) {
 }
 
 func Fix(p Path, _ map[string]any) {
-	file, ok := p.Node.(*ast.File)
-	if !ok {
-		return
-	}
+	file := p.Node.(*ast.File)
 	if !hasGoTapeImport(file) {
 		return
 	}
