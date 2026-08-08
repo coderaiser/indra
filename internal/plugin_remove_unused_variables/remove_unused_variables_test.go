@@ -98,6 +98,37 @@ func TestRemoveUnusedDeclarations(t *testing.T) {
 		t.End()
 	})
 
+	// go-prefix / version-suffix imports used under their real package name
+	Test(t, "remove-unused-variables: no report go-prefix-import", func(t *T) {
+		t.NoReport("go-prefix-import")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: no transform go-prefix-import", func(t *T) {
+		t.NoTransform("go-prefix-import")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: report go-prefix-import-unused", func(t *T) {
+		t.Report("go-prefix-import-unused", `remove unused import: "github.com/coderaiser/go-tape"`)
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: transform go-prefix-import-unused", func(t *T) {
+		t.Transform("go-prefix-import-unused")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: no report version-suffix-import", func(t *T) {
+		t.NoReport("version-suffix-import")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: no transform version-suffix-import", func(t *T) {
+		t.NoTransform("version-suffix-import")
+		t.End()
+	})
+
 	// variable cases
 	Test(t, "remove-unused-variables: report unused var remove-unused-variable", func(t *T) {
 		t.Report("remove-unused-variable", "remove unused variable: x")
