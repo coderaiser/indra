@@ -9,9 +9,12 @@ import (
 	remove_skip "coderaiser/indra/internal/plugin_tape/remove_skip"
 	indratest "coderaiser/indra/test"
 	"coderaiser/indra/types"
-
-	. "github.com/coderaiser/go-tape"
 )
+
+// run is a fixture-less runner for white-box tests that call engine
+// functions directly rather than through fixture files on disk.
+// It uses tape.Extend bound to indraLint so *T carries Ok, Equal, etc.
+var run = CreateTest("internal-test", remove_skip.Plugin{})
 
 // ── indraLint ────────────────────────────────────────────────────────────────
 
@@ -19,26 +22,24 @@ func TestIndraLintSuccess(t *testing.T) {
 	src := []byte("package p\n\nfunc f() {\n\tTest.Skip(t, \"foo: something\", func(t *Test.T) {\n\t\tt.End()\n\t})\n}\n")
 	plugins := []any{indratest.PluginArg{Rule: "remove-skip", Plugin: remove_skip.Plugin{}}}
 
-	Test(t, "indraLint: fixes without error", func(tt *T) {
+	run(t, "internal-test: indraLint: fixes without error", func(tt *T) {
 		out, err := indraLint(src, true, plugins)
 		tt.Ok(err == nil && strings.Contains(string(out.Out), "Test("))
 		tt.End()
 	})
 
-	Test(t, "indraLint: output drops Skip", func(tt *T) {
+	run(t, "internal-test: indraLint: output drops Skip", func(tt *T) {
 		out, _ := indraLint(src, true, plugins)
 		tt.NotOk(strings.Contains(string(out.Out), "Skip"))
-
 		tt.End()
 	})
 }
 
 func TestIndraLintParseError(t *testing.T) {
-	Test(t, "indraLint: returns parse error", func(tt *T) {
+	run(t, "internal-test: indraLint: returns parse error", func(tt *T) {
 		plugins := []any{indratest.PluginArg{Rule: "remove-skip", Plugin: remove_skip.Plugin{}}}
 		_, err := indraLint([]byte("package p\nfunc (\n"), false, plugins)
 		tt.Ok(err)
-
 		tt.End()
 	})
 }
@@ -74,7 +75,7 @@ func catchPanic(fn func()) (msg string) {
 }
 
 func TestValidatePluginNilGuard(t *testing.T) {
-	Test(t, "validatePlugin: panics on nil MatchFn", func(tt *T) {
+	run(t, "internal-test: validatePlugin: panics on nil MatchFn", func(tt *T) {
 		pf := loader.PluginFuncs{Name: "nil-guard", Plugin: synthReplacer{report: "x", match: types.Matcher{"p": nil}, replace: types.Replacer{"p": "q"}}}
 		msg := catchPanic(func() { validatePlugin(loader.Load([]loader.PluginFuncs{pf}, loader.Config{})[0]) })
 		tt.Ok(strings.Contains(msg, "nil MatchFn"))
@@ -83,7 +84,7 @@ func TestValidatePluginNilGuard(t *testing.T) {
 }
 
 func TestValidatePluginOrphanKey(t *testing.T) {
-	Test(t, "validatePlugin: panics on orphan Match key", func(tt *T) {
+	run(t, "internal-test: validatePlugin: panics on orphan Match key", func(tt *T) {
 		pf := loader.PluginFuncs{Name: "orphan-key", Plugin: synthReplacer{report: "x", match: types.Matcher{"p": func(types.Vars, *ast.BlockStmt) bool { return true }}, replace: types.Replacer{}}}
 		msg := catchPanic(func() { validatePlugin(loader.Load([]loader.PluginFuncs{pf}, loader.Config{})[0]) })
 		tt.Ok(strings.Contains(msg, "Match key not in Replace"))
@@ -92,7 +93,7 @@ func TestValidatePluginOrphanKey(t *testing.T) {
 }
 
 func TestValidatePluginTraverserNoPanic(t *testing.T) {
-	Test(t, "validatePlugin: no panic for traverser plugin", func(tt *T) {
+	run(t, "internal-test: validatePlugin: no panic for traverser plugin", func(tt *T) {
 		pf := loader.PluginFuncs{Name: "trav", Plugin: synthTraverser{}}
 		msg := catchPanic(func() { validatePlugin(loader.Load([]loader.PluginFuncs{pf}, loader.Config{})[0]) })
 		tt.Equal(msg, "")
