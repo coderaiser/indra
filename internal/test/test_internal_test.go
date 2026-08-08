@@ -109,15 +109,15 @@ func catchPanic(fn func()) (msg string) {
 	return ""
 }
 
-// ── For / ForGroup ───────────────────────────────────────────────────────────
+// ── CreateTest / ForGroup ─────────────────────────────────────────────────────
 
-func TestFor(t *testing.T) {
-	run := For("synth", synthReplacer{
+func TestCreateTest(t *testing.T) {
+	run := CreateTest("synth", synthReplacer{
 		report:  "x",
 		match:   types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }},
 		replace: types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"},
 	})
-	run(t, "for: returns working runner", func(tt *T) {
+	run(t, "creative: returns working runner", func(tt *T) {
 		tt.Ok(true)
 		tt.End()
 	})

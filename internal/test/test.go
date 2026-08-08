@@ -28,24 +28,20 @@ func New(tt *tape.T, plugins []runner.PluginItem, dir string) *T {
 	return &T{T: tt, plugins: plugins, dir: dir, fatal: tt.TB().Fatalf, writeFile: os.WriteFile}
 }
 
-// For returns a test runner fixed to a single leaf rule whose plugin is a
-// method-bearing struct (e.g. remove_skip.Plugin{}). The fixture dir is the
+// CreateTest returns a test runner fixed to a single leaf rule whose plugin is
+// a method-bearing struct (e.g. remove_skip.Plugin{}). The fixture dir is the
 // caller's fixture/ directory.
 //
 //	func TestRemoveSkip(t *testing.T) {
-//		For("remove-skip", remove_skip.Plugin{}) ...
+//		CreateTest("remove-skip", remove_skip.Plugin{}) ...
 //	}
-func For(rule string, plugin any) func(*testing.T, string, func(*T)) {
+func CreateTest(rule string, plugin any) func(*testing.T, string, func(*T)) {
 	items := itemsFor(rule, plugin)
 	dir := callerFixtureDir(1)
 	return tape.Extend(func(base *tape.T) *T {
 		return New(base, items, dir)
 	})
 }
-
-// CreateTest is the exported alias for For, used by the
-// convert-for-to-create-test plugin and by migrated plugin test files.
-var CreateTest = For
 
 // ForGroup returns a test runner for every rule of a group. It is used by a
 // group's own test file to exercise all sub-rules at once (e.g. tape.Rules()).
@@ -63,7 +59,8 @@ func ForGroup(name string, rules []types.Rule) func(*testing.T, string, func(*T)
 }
 
 // callerFixtureDir returns the fixture/ directory next to the test file that
-// called For/ForGroup. depth is the position of For/ForGroup's caller frame.
+// called CreateTest/ForGroup. depth is the position of CreateTest/ForGroup's
+// caller frame.
 func callerFixtureDir(depth int) string {
 	_, file, _, _ := runtime.Caller(depth + 1)
 	return filepath.Join(filepath.Dir(file), "fixture")
