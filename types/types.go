@@ -194,6 +194,17 @@ type Place struct {
 	Position Position `json:"position"`
 }
 
+// Lint is the engine contract that test helpers depend on.
+// Each linter implements its own and passes it to CreateTest.
+// Mirrors how flatlint passes its own lint() to @putout/test.
+type Lint func(src []byte, fix bool, plugins []any) (LintResult, error)
+
+// LintResult is the minimal result shape shared across linters.
+type LintResult struct {
+	Out    []byte
+	Places []Place
+}
+
 // Rule is a named plugin entry inside a group's Rules() return.
 type Rule struct {
 	Name   string

@@ -16,11 +16,9 @@ type Params struct {
 	Plugins  []runner.PluginItem
 }
 
-// Result holds the processed output.
-type Result struct {
-	Out    []byte
-	Places []types.Place
-}
+// Result is the engine_processor result shape, aliased from types so all
+// linters share the same minimal result contract.
+type Result = types.LintResult
 
 // print formats an AST file back to source bytes. It is a variable so tests
 // can exercise the printer error path.

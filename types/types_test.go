@@ -357,6 +357,26 @@ func TestPathStop(t *testing.T) {
 	})
 }
 
+func TestLintContract(t *testing.T) {
+	Test(t, "types: Lint returns no error", func(t *T) {
+		lint := types.Lint(func(src []byte, fix bool, plugins []any) (types.LintResult, error) {
+			return types.LintResult{Out: src, Places: nil}, nil
+		})
+		_, err := lint([]byte("x"), false, nil)
+		t.Ok(err == nil)
+		t.End()
+	})
+
+	Test(t, "types: LintResult carries Out", func(t *T) {
+		lint := types.Lint(func(src []byte, fix bool, plugins []any) (types.LintResult, error) {
+			return types.LintResult{Out: src, Places: nil}, nil
+		})
+		result, _ := lint([]byte("x"), false, nil)
+		t.Equal(string(result.Out), "x")
+		t.End()
+	})
+}
+
 func TestPathSkip(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tif true {\n\t\ty := 2\n\t}\n\tz := 3\n}\n"
 	fset := token.NewFileSet()
