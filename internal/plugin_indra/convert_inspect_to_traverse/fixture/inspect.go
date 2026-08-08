@@ -29,4 +29,3 @@ func helper() {}
 func other() string { return "x" }
 
 func list() []string { return nil }
-
