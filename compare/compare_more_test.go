@@ -53,7 +53,7 @@ func TestMatchSliceLikeArgsHole(t *testing.T) {
 
 func TestMatchSliceLikeBlockStmts(t *testing.T) {
 	pattern := parseStmt(t, "{\nfoo()\n}")
-	if Compare(parseStmt(t, "{\nfoo()\n}"), "{\nfoo()\n}") == nil {
+	if GetTemplateValues(parseStmt(t, "{\nfoo()\n}"), "{\nfoo()\n}") == nil {
 		t.Fatal("block statement slices should match")
 	}
 	_ = pattern

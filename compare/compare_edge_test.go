@@ -14,7 +14,7 @@ func TestMatchNodeArgsNotCall(t *testing.T) {
 
 func TestMatchNodeArgsLiteral(t *testing.T) {
 	// a single non-ident argument disables the __args fast path.
-	if Compare(parseStmt(t, "t.Equal(1)"), "t.Equal(1)") == nil {
+	if GetTemplateValues(parseStmt(t, "t.Equal(1)"), "t.Equal(1)") == nil {
 		t.Fatal("literal single-arg call should match")
 	}
 }
@@ -22,7 +22,7 @@ func TestMatchNodeArgsLiteral(t *testing.T) {
 func TestMatchNodeBodySelectorFun(t *testing.T) {
 	// the sentinel call fun being a selector (not ident) skips the capture.
 	node := parseStmt(t, "{\na.b()\n}")
-	if Compare(node, "{\na.b()\n}") == nil {
+	if GetTemplateValues(node, "{\na.b()\n}") == nil {
 		t.Fatal("selector call inside block should match")
 	}
 }

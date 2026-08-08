@@ -29,7 +29,7 @@ func Replace() Replacer {
 // method (t.End()).
 func stmtsContainEnd(stmts []ast.Stmt) bool {
 	for _, s := range stmts {
-		if compare.Compare(s, "__.End()") != nil {
+				if compare.GetTemplateValues(s, "__.End()") != nil {
 			return true
 		}
 	}

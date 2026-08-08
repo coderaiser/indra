@@ -29,9 +29,9 @@ type BodySlice struct {
 func (BodySlice) Pos() token.Pos { return token.NoPos }
 func (BodySlice) End() token.Pos { return token.NoPos }
 
-// Compare matches node against a pattern string.
-// It returns the bound holes (Vars) or nil when there is no match.
-func Compare(node ast.Node, pattern string) Vars {
+// GetTemplateValues matches node against a pattern string and returns the
+// bound holes (Vars), or nil when there is no match.
+func GetTemplateValues(node ast.Node, pattern string) Vars {
 	pat := parsePattern(pattern)
 	if pat == nil {
 		return nil

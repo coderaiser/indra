@@ -39,7 +39,7 @@ func noResultInBlock(_ Vars, block *ast.BlockStmt) bool {
 // short variable declaration (:=).
 func blockDeclares(block *ast.BlockStmt, name string) bool {
 	for _, s := range block.List {
-		if compare.Compare(s, name+" := __a") != nil {
+				if compare.GetTemplateValues(s, name+" := __a") != nil {
 			return true
 		}
 	}

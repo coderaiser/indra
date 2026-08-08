@@ -33,7 +33,7 @@ func named(t *testing.T, vars Vars, name string) ast.Node {
 
 func TestCompareDiscard(t *testing.T) {
 	node := parseStmt(t, "foo(1, 2)")
-	vars := Compare(node, "__")
+	vars := GetTemplateValues(node, "__")
 	if vars == nil {
 		t.Fatal("__ should match any expression")
 	}
@@ -44,7 +44,7 @@ func TestCompareDiscard(t *testing.T) {
 
 func TestCompareBindLinked(t *testing.T) {
 	node := parseStmt(t, "t.Equal(x, x)")
-	vars := Compare(node, "t.Equal(__a, __a)")
+	vars := GetTemplateValues(node, "t.Equal(__a, __a)")
 	if vars == nil {
 		t.Fatal("__a linked pattern should match")
 	}
@@ -56,14 +56,14 @@ func TestCompareBindLinked(t *testing.T) {
 
 	// second occurrence of a different source must fail
 	mismatch := parseStmt(t, "t.Equal(x, y)")
-	if Compare(mismatch, "t.Equal(__a, __a)") != nil {
+	if GetTemplateValues(mismatch, "t.Equal(__a, __a)") != nil {
 		t.Fatal("linked hole with different values should not match")
 	}
 }
 
 func TestCompareArgs(t *testing.T) {
 	node := parseStmt(t, "t.Equal(a, b, c)")
-	vars := Compare(node, "t.Equal(__args)")
+	vars := GetTemplateValues(node, "t.Equal(__args)")
 	if vars == nil {
 		t.Fatal("__args pattern should match")
 	}
@@ -83,7 +83,7 @@ func TestCompareBody(t *testing.T) {
 	})`
 	node := parseStmt(t, src)
 	pattern := `tape.Test(__t, __, func(__t *tape.T) { __body })`
-	vars := Compare(node, pattern)
+	vars := GetTemplateValues(node, pattern)
 	if vars == nil {
 		t.Fatal("__body pattern should match")
 	}
@@ -98,39 +98,39 @@ func TestCompareBody(t *testing.T) {
 
 func TestCompareArray(t *testing.T) {
 	node := parseStmt(t, "t.DeepEqual(x, []int{1, 2})")
-	vars := Compare(node, "t.DeepEqual(__a, __array)")
+	vars := GetTemplateValues(node, "t.DeepEqual(__a, __array)")
 	if vars == nil {
 		t.Fatal("__array should match CompositeLit with ArrayType")
 	}
 
 	mapLit := parseStmt(t, "t.DeepEqual(x, map[string]int{})")
-	if Compare(mapLit, "t.DeepEqual(__a, __array)") != nil {
+	if GetTemplateValues(mapLit, "t.DeepEqual(__a, __array)") != nil {
 		t.Fatal("__array must reject a MapType composite literal")
 	}
 
 	nonLit := parseStmt(t, "t.DeepEqual(x, y)")
-	if Compare(nonLit, "t.DeepEqual(__a, __array)") != nil {
+	if GetTemplateValues(nonLit, "t.DeepEqual(__a, __array)") != nil {
 		t.Fatal("__array must reject a non-composite-literal argument")
 	}
 }
 
 func TestCompareTypeMismatch(t *testing.T) {
 	node := parseStmt(t, "foo(x)")
-	if Compare(node, "bar(x)") != nil {
+	if GetTemplateValues(node, "bar(x)") != nil {
 		t.Fatal("different function names should not match")
 	}
 }
 
 func TestCompareStructuralMismatch(t *testing.T) {
 	node := parseStmt(t, "t.Equal(a, b)")
-	if Compare(node, "t.Equal(a)") != nil {
+	if GetTemplateValues(node, "t.Equal(a)") != nil {
 		t.Fatal("different arity should not match")
 	}
 }
 
 func TestCompareEqual(t *testing.T) {
 	node := parseStmt(t, "t.Equal(a, b)")
-	vars := Compare(node, "t.Equal(__a, __b)")
+	vars := GetTemplateValues(node, "t.Equal(__a, __b)")
 	if vars == nil {
 		t.Fatal("t.Equal(__a, __b) should match")
 	}

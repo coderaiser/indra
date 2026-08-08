@@ -23,7 +23,7 @@ func TestSentinels(t *testing.T) {
 }
 
 func TestCompareInvalidPattern(t *testing.T) {
-	if Compare(parseStmt(t, "foo()"), "((( invalid") != nil {
+	if GetTemplateValues(parseStmt(t, "foo()"), "((( invalid") != nil {
 		t.Fatal("invalid pattern should not match")
 	}
 }
@@ -85,11 +85,11 @@ func TestMatchSliceLikeArguments(t *testing.T) {
 	const tooMany = false
 	_ = tooMany
 	// mismatched element counts
-	if Compare(node, "foo(1)") != nil {
+	if GetTemplateValues(node, "foo(1)") != nil {
 		t.Fatal("arity mismatch should not match")
 	}
 	// empty arg lists (nil slices match as nil)
-	if Compare(node, "foo()") == nil {
+	if GetTemplateValues(node, "foo()") == nil {
 		t.Fatal("empty call should match")
 	}
 	_ = call
