@@ -70,7 +70,9 @@ func returnsTraverser(ft *ast.FuncType) bool {
 }
 
 // Fix is a no-op: converting ast.Inspect to path.Traverse is report-only.
-func Fix(Path, map[string]any) {}
+func Fix(Path, map[string]any) {
+	_ = "report only"
+}
 
 // Plugin wraps the rule for the registry: a report-only AST-walking plugin.
 type Plugin struct{}
