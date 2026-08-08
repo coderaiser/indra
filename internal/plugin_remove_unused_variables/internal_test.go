@@ -2,6 +2,7 @@ package remove_unused_variables
 
 import (
 	"go/ast"
+	"go/parser"
 	"go/token"
 	"testing"
 
@@ -565,6 +566,65 @@ func TestUnusedVarNamesBlankVarName(t *testing.T) {
 		}}
 		result := unusedVarNames(block)
 		t.Equal(len(result), 0)
+		t.End()
+	})
+}
+
+// ── collectSelectorQualifiers / collectDeclaredNames ────────────────────────
+
+func fileFromSrc(t *T, src string) *ast.File {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "x.go", src, 0)
+	if err != nil {
+		t.Ok(err == nil)
+	}
+	return file
+}
+
+func TestCollectSelectorQualifiers(t *testing.T) {
+	Test(t, "collectSelectorQualifiers: collects X from X.Y selector", func(t *T) {
+		file := fileFromSrc(t, "package p\nfunc f() { fmt.Println() }\n")
+		qualifiers := collectSelectorQualifiers(types.Path{Node: file})
+		t.Ok(qualifiers["fmt"])
+		t.End()
+	})
+	Test(t, "collectSelectorQualifiers: skips import block", func(t *T) {
+		file := fileFromSrc(t, "package p\nimport \"fmt\"\nfunc f() {}\n")
+		qualifiers := collectSelectorQualifiers(types.Path{Node: file})
+		t.Ok(!qualifiers["fmt"])
+		t.End()
+	})
+	Test(t, "collectSelectorQualifiers: skips non-ident qualifier", func(t *T) {
+		file := fileFromSrc(t, "package p\nfunc f() { foo().Bar() }\n")
+		qualifiers := collectSelectorQualifiers(types.Path{Node: file})
+		t.Ok(!qualifiers["Bar"])
+		t.End()
+	})
+}
+
+func TestCollectDeclaredNames(t *testing.T) {
+	Test(t, "collectDeclaredNames: includes func name", func(t *T) {
+		file := fileFromSrc(t, "package p\nfunc MyFunc() {}\n")
+		names := collectDeclaredNames(types.Path{Node: file})
+		t.Ok(names["MyFunc"])
+		t.End()
+	})
+	Test(t, "collectDeclaredNames: includes type name", func(t *T) {
+		file := fileFromSrc(t, "package p\ntype MyType struct{}\n")
+		names := collectDeclaredNames(types.Path{Node: file})
+		t.Ok(names["MyType"])
+		t.End()
+	})
+	Test(t, "collectDeclaredNames: includes var name", func(t *T) {
+		file := fileFromSrc(t, "package p\nvar MyVar int\n")
+		names := collectDeclaredNames(types.Path{Node: file})
+		t.Ok(names["MyVar"])
+		t.End()
+	})
+	Test(t, "collectDeclaredNames: skips import decl", func(t *T) {
+		file := fileFromSrc(t, "package p\nimport \"fmt\"\n")
+		names := collectDeclaredNames(types.Path{Node: file})
+		t.Ok(!names["fmt"])
 		t.End()
 	})
 }
