@@ -1,6 +1,7 @@
 package plugin_indra
 
 import (
+	"coderaiser/indra/internal/plugin_indra/apply_compare"
 	"coderaiser/indra/internal/plugin_indra/apply_fixture_name_to_message"
 	"coderaiser/indra/internal/plugin_indra/convert_for_to_create"
 	"coderaiser/indra/internal/plugin_indra/convert_inspect_to_traverse"
@@ -19,5 +20,6 @@ func Rules() []types.Rule {
 		{Name: "apply-fixture-name-to-message", Plugin: apply_fixture_name_to_message.Plugin{}},
 		{Name: "replace-test-message", Plugin: replace_test_message.Plugin{}},
 		{Name: "convert-inspect-to-traverse", Plugin: convert_inspect_to_traverse.Plugin{}},
+		{Name: "apply-compare", Plugin: apply_compare.Plugin{}},
 	}
 }

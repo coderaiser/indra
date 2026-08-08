@@ -75,4 +75,15 @@ func TestRules(t *testing.T) {
 		t.Ok(found)
 		t.End()
 	})
+
+	Test(t, "plugin-indra: apply-compare is present", func(t *T) {
+		found := false
+		for _, r := range Rules() {
+			if r.Name == "apply-compare" {
+				found = true
+			}
+		}
+		t.Ok(found)
+		t.End()
+	})
 }
