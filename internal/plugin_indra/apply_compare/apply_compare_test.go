@@ -10,12 +10,12 @@ import (
 var Test = CreateTest("apply-compare", apply_compare.Plugin{})
 
 func TestApplyCompare(t *testing.T) {
-	Test(t, "apply-compare: report compare.GetTemplateValues != nil", func(t *T) {
+	Test(t, "apply-compare: report compare.GetTemplateValues != nil apply-compare", func(t *T) {
 		t.Report("apply-compare", "use Compare instead of GetTemplateValues != nil")
 		t.End()
 	})
 
-	Test(t, "apply-compare: transform to Compare", func(t *T) {
+	Test(t, "apply-compare: transform to Compare apply-compare", func(t *T) {
 		t.Transform("apply-compare")
 		t.End()
 	})
