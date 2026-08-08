@@ -124,8 +124,30 @@ func TestRemoveUnusedDeclarations(t *testing.T) {
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: no transform version-suffix-import", func(t *T) {
+		Test(t, "remove-unused-variables: no transform version-suffix-import", func(t *T) {
 		t.NoTransform("version-suffix-import")
+		t.End()
+	})
+
+	// multi go-prefix imports both used
+	Test(t, "remove-unused-variables: no report multi-go-prefix", func(t *T) {
+		t.NoReport("multi-go-prefix")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: no transform multi-go-prefix", func(t *T) {
+		t.NoTransform("multi-go-prefix")
+		t.End()
+	})
+
+	// multi go-prefix, one unused
+	Test(t, "remove-unused-variables: report multi-go-prefix-one-unused", func(t *T) {
+		t.Report("multi-go-prefix-one-unused", `remove unused import: "github.com/coderaiser/go-coverage"`)
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: transform multi-go-prefix-one-unused", func(t *T) {
+		t.Transform("multi-go-prefix-one-unused")
 		t.End()
 	})
 
