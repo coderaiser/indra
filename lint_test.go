@@ -350,10 +350,10 @@ func TestIndraHelp(t *testing.T) {
 		t.End()
 	})
 
-	Test(t, "lint: --help output contains --formatter", func(t *T) {
+	Test(t, "lint: --help output contains --format", func(t *T) {
 		var buf bytes.Buffer
 		indra.Indra(testRegistry, []string{"--help"}, &buf)
-		t.Match(buf.String(), "--formatter")
+		t.Match(buf.String(), "--format")
 		t.End()
 	})
 

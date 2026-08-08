@@ -13,6 +13,7 @@ desc = "output version information and exit"
 flag = "--fix"
 desc = "rewrite files in place to fix lint issues"
 
+[[options]]
 flag = "-f, --format"
 desc = "select output formatter: json-lines, dump, progress-bar (default: progress-bar locally, dump on CI)"
 note = "frame, memory, time, json, json-lines, progress"
