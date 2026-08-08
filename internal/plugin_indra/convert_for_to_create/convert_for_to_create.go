@@ -17,10 +17,6 @@ func Traverse() Traverser {
 }
 
 func findForCalls(p Path, push func(Path)) {
-	_, ok := p.Node.(*ast.File)
-	if !ok {
-		return
-	}
 	if hasForCall(p) {
 		push(p)
 	}
@@ -32,9 +28,6 @@ func hasForCall(p Path) bool {
 	found := false
 	p.Traverse(map[string]func(Path){
 		"*ast.SelectorExpr": func(sp Path) {
-			if found {
-				return
-			}
 			sel := sp.Node.(*ast.SelectorExpr)
 			id, ok := sel.X.(*ast.Ident)
 			if ok && id.Name == "indratest" && sel.Sel != nil && sel.Sel.Name == "For" {
@@ -49,10 +42,7 @@ func hasForCall(p Path) bool {
 // Fix rewrites indratest.For usages (call site, import alias, and *T type)
 // to the createTest form. node is *ast.File; options is unused.
 func Fix(p Path, _ map[string]any) {
-	file, ok := p.Node.(*ast.File)
-	if !ok {
-		return
-	}
+	file := p.Node.(*ast.File)
 	rewriteImport(file)
 	rewriteCalls(p)
 	rewriteT(p)
