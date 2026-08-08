@@ -44,4 +44,19 @@ func TestConvertSwitchToIf(t *testing.T) {
 		t.NoReport("has-init")
 		t.End()
 	})
+
+	Test(t, "convert-switch-to-if: report has-break", func(t *T) {
+		t.Report("has-break", "use 'if' instead of 'switch'")
+		t.End()
+	})
+
+	Test(t, "convert-switch-to-if: transform has-break", func(t *T) {
+		t.Transform("has-break")
+		t.End()
+	})
+
+	Test(t, "convert-switch-to-if: transform nested-switch", func(t *T) {
+		t.Transform("nested-switch")
+		t.End()
+	})
 }

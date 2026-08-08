@@ -68,12 +68,11 @@ func Fix(p Path, _ map[string]any) {
 }
 
 // switchBlock returns the *ast.BlockStmt that directly contains the switch, or
-// nil when the switch has no parent or its parent is not a block.
+// nil when the switch's parent is not a block (e.g. a switch nested directly
+// inside another switch's case body). Every switch reached by the engine has a
+// parent, so the parent lookup always succeeds.
 func switchBlock(p Path) *ast.BlockStmt {
-	parent, ok := p.ParentPath()
-	if !ok {
-		return nil
-	}
+	parent, _ := p.ParentPath()
 	block, ok := parent.Node.(*ast.BlockStmt)
 	if !ok {
 		return nil
