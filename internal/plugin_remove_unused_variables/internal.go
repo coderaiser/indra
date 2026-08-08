@@ -27,10 +27,7 @@ func collectImports(file *ast.File) []importInfo {
 			continue
 		}
 		for _, spec := range genDecl.Specs {
-			importSpec, ok := spec.(*ast.ImportSpec)
-			if !ok {
-				continue
-			}
+			importSpec := spec.(*ast.ImportSpec)
 			info := importInfo{
 				spec: importSpec,
 				path: importSpec.Path.Value,
@@ -260,11 +257,7 @@ func collectConstNames(file *ast.File) []string {
 			continue
 		}
 		for _, spec := range genDecl.Specs {
-			vs, ok := spec.(*ast.ValueSpec)
-			if !ok {
-				continue
-			}
-			for _, name := range vs.Names {
+			for _, name := range spec.(*ast.ValueSpec).Names {
 				if name.Name != "_" {
 					names = append(names, name.Name)
 				}
@@ -286,13 +279,8 @@ func fixUnusedConsts(file *ast.File) {
 		}
 		kept := genDecl.Specs[:0]
 		for _, spec := range genDecl.Specs {
-			vs, ok := spec.(*ast.ValueSpec)
-			if !ok {
-				kept = append(kept, spec)
-				continue
-			}
 			allUnused := true
-			for _, name := range vs.Names {
+			for _, name := range spec.(*ast.ValueSpec).Names {
 				if !unused[name.Name] {
 					allUnused = false
 				}
@@ -340,16 +328,12 @@ func unusedVarNames(block *ast.BlockStmt) []string {
 		}
 		// handle: var x = expr  or  var x int
 		if declStmt, ok := stmt.(*ast.DeclStmt); ok {
-			genDecl, ok := declStmt.Decl.(*ast.GenDecl)
-			if !ok || genDecl.Tok != token.VAR {
+			genDecl := declStmt.Decl.(*ast.GenDecl)
+			if genDecl.Tok != token.VAR {
 				continue
 			}
 			for _, spec := range genDecl.Specs {
-				vs, ok := spec.(*ast.ValueSpec)
-				if !ok {
-					continue
-				}
-				for _, name := range vs.Names {
+				for _, name := range spec.(*ast.ValueSpec).Names {
 					if name.Name == "_" {
 						continue
 					}
@@ -450,17 +434,12 @@ func fixUnusedVars(block *ast.BlockStmt) {
 		}
 		// handle: var x = expr
 		if declStmt, ok := stmt.(*ast.DeclStmt); ok {
-			genDecl, ok := declStmt.Decl.(*ast.GenDecl)
-			if ok && genDecl.Tok == token.VAR {
+			genDecl := declStmt.Decl.(*ast.GenDecl)
+			if genDecl.Tok == token.VAR {
 				newSpecs := genDecl.Specs[:0]
 				for _, spec := range genDecl.Specs {
-					vs, ok := spec.(*ast.ValueSpec)
-					if !ok {
-						newSpecs = append(newSpecs, spec)
-						continue
-					}
 					allUnused := true
-					for _, name := range vs.Names {
+					for _, name := range spec.(*ast.ValueSpec).Names {
 						if name.Name != "_" && !unused[name.Name] {
 							allUnused = false
 						}

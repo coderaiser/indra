@@ -2,6 +2,8 @@
 
 package fixture
 
-func f() {}
+func f() {
+	var x = 1
 
-type unusedType struct{}
+	_ = x
+}

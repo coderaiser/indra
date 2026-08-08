@@ -2,6 +2,6 @@
 
 package fixture
 
-func f() {}
+func f() {
 
-type unusedType struct{}
+}

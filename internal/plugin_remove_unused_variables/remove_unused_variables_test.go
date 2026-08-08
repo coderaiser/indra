@@ -48,6 +48,11 @@ func TestRemoveUnusedDeclarations(t *testing.T) {
 		t.End()
 	})
 
+	Test(t, "remove-unused-variables: no transform for blank import blank-import", func(t *T) {
+		t.NoTransform("blank-import")
+		t.End()
+	})
+
 	Test(t, "remove-unused-variables: no report for dot import dot-import", func(t *T) {
 		t.NoReport("dot-import")
 		t.End()
@@ -203,6 +208,17 @@ func TestRemoveUnusedDeclarations(t *testing.T) {
 		t.End()
 	})
 
+	// mixed const declaration (some used, some unused)
+	Test(t, "remove-unused-variables: report mixed const decl const-mixed", func(t *T) {
+		t.Report("const-mixed", "remove unused const: timeout")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: transform keeps used const and removes unused const-mixed", func(t *T) {
+		t.Transform("const-mixed")
+		t.End()
+	})
+
 	// var declaration cases
 	Test(t, "remove-unused-variables: report unused var decl var-decl", func(t *T) {
 		t.Report("var-decl", "remove unused variable: a")
@@ -211,6 +227,48 @@ func TestRemoveUnusedDeclarations(t *testing.T) {
 
 	Test(t, "remove-unused-variables: fix removes unused var decl var-decl", func(t *T) {
 		t.Transform("var-decl")
+		t.End()
+	})
+
+	// mixed var declaration (some used, some unused)
+	Test(t, "remove-unused-variables: report mixed var decl var-mixed", func(t *T) {
+		t.Report("var-mixed", "remove unused variable: b")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: transform keeps used var and removes unused var-mixed", func(t *T) {
+		t.Transform("var-mixed")
+		t.End()
+	})
+
+	// blank var declaration (blank + unused)
+	Test(t, "remove-unused-variables: report blank var decl blank-var-decl", func(t *T) {
+		t.Report("blank-var-decl", "remove unused variable: x")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: transform removes blank var decl blank-var-decl", func(t *T) {
+		t.Transform("blank-var-decl")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: report blank var decl2 blank-var-decl2", func(t *T) {
+		t.Report("blank-var-decl2", "remove unused variable: y")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: transform removes blank var decl2 blank-var-decl2", func(t *T) {
+		t.Transform("blank-var-decl2")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: no report for type decl type-decl", func(t *T) {
+		t.NoReport("type-decl")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: no transform for type decl type-decl", func(t *T) {
+		t.NoTransform("type-decl")
 		t.End()
 	})
 

@@ -2,6 +2,12 @@
 
 package fixture
 
-func f() {}
+const (
+	used = 1
+)
+
+func f() {
+	_ = used
+}
 
 type unusedType struct{}
