@@ -1,6 +1,6 @@
 # indra
 
-> Rules for the indra linter itself.
+Rules for the indra linter itself.
 
 ## Rules
 
@@ -17,14 +17,12 @@
 
 ⛔ **disabled by default** — enable via `"indra" = "on"`.
 
-> Removes useless entries in a `Match()` map: a `nil` guard is reported as
-> useless, as is an empty `Matcher`.
+Removes useless entries in a `Match()` map: a `nil` guard is reported as
+useless, as is an empty `Matcher`.
 
 ### ❌ Incorrect
 
 ```go
-//go:build ignore
-
 package fixture
 
 import . "coderaiser/indra/types"
@@ -47,8 +45,6 @@ func Replace() Replacer {
 ### ✅ Correct
 
 ```go
-//go:build ignore
-
 package fixture
 
 import . "coderaiser/indra/types"

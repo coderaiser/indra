@@ -1,6 +1,6 @@
 # tape
 
-> Rules for go-tape test files.
+Rules for go-tape test files.
 
 ## Rules
 
@@ -23,13 +23,11 @@
 
 ## remove-skip
 
-> Removes t.Skip() calls from test functions.
+Removes t.Skip() calls from test functions.
 
 ### ❌ Incorrect
 
 ```go
-//go:build ignore
-
 package fixture
 
 import (
@@ -48,8 +46,6 @@ func TestFoo(t *testing.T) {
 ### ✅ Correct
 
 ```go
-//go:build ignore
-
 package fixture
 
 import (
@@ -68,13 +64,11 @@ func TestFoo(t *testing.T) {
 
 ## add-t-end
 
-> Adds a missing t.End() call at the end of a test function.
+Adds a missing t.End() call at the end of a test function.
 
 ### ❌ Incorrect
 
 ```go
-//go:build ignore
-
 package fixture
 
 import (
@@ -92,8 +86,6 @@ func TestFoo(t *testing.T) {
 ### ✅ Correct
 
 ```go
-//go:build ignore
-
 package fixture
 
 import (
@@ -112,13 +104,11 @@ func TestFoo(t *testing.T) {
 
 ## convert-equal-to-deep-equal
 
-> Uses DeepEqual instead of Equal when comparing slices.
+Uses DeepEqual instead of Equal when comparing slices.
 
 ### ❌ Incorrect
 
 ```go
-//go:build ignore
-
 package fixture
 
 // convert-equal-to-deep-equal is the canonical happy path: Equal used on a slice.
@@ -130,8 +120,6 @@ func f() {
 ### ✅ Correct
 
 ```go
-//go:build ignore
-
 package fixture
 
 // convert-equal-to-deep-equal is the canonical happy path: Equal used on a slice.
@@ -143,13 +131,11 @@ func f() {
 
 ## convert-equal-to-not-ok
 
-> Converts Equal(err, nil) to NotOk(err).
+Converts Equal(err, nil) to NotOk(err).
 
 ### ❌ Incorrect
 
 ```go
-//go:build ignore
-
 package fixture
 
 func f() {
@@ -160,8 +146,6 @@ func f() {
 ### ✅ Correct
 
 ```go
-//go:build ignore
-
 package fixture
 
 func f() {
@@ -172,13 +156,11 @@ func f() {
 
 ## convert-ok-to-not-ok
 
-> Converts Ok(err == nil) to NotOk(err).
+Converts Ok(err == nil) to NotOk(err).
 
 ### ❌ Incorrect
 
 ```go
-//go:build ignore
-
 package fixture
 
 func f() {
@@ -189,8 +171,6 @@ func f() {
 ### ✅ Correct
 
 ```go
-//go:build ignore
-
 package fixture
 
 func f() {
@@ -201,13 +181,11 @@ func f() {
 
 ## extract-result-from-assertion
 
-> Extracts an inline expression from an assertion into a named result variable.
+Extracts an inline expression from an assertion into a named result variable.
 
 ### ❌ Incorrect
 
 ```go
-//go:build ignore
-
 package fixture
 
 func f() {
@@ -218,8 +196,6 @@ func f() {
 ### ✅ Correct
 
 ```go
-//go:build ignore
-
 package fixture
 
 func f() {
@@ -231,13 +207,11 @@ func f() {
 
 ## remove-useless-condition
 
-> Removes a useless condition inside Ok().
+Removes a useless condition inside Ok().
 
 ### ❌ Incorrect
 
 ```go
-//go:build ignore
-
 package fixture
 
 func f() {
@@ -248,8 +222,6 @@ func f() {
 ### ✅ Correct
 
 ```go
-//go:build ignore
-
 package fixture
 
 func f() {
@@ -260,13 +232,11 @@ func f() {
 
 ## remove-useless-prefix
 
-> Removes the redundant tape prefix so the tape package is dot-imported.
+Removes the redundant tape prefix so the tape package is dot-imported.
 
 ### ❌ Incorrect
 
 ```go
-//go:build ignore
-
 package fixture
 
 import (
@@ -286,8 +256,6 @@ func TestFoo(t *testing.T) {
 ### ✅ Correct
 
 ```go
-//go:build ignore
-
 package fixture
 
 import (
@@ -306,13 +274,11 @@ func TestFoo(t *testing.T) {
 
 ## convert-no-error-to-not-ok
 
-> Converts NoError(err) to NotOk(err).
+Converts NoError(err) to NotOk(err).
 
 ### ❌ Incorrect
 
 ```go
-//go:build ignore
-
 package fixture
 
 import tape "github.com/coderaiser/go-tape"
@@ -328,8 +294,6 @@ func f() {
 ### ✅ Correct
 
 ```go
-//go:build ignore
-
 package fixture
 
 import tape "github.com/coderaiser/go-tape"
