@@ -3,6 +3,7 @@
 package config
 
 import (
+	_ "embed"
 	"os"
 	"path/filepath"
 	"sort"
@@ -65,15 +66,75 @@ type ProgressConfig struct {
 	MinCount int    `toml:"minCount"`
 }
 
-// Load reads .indra.toml from dir. Returns a zero Config if the file is absent.
-func Load(dir string) (Config, error) {
+// defaultToml is the built-in configuration embedded into the binary. It is a
+// var (not const) so tests can drive the malformed-default path in Default().
+//go:embed default.toml
+var defaultToml []byte
+
+// Default returns the built-in default configuration.
+func Default() Config {
 	var cfg Config
+	if err := toml.Unmarshal(defaultToml, &cfg); err != nil {
+		panic("indra: malformed default.toml: " + err.Error())
+	}
+	return cfg
+}
+
+// Merge returns a new Config where user values override defaults.
+// Rules: user entry wins over default entry.
+// Match: user patterns are added; for the same pattern, user rules win.
+// Ignore, Progress: user values win if non-zero, otherwise default.
+func Merge(defaults, user Config) Config {
+	result := defaults
+
+	// merge rules — user wins
+	if result.Rules == nil {
+		result.Rules = make(map[string]string)
+	}
+	for rule, val := range user.Rules {
+		result.Rules[rule] = val
+	}
+
+	// merge match — user patterns added, user rules win per pattern
+	if result.Match == nil {
+		result.Match = make(MatchConfig)
+	}
+	for pattern, rules := range user.Match {
+		if result.Match[pattern] == nil {
+			result.Match[pattern] = make(map[string]string)
+		}
+		for rule, val := range rules {
+			result.Match[pattern][rule] = val
+		}
+	}
+
+	// merge ignore — append user patterns after defaults
+	result.Ignore.Patterns = append(result.Ignore.Patterns, user.Ignore.Patterns...)
+
+	// merge progress — user wins if non-zero
+	if user.Progress.Color != "" {
+		result.Progress.Color = user.Progress.Color
+	}
+	if user.Progress.MinCount != 0 {
+		result.Progress.MinCount = user.Progress.MinCount
+	}
+
+	return result
+}
+
+// Load reads .indra.toml from dir and merges it with the built-in defaults.
+// Returns the default config if the file is absent.
+func Load(dir string) (Config, error) {
+	result := Default()
 	path := filepath.Join(dir, ".indra.toml")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return cfg, nil
+		return result, nil
 	}
-	_, err := toml.DecodeFile(path, &cfg)
-	return cfg, err
+	var user Config
+	if _, err := toml.DecodeFile(path, &user); err != nil {
+		return result, err
+	}
+	return Merge(result, user), nil
 }
 
 // IsIgnored reports whether relPath is ignored by the pattern list.

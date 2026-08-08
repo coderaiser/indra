@@ -1,0 +1,6 @@
+[rules]
+"remove-unused-variables" = "on"
+"conditions" = "on"
+
+[match]
+"*_test.go" = { "tape" = "on" }

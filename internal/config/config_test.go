@@ -306,3 +306,192 @@ func TestOverrideRulesSortedMerge(t *testing.T) {
 		t.End()
 	})
 }
+
+// ── Default / Merge ───────────────────────────────────────────────────────────
+
+func TestDefaultReturnsNonEmptyRules(t *testing.T) {
+	Test(t, "config: Default returns non-empty rules", func(t *T) {
+		cfg := config.Default()
+		t.Ok(len(cfg.Rules) > 0)
+		t.End()
+	})
+}
+
+func TestDefaultEnablesRemoveUnusedVariables(t *testing.T) {
+	Test(t, "config: Default enables remove-unused-variables", func(t *T) {
+		cfg := config.Default()
+		t.Equal(cfg.Rules["remove-unused-variables"], "on")
+		t.End()
+	})
+}
+
+func TestDefaultEnablesConditions(t *testing.T) {
+	Test(t, "config: Default enables conditions", func(t *T) {
+		cfg := config.Default()
+		t.Equal(cfg.Rules["conditions"], "on")
+		t.End()
+	})
+}
+
+func TestDefaultEnablesTapeForTestFiles(t *testing.T) {
+	Test(t, "config: Default enables tape for test files", func(t *T) {
+		cfg := config.Default()
+		t.Equal(cfg.Match["*_test.go"]["tape"], "on")
+		t.End()
+	})
+}
+
+func TestMergeUserRuleOverridesDefault(t *testing.T) {
+	Test(t, "config: Merge user rule overrides default", func(t *T) {
+		defaults := config.Default()
+		user := config.Config{Rules: map[string]string{"remove-unused-variables": "off"}}
+		result := config.Merge(defaults, user)
+		t.Equal(result.Rules["remove-unused-variables"], "off")
+		t.End()
+	})
+}
+
+func TestMergeDefaultRulePreserved(t *testing.T) {
+	Test(t, "config: Merge preserves default rule when user does not override", func(t *T) {
+		defaults := config.Default()
+		user := config.Config{Rules: map[string]string{"indra": "on"}}
+		result := config.Merge(defaults, user)
+		t.Equal(result.Rules["remove-unused-variables"], "on")
+		t.End()
+	})
+}
+
+func TestMergeUserMatchPatternAdded(t *testing.T) {
+	Test(t, "config: Merge adds user match pattern to defaults", func(t *T) {
+		defaults := config.Default()
+		user := config.Config{Match: config.MatchConfig{"*_mock.go": {"tape": "off"}}}
+		result := config.Merge(defaults, user)
+		t.Equal(result.Match["*_mock.go"]["tape"], "off")
+		t.End()
+	})
+}
+
+func TestMergeUserMatchRuleOverridesDefault(t *testing.T) {
+	Test(t, "config: Merge user match rule overrides default pattern rule", func(t *T) {
+		defaults := config.Default()
+		user := config.Config{Match: config.MatchConfig{"*_test.go": {"tape": "off"}}}
+		result := config.Merge(defaults, user)
+		t.Equal(result.Match["*_test.go"]["tape"], "off")
+		t.End()
+	})
+}
+
+func TestMergeInitializesNilRules(t *testing.T) {
+	Test(t, "config: Merge initializes nil default rules", func(t *T) {
+		user := config.Config{Rules: map[string]string{"x": "on"}}
+		result := config.Merge(config.Config{}, user)
+		t.Equal(result.Rules["x"], "on")
+		t.End()
+	})
+}
+
+func TestMergeInitializesNilMatch(t *testing.T) {
+	Test(t, "config: Merge initializes nil default match", func(t *T) {
+		user := config.Config{Match: config.MatchConfig{"a.go": {"b": "c"}}}
+		result := config.Merge(config.Config{}, user)
+		t.Equal(result.Match["a.go"]["b"], "c")
+		t.End()
+	})
+}
+
+func TestMergeAppendsIgnorePatterns(t *testing.T) {
+	Test(t, "config: Merge appends user ignore patterns", func(t *T) {
+		defaults := config.Default()
+		user := config.Config{Ignore: config.IgnoreConfig{Patterns: []string{"vendor2/**"}}}
+		result := config.Merge(defaults, user)
+		t.Equal(len(result.Ignore.Patterns), 1)
+		t.End()
+	})
+}
+
+func TestMergeProgressColorUserWins(t *testing.T) {
+	Test(t, "config: Merge user progress color wins", func(t *T) {
+		defaults := config.Default()
+		user := config.Config{Progress: config.ProgressConfig{Color: "#ff0000", MinCount: 7}}
+		result := config.Merge(defaults, user)
+		t.Equal(result.Progress.Color, "#ff0000")
+		t.End()
+	})
+}
+
+func TestMergeProgressMinCountUserWins(t *testing.T) {
+	Test(t, "config: Merge user minCount wins", func(t *T) {
+		defaults := config.Default()
+		user := config.Config{Progress: config.ProgressConfig{Color: "#ff0000", MinCount: 7}}
+		result := config.Merge(defaults, user)
+		t.Equal(result.Progress.MinCount, 7)
+		t.End()
+	})
+}
+
+// ── Load with defaults ────────────────────────────────────────────────────────
+
+func TestLoadReturnsDefaultsWhenFileAbsent(t *testing.T) {
+	Test(t, "config: Load returns defaults when file absent", func(t *T) {
+		cfg, err := config.Load("/nonexistent/path")
+		t.Equal(err, nil)
+		t.End()
+	})
+}
+
+func TestLoadReturnsDefaultRulesWhenFileAbsent(t *testing.T) {
+	Test(t, "config: Load keeps default rules when file absent", func(t *T) {
+		cfg, _ := config.Load("/nonexistent/path")
+		t.Equal(cfg.Rules["remove-unused-variables"], "on")
+		t.End()
+	})
+}
+
+func TestLoadMergesUserToml(t *testing.T) {
+	Test(t, "config: Load merges user toml with defaults", func(t *T) {
+		dir := t.TB().TempDir()
+		os.WriteFile(filepath.Join(dir, ".indra.toml"), []byte(`
+[rules]
+"indra" = "on"
+`), 0644)
+		cfg, err := config.Load(dir)
+		t.Ok(err == nil)
+		t.End()
+	})
+}
+
+func TestLoadUserTomlMergeKeepsDefaults(t *testing.T) {
+	Test(t, "config: Load keeps default rules after user merge", func(t *T) {
+		dir := t.TB().TempDir()
+		os.WriteFile(filepath.Join(dir, ".indra.toml"), []byte(`
+[rules]
+"indra" = "on"
+`), 0644)
+		cfg, _ := config.Load(dir)
+		t.Equal(cfg.Rules["remove-unused-variables"], "on")
+		t.End()
+	})
+}
+
+func TestLoadUserTomlMergeAddsUserRule(t *testing.T) {
+	Test(t, "config: Load adds user rule on merge", func(t *T) {
+		dir := t.TB().TempDir()
+		os.WriteFile(filepath.Join(dir, ".indra.toml"), []byte(`
+[rules]
+"indra" = "on"
+`), 0644)
+		cfg, _ := config.Load(dir)
+		t.Equal(cfg.Rules["indra"], "on")
+		t.End()
+	})
+}
+
+func TestLoadMalformedTomlReturnsError(t *testing.T) {
+	Test(t, "config: Load returns error for malformed toml", func(t *T) {
+		dir := t.TB().TempDir()
+		os.WriteFile(filepath.Join(dir, ".indra.toml"), []byte("["), 0644)
+		_, err := config.Load(dir)
+		t.Ok(err != nil)
+		t.End()
+	})
+}
