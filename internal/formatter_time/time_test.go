@@ -10,6 +10,7 @@ import (
 	pb "coderaiser/indra/internal/formatter_progress_bar"
 	formtime "coderaiser/indra/internal/formatter_time"
 	"coderaiser/indra/types"
+
 	. "github.com/coderaiser/go-tape"
 )
 

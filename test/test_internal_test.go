@@ -78,7 +78,7 @@ func engineLint(rule string, plugin any) types.Lint {
 			Fix:     fix,
 			Plugins: []runner.PluginItem{{Rule: kinds[0].Name(), Plugin: kinds[0]}},
 		})
-		return types.LintResult{Out: result.Out, Places: result.Places}, err
+		return types.LintResult(result), err
 	}
 }
 

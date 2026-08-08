@@ -6,6 +6,7 @@ import (
 
 	formprog "coderaiser/indra/internal/formatter_progress"
 	"coderaiser/indra/types"
+
 	. "github.com/coderaiser/go-tape"
 )
 

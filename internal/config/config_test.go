@@ -434,7 +434,8 @@ func TestMergeProgressMinCountUserWins(t *testing.T) {
 func TestLoadReturnsDefaultsWhenFileAbsent(t *testing.T) {
 	Test(t, "config: Load returns defaults when file absent", func(t *T) {
 		_, err := config.Load("/nonexistent/path")
-		t.Ok(err == nil)
+		t.NotOk(err)
+
 		t.End()
 	})
 }
@@ -455,7 +456,8 @@ func TestLoadMergesUserToml(t *testing.T) {
 "indra" = "on"
 `), 0644)
 		_, err := config.Load(dir)
-		t.Ok(err == nil)
+		t.NotOk(err)
+
 		t.End()
 	})
 }
@@ -491,7 +493,8 @@ func TestLoadMalformedTomlReturnsError(t *testing.T) {
 		dir := t.TB().TempDir()
 		os.WriteFile(filepath.Join(dir, ".indra.toml"), []byte("["), 0644)
 		_, err := config.Load(dir)
-		t.Ok(err != nil)
+		t.Ok(err)
+
 		t.End()
 	})
 }

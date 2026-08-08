@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	. "coderaiser/indra/operator"
+
 	. "github.com/coderaiser/go-tape"
 )
 

@@ -31,7 +31,7 @@ func indraLint(src []byte, fix bool, plugins []any) (types.LintResult, error) {
 		items = append(items, runner.PluginItem{Rule: kinds[0].Name(), Plugin: kinds[0]})
 	}
 	result, err := processor.Process(processor.Params{Src: src, Fix: fix, Plugins: items})
-	return types.LintResult{Out: result.Out, Places: result.Places}, err
+	return types.LintResult(result), err
 }
 
 // validatePlugin enforces consistency on a resolved ReplacerPlugin before it is

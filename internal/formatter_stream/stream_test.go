@@ -6,6 +6,7 @@ import (
 
 	formstream "coderaiser/indra/internal/formatter_stream"
 	"coderaiser/indra/types"
+
 	. "github.com/coderaiser/go-tape"
 )
 
