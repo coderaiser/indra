@@ -1,3 +1,46 @@
+2026.08.09, v1.0.4
+
+fix:
+- 85a646d progress_bar: output
+- b0f188d cmd: repair help.toml options rendering and align --format test
+
+feature:
+- 830b3b5 config: improve
+- 2dc6158 default config
+- f34729c test: export CreateTest(Lint) for cross-linter reuse
+- 66891b3 plugin-indra: apply-compare: add
+- 2b14b7c conditions group; remove-useless-condition enabled for all files
+- bd01f51 compare: getTemplateValues
+- 67dcedd convert_no_error_to_not_ok: delete impossible guards and redundant early return and internal test go
+- 8769ec7 plugins: simplify
+- cae4844 convert_for_to_create: delete impossible guards and dead hasForCall early exit and internal test go add fixtures
+- 346b4ea get rid from internal
+- 15751d2 remove-unused-variables: replace importIsUsed with qualifier pairing heuristic
+- 2c660fd remove-unused-variables: improve
+- 4bb154f plugin-indra: add convert-inspect-to-traverse rule
+- 2983bb8 types: add Path.Stop and Path.Skip for early-exit traversal
+- e0c834d plugin-tape: convert-ok-to-not-ok: improve
+- 700cb8e docs: remove //go:build ignore and rule blockquotes from READMEs
+- ccdd3cb plugin-indra/replace-test-message
+- fefb1e3 plugin-indra/apply-fixture-name-to-message
+- 443ad52 plugin-indra: apply-fixture-name-to-massage
+- 1bbb7e8 plugin-indra: apply-fixture-name-to-massage
+- c5751e2 plugin-indra/convert-switch-to-if
+- 45d924a types: Path.Traverse — walk sub-tree by node type
+- 86202da remove-useless-prefix: migrate Fix to astutil.Apply
+- 062d40c engine: replace preorderStack with astutil.Apply
+- 4c85bd2 types: add Path cursor methods
+- 67670e0 runner: improve
+- 7c9d835 unknown flags return non-zero exit with error message
+- 31008d2 types
+- 8bbf855 step6: stream prints per-file output immediately for mid-run files
+- 37f8147 step5: codeframe shows caret and underline under exact column
+- 42b7408 step4: formatter time shows live progress bar with elapsed time
+- 3eeaa53 step3: formatter memory shows live progress bar with heap stats
+- a70cf28 step2: progress bar hides cursor before and shows after
+- 1fa8394 unknown flags return non-zero exit with error message
+- d9708aa engine-runner: improve
+
 2026.08.07, v1.0.3
 
 fix:
