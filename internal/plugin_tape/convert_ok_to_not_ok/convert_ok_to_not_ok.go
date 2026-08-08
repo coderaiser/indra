@@ -2,11 +2,12 @@ package convert_ok_to_not_ok
 
 import . "coderaiser/indra/types"
 
-func Report() string { return "convert Ok(err == nil) to NotOk(err)" }
+func Report() string { return "convert Ok to NotOk" }
 
 func Replace() Replacer {
 	return Replacer{
 		"__a.Ok(__b == nil)": "__a.NotOk(__b)",
+		"__a.Ok(!__b)":       "__a.NotOk(__b)",
 	}
 }
 

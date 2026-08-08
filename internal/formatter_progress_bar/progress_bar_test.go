@@ -57,7 +57,8 @@ func TestProgressBarForceShow(t *testing.T) {
 func TestProgressBarShouldShowForcedOff(t *testing.T) {
 	Test(t, "progress-bar: ShouldShow forced off by env", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
-		t.Ok(!pb.ShouldShow(1000))
+		t.NotOk(pb.ShouldShow(1000))
+
 		t.End()
 	})
 }
@@ -195,7 +196,8 @@ func TestHexToANSIInvalid(t *testing.T) {
 func TestShouldShowInvalidMinFallback(t *testing.T) {
 	Test(t, "progress-bar: ShouldShow ignores invalid min env", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
-		t.Ok(!pb.ShouldShow(1))
+		t.NotOk(pb.ShouldShow(1))
+
 		t.End()
 	})
 }
@@ -285,7 +287,8 @@ func TestProgressBarNoCursorWhenHidden(t *testing.T) {
 			pb.Format("foo.go", nil, nil, 0, 3, 0, 0)
 			pb.Format("bar.go", nil, nil, 2, 3, 0, 0)
 		})
-		t.Ok(!strings.Contains(out, pb.HideCursor))
+		t.NotOk(strings.Contains(out, pb.HideCursor))
+
 		t.End()
 	})
 
@@ -296,7 +299,8 @@ func TestProgressBarNoCursorWhenHidden(t *testing.T) {
 			pb.Format("foo.go", nil, nil, 0, 3, 0, 0)
 			pb.Format("bar.go", nil, nil, 2, 3, 0, 0)
 		})
-		t.Ok(!strings.Contains(out, pb.ShowCursor))
+		t.NotOk(strings.Contains(out, pb.ShowCursor))
+
 		t.End()
 	})
 }

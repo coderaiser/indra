@@ -156,7 +156,7 @@ func f() {
 
 ## convert-ok-to-not-ok
 
-Converts Ok(err == nil) to NotOk(err).
+Converts Ok(err == nil) and Ok(!err) to NotOk(err).
 
 ### ❌ Incorrect
 
@@ -165,6 +165,7 @@ package fixture
 
 func f() {
 	t.Ok(err == nil)
+	t.Ok(!err)
 }
 ```
 
@@ -175,7 +176,7 @@ package fixture
 
 func f() {
 	t.NotOk(err)
-
+	t.NotOk(err)
 }
 ```
 

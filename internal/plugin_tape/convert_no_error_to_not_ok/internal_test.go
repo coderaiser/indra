@@ -14,7 +14,8 @@ func TestFindNoErrorCallsNonFile(t *testing.T) {
 	Test(t, "findNoErrorCalls: non-file node is a no-op", func(t *T) {
 		pushed := false
 		findNoErrorCalls(types.Path{Node: ast.NewIdent("x")}, func(types.Path) { pushed = true })
-		t.Ok(!pushed)
+		t.NotOk(pushed)
+
 		t.End()
 	})
 }

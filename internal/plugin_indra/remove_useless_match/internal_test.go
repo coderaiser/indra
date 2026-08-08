@@ -175,7 +175,8 @@ func TestFindUselessMatchNonFile(t *testing.T) {
 	Test(t, "findUselessMatch: non-file node is a no-op", func(t *T) {
 		pushed := false
 		findUselessMatch(types.Path{Node: ast.NewIdent("x")}, func(types.Path) { pushed = true })
-		t.Ok(!pushed)
+		t.NotOk(pushed)
+
 		t.End()
 	})
 }
@@ -186,7 +187,8 @@ func TestFindUselessMatchNoMatch(t *testing.T) {
 		pushed := false
 		file := parseFile(t.TB(), "package p\nfunc Match() Matcher { return Matcher{\"p\": f} }\n")
 		findUselessMatch(types.Path{Node: file}, func(types.Path) { pushed = true })
-		t.Ok(!pushed)
+		t.NotOk(pushed)
+
 		t.End()
 	})
 }

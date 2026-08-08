@@ -50,7 +50,8 @@ func TestProgressShouldShow(t *testing.T) {
 
 	Test(t, "progress: ShouldShow false when count not above default min", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_MIN", "")
-		t.Ok(!formprog.ShouldShow(0))
+		t.NotOk(formprog.ShouldShow(0))
+
 		t.End()
 	})
 
@@ -62,7 +63,8 @@ func TestProgressShouldShow(t *testing.T) {
 
 	Test(t, "progress: ShouldShow hides count not above valid min env", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_MIN", "5")
-		t.Ok(!formprog.ShouldShow(5))
+		t.NotOk(formprog.ShouldShow(5))
+
 		t.End()
 	})
 

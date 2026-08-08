@@ -119,14 +119,16 @@ func TestIsIgnoredDoubleStarSuffix(t *testing.T) {
 
 func TestIsIgnoredNoMatch(t *testing.T) {
 	Test(t, "isIgnored: no match returns false", func(t *T) {
-		t.Ok(!config.IsIgnored([]string{"vendor/**"}, "internal/foo.go"))
+		t.NotOk(config.IsIgnored([]string{"vendor/**"}, "internal/foo.go"))
+
 		t.End()
 	})
 }
 
 func TestIsIgnoredEmpty(t *testing.T) {
 	Test(t, "isIgnored: empty patterns returns false", func(t *T) {
-		t.Ok(!config.IsIgnored(nil, "foo.go"))
+		t.NotOk(config.IsIgnored(nil, "foo.go"))
+
 		t.End()
 	})
 }
@@ -140,7 +142,8 @@ func TestIsIgnoredZeroSegments(t *testing.T) {
 
 func TestIsIgnoredNegationOverrides(t *testing.T) {
 	Test(t, "isIgnored: negation overrides earlier match", func(t *T) {
-		t.Ok(!config.IsIgnored([]string{"vendor/**", "!vendor/mypkg/**"}, "vendor/mypkg/file.go"))
+		t.NotOk(config.IsIgnored([]string{"vendor/**", "!vendor/mypkg/**"}, "vendor/mypkg/file.go"))
+
 		t.End()
 	})
 }
@@ -154,7 +157,8 @@ func TestIsIgnoredPositiveAfterNegationWins(t *testing.T) {
 
 func TestIsIgnoredNegationOnlyMatch(t *testing.T) {
 	Test(t, "isIgnored: negation-only match unignores", func(t *T) {
-		t.Ok(!config.IsIgnored([]string{"!vendor/**"}, "vendor/pkg/file.go"))
+		t.NotOk(config.IsIgnored([]string{"!vendor/**"}, "vendor/pkg/file.go"))
+
 		t.End()
 	})
 }
@@ -182,7 +186,8 @@ func TestDefaultIgnoreIgnoresDotDir(t *testing.T) {
 
 func TestDefaultIgnoreKeepsInternal(t *testing.T) {
 	Test(t, "default: does not ignore internal", func(t *T) {
-		t.Ok(!config.IsIgnored(config.DefaultIgnorePatterns, "internal/pkg/f.go"))
+		t.NotOk(config.IsIgnored(config.DefaultIgnorePatterns, "internal/pkg/f.go"))
+
 		t.End()
 	})
 }
@@ -209,7 +214,8 @@ func TestToLoaderConfigOffDisabled(t *testing.T) {
 
 func TestIsIgnoredDoubleStarExhausts(t *testing.T) {
 	Test(t, "isIgnored: double star backtracking exhausts and returns false", func(t *T) {
-		t.Ok(!config.IsIgnored([]string{"**/nomatch"}, "a/b/c"))
+		t.NotOk(config.IsIgnored([]string{"**/nomatch"}, "a/b/c"))
+
 		t.End()
 	})
 }

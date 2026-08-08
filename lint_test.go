@@ -391,7 +391,8 @@ func TestIndraPerFileMatchOverride(t *testing.T) {
 	})
 
 	Test(t, "match: override silences matched file", func(t *T) {
-		t.Ok(!strings.Contains(out, "skip_match.go"))
+		t.NotOk(strings.Contains(out, "skip_match.go"))
+
 		t.End()
 	})
 }
