@@ -1,17 +1,31 @@
 # 🐘 Indra
 
-🐘 **Indra** is a Go port of 🐊[**Putout**](https://github.com/coderaiser/putout) —
-a pluggable, configurable linter and code transformer for Go test files
-using [📼 go-tape](https://github.com/coderaiser/go-tape).
+<img width="500" height="320" alt="image" src="https://github.com/user-attachments/assets/b3fb1227-99c1-46bf-84d0-bb59c9c9f858" />
 
-## 🚚 Installation
 
-    go install coderaiser/indra/cmd/indra@latest
+🐘**Indra** is a Go port of 🐊[**Putout**](https://github.com/coderaiser/putout) —
+a pluggable, configurable linter and code transformer for Go.
+
+## 🚚 Install
+
+Install 🐘**Indra** with [palabra](https://github.com/coderaiser/palabra):
+
+```
+palabra i indra
+```
+
+Or go:
+
+```sh
+go install coderaiser/indra/cmd/indra@latest
+```
 
 ## 🎙 Usage
 
-    indra ./...        # report issues
-    indra --fix ./...  # fix issues
+```sh
+indra .        # report issues
+indra --fix .  # fix issues
+```
 
 ## 🏛 Architecture
 
