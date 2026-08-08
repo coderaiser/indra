@@ -90,7 +90,7 @@ func runOnce(p RunParams) []types.Place {
 	// Build a merged visitor set from all traverser plugins. Type-keyed viewers
 	// (keys beginning with "*ast.", e.g. "*ast.File") are dispatched by node
 	// type; pattern-keyed visitors are dispatched by matching each visited
-			// node against the pattern with compare.GetTemplateValues.
+	// node against the pattern with compare.GetTemplateValues.
 	typeVisitors := map[string][]visitorCall{}
 	patternKeys := []string{}
 	patternVisitors := map[string][]visitorCall{}
@@ -153,7 +153,7 @@ func runOnce(p RunParams) []types.Place {
 
 			// Call pattern-keyed visitors whose pattern matches this node.
 			for _, pattern := range patternKeys {
-							if compare.GetTemplateValues(n, pattern) != nil {
+				if compare.GetTemplateValues(n, pattern) != nil {
 					for _, call := range patternVisitors[pattern] {
 						call.visit(path, func(pushPath types.Path) {
 							reportFound(call.item, call.plugin, pushPath)
@@ -189,7 +189,7 @@ func runOnce(p RunParams) []types.Place {
 			matcher := rp.Match()
 			replacer := rp.Replace()
 			for _, pattern := range replacerPatterns(matcher, replacer) {
-							vars := compare.GetTemplateValues(stmt, pattern)
+				vars := compare.GetTemplateValues(stmt, pattern)
 				if vars == nil {
 					continue
 				}

@@ -129,7 +129,7 @@ func TestRemoveUnusedDeclarations(t *testing.T) {
 		t.End()
 	})
 
-		Test(t, "remove-unused-variables: no transform version-suffix-import", func(t *T) {
+	Test(t, "remove-unused-variables: no transform version-suffix-import", func(t *T) {
 		t.NoTransform("version-suffix-import")
 		t.End()
 	})

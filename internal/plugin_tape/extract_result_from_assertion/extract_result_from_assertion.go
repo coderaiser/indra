@@ -3,7 +3,7 @@ package extract_result_from_assertion
 import (
 	"go/ast"
 
-	"coderaiser/indra/compare"
+	. "coderaiser/indra/operator"
 	. "coderaiser/indra/types"
 )
 
@@ -39,7 +39,7 @@ func noResultInBlock(_ Vars, block *ast.BlockStmt) bool {
 // short variable declaration (:=).
 func blockDeclares(block *ast.BlockStmt, name string) bool {
 	for _, s := range block.List {
-				if compare.GetTemplateValues(s, name+" := __a") != nil {
+		if Compare(s, name+" := __a") {
 			return true
 		}
 	}

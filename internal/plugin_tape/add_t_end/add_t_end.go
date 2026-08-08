@@ -3,7 +3,7 @@ package add_t_end
 import (
 	"go/ast"
 
-	"coderaiser/indra/compare"
+	. "coderaiser/indra/operator"
 	. "coderaiser/indra/types"
 )
 
@@ -29,7 +29,7 @@ func Replace() Replacer {
 // method (t.End()).
 func stmtsContainEnd(stmts []ast.Stmt) bool {
 	for _, s := range stmts {
-				if compare.GetTemplateValues(s, "__.End()") != nil {
+		if Compare(s, "__.End()") {
 			return true
 		}
 	}
@@ -39,7 +39,7 @@ func stmtsContainEnd(stmts []ast.Stmt) bool {
 // missingEnd is a guard that accepts a test body which does not already end
 // with t.End(). The block argument is unused but kept to satisfy MatchFn.
 func missingEnd(vars Vars, _ *ast.BlockStmt) bool {
-	return !stmtsContainEnd(vars["__body"].(compare.BodySlice).Stmts)
+	return !stmtsContainEnd(vars["__body"].(BodySlice).Stmts)
 }
 
 // Plugin wraps the rule for the registry: a replacer with a Match guard.
