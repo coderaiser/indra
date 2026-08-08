@@ -323,3 +323,55 @@ func TestPathTraverse(t *testing.T) {
 		t.End()
 	})
 }
+
+func TestPathStop(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tx := 1\n\ty := 2\n\tz := 3\n}\n"
+	fset := token.NewFileSet()
+	file, _ := parser.ParseFile(fset, "", src, 0)
+	funcDecl := file.Decls[0].(*ast.FuncDecl)
+	p := types.Path{Node: funcDecl.Body}
+
+	Test(t, "Path.Stop: halts traversal after first match", func(t *T) {
+		count := 0
+		p.Traverse(map[string]func(types.Path){
+			"*ast.AssignStmt": func(child types.Path) {
+				count++
+				child.Stop()
+			},
+		})
+		t.Equal(count, 1)
+		t.End()
+	})
+
+	Test(t, "Path.Stop: does not affect a later independent Traverse call", func(t *T) {
+		count := 0
+		p.Traverse(map[string]func(types.Path){
+			"*ast.AssignStmt": func(child types.Path) { child.Stop() },
+		})
+		p.Traverse(map[string]func(types.Path){
+			"*ast.AssignStmt": func(child types.Path) { count++ },
+		})
+		// the second call visits all three assignments independently
+		t.Equal(count, 3)
+		t.End()
+	})
+}
+
+func TestPathSkip(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tif true {\n\t\ty := 2\n\t}\n\tz := 3\n}\n"
+	fset := token.NewFileSet()
+	file, _ := parser.ParseFile(fset, "", src, 0)
+	funcDecl := file.Decls[0].(*ast.FuncDecl)
+	p := types.Path{Node: funcDecl.Body}
+
+	Test(t, "Path.Skip: skips children of current node only", func(t *T) {
+		assigns := 0
+		p.Traverse(map[string]func(types.Path){
+			"*ast.IfStmt":     func(child types.Path) { child.Skip() },
+			"*ast.AssignStmt": func(_ types.Path) { assigns++ },
+		})
+		// y := 2 is inside the skipped if; z := 3 is a sibling and is visited
+		t.Equal(assigns, 1)
+		t.End()
+	})
+}

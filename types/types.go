@@ -49,10 +49,20 @@ type Traverser map[string]FindFn
 // Cursor is set by the engine during astutil.Apply and is engine-internal.
 // Plugins call path.Replace / Delete / InsertBefore / InsertAfter, never
 // path.Cursor directly.
+// state is non-nil only for paths handed to a path.Traverse visitor; it carries
+// per-call early-exit flags set by Stop and Skip. Engine-constructed paths have
+// a nil state, so Stop and Skip are no-ops on them.
 type Path struct {
 	Node   ast.Node
 	Stack  []ast.Node // ancestors root-first, excluding Node; engine-internal
 	Cursor *astutil.Cursor
+	state  *traverseState // non-nil only inside path.Traverse callbacks
+}
+
+// traverseState holds early-exit state for one path.Traverse call.
+type traverseState struct {
+	stopped bool
+	skip    bool
 }
 
 // Replace delegates to Cursor.Replace when Cursor is non-nil.
@@ -87,21 +97,54 @@ func (p Path) InsertAfter(n ast.Node) {
 // node to the matching visitor by its type key ("*ast.ReturnStmt" etc).
 // Visitor keys use the same format as Traverser.
 // The visitor receives a child Path whose Stack includes p.Node as the
-// immediate parent. There is no early-exit mechanism in this first version;
-// if early exit is needed, use a closed-over bool and return immediately.
+// immediate parent. A visitor may call childPath.Stop() to halt the whole
+// walk, or childPath.Skip() to skip only the current node's children.
+// Each path.Traverse call has its own early-exit state, so stopping or
+// skipping within one call never affects a later, independent Traverse call.
 func (p Path) Traverse(visitors map[string]func(Path)) {
+	state := &traverseState{}
 	astutil.Apply(p.Node, func(c *astutil.Cursor) bool {
+		if state.stopped {
+			return false
+		}
+		state.skip = false
 		key := fmt.Sprintf("%T", c.Node())
 		if fn, ok := visitors[key]; ok {
 			child := Path{
 				Node:   c.Node(),
 				Stack:  append(append([]ast.Node{}, p.Stack...), p.Node),
 				Cursor: c,
+				state:  state,
 			}
 			fn(child)
+			if state.stopped {
+				return false
+			}
+			if state.skip {
+				return false // skip this node's children only
+			}
 		}
 		return true
 	}, nil)
+}
+
+// Stop signals path.Traverse to skip any remaining nodes in this walk,
+// matching Babel's path.stop(). It is a no-op on engine-constructed paths
+// that were not created inside a path.Traverse callback.
+func (p Path) Stop() {
+	if p.state != nil {
+		p.state.stopped = true
+	}
+}
+
+// Skip signals path.Traverse to skip the current node's children only;
+// siblings and their descendants continue normally. It matches Babel's
+// visitor returning false. It is a no-op on engine-constructed paths that
+// were not created inside a path.Traverse callback.
+func (p Path) Skip() {
+	if p.state != nil {
+		p.state.skip = true
+	}
 }
 
 // Find walks up from this path (inclusive) and returns the first Path where fn
