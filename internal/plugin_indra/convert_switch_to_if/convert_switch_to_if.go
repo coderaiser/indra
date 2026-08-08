@@ -104,7 +104,10 @@ func stripPositions(root ast.Node) {
 func hasReturn(p Path) bool {
 	found := false
 	p.Traverse(map[string]func(Path){
-		"*ast.ReturnStmt": func(_ Path) { found = true },
+		"*ast.ReturnStmt": func(cp Path) {
+			found = true
+			cp.Stop()
+		},
 	})
 	return found
 }
@@ -117,6 +120,7 @@ func hasFallthrough(p Path) bool {
 		"*ast.BranchStmt": func(bp Path) {
 			if bp.Node.(*ast.BranchStmt).Tok == token.FALLTHROUGH {
 				found = true
+				bp.Stop()
 			}
 		},
 	})

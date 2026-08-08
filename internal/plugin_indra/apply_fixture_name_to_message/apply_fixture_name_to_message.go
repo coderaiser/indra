@@ -71,9 +71,6 @@ func hasMissingPrefix(p Path, ruleName string) bool {
 	found := false
 	p.Traverse(map[string]func(Path){
 		"*ast.CallExpr": func(cp Path) {
-			if found {
-				return
-			}
 			call := cp.Node.(*ast.CallExpr)
 			ident, ok := call.Fun.(*ast.Ident)
 			if !ok || ident.Name != "Test" || len(call.Args) < 2 {
@@ -86,6 +83,7 @@ func hasMissingPrefix(p Path, ruleName string) bool {
 			msg := lit.Value
 			if len(msg) >= 2 && !strings.HasPrefix(msg[1:len(msg)-1], prefix) {
 				found = true
+				cp.Stop()
 			}
 		},
 	})

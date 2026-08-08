@@ -79,9 +79,6 @@ func hasMissingFixtureName(p Path) bool {
 	found := false
 	p.Traverse(map[string]func(Path){
 		"*ast.CallExpr": func(cp Path) {
-			if found {
-				return
-			}
 			call := cp.Node.(*ast.CallExpr)
 			ident, ok := call.Fun.(*ast.Ident)
 			if !ok || ident.Name != "Test" || len(call.Args) < 3 {
@@ -103,6 +100,7 @@ func hasMissingFixtureName(p Path) bool {
 			msg := msgLit.Value
 			if len(msg) >= 2 && !strings.Contains(afterSeparator(msg[1:len(msg)-1]), fixtureName) {
 				found = true
+				cp.Stop()
 			}
 		},
 	})
