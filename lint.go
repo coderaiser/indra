@@ -36,9 +36,11 @@ type helpConfig struct {
 	}
 }
 
-func loadUsage() string {
+func loadUsage() string { return parseUsage(helpToml) }
+
+func parseUsage(data []byte) string {
 	var cfg helpConfig
-	if err := toml.Unmarshal(helpToml, &cfg); err != nil {
+	if err := toml.Unmarshal(data, &cfg); err != nil {
 		return "Usage: indra [options] [path ...]\n"
 	}
 	var sb strings.Builder
@@ -178,9 +180,7 @@ func Indra(registry []loader.PluginFuncs, args []string, w io.Writer) error {
 			failed = true
 			continue
 		}
-		if readErr != nil {
-			src = nil
-		}
+		_ = readErr
 		if len(places) > 0 {
 			filesWithIssues++
 			errorsCount += len(places)

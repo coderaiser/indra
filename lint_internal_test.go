@@ -18,6 +18,14 @@ func pluginItems(names ...string) []runner.PluginItem {
 	return out
 }
 
+func TestParseUsageBadToml(t *testing.T) {
+	Test(t, "parseUsage: falls back to plain usage on bad toml", func(t *T) {
+		result := parseUsage([]byte("not toml {{{"))
+		t.Match(result, "Usage:")
+		t.End()
+	})
+}
+
 func TestFilterPluginsExact(t *testing.T) {
 	Test(t, "filterPlugins: keeps exact rule match", func(t *T) {
 		out := filterPlugins(pluginItems("a", "b"), []string{"b"})

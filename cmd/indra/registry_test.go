@@ -16,7 +16,7 @@ func TestRegistry(t *testing.T) {
 		found := false
 		for _, p := range Registry {
 			if p.Name == "tape" {
-				found = p.Rules != nil && len(p.Rules) > 0
+				found = len(p.Rules) > 0
 			}
 		}
 		t.Ok(found)
@@ -27,7 +27,7 @@ func TestRegistry(t *testing.T) {
 		found := false
 		for _, p := range Registry {
 			if p.Name == "conditions" {
-				found = p.Rules != nil && len(p.Rules) > 0
+				found = len(p.Rules) > 0
 			}
 		}
 		t.Ok(found)

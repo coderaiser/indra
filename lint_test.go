@@ -187,6 +187,15 @@ func TestIndraFormatterFlag(t *testing.T) {
 		t.End()
 	})
 
+	Test(t, "lint: --format=dump sets dump formatter via equals form", func(t *T) {
+		dir := t.TB().TempDir()
+		writeFile(t.TB(), dir, "bad.go", matchSrc)
+		var buf bytes.Buffer
+		indra.Indra(testRegistry, []string{"--format=dump", dir}, &buf)
+		t.Ok(strings.Contains(buf.String(), "bad.go"))
+		t.End()
+	})
+
 	Test(t, "lint: -f=json-lines sets json-lines formatter", func(t *T) {
 		dir := t.TB().TempDir()
 		writeFile(t.TB(), dir, "bad.go", matchSrc)

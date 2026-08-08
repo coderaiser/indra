@@ -12,16 +12,6 @@ import (
 	. "github.com/coderaiser/go-tape"
 )
 
-func makeStack(nodes ...ast.Node) types.Path {
-	if len(nodes) == 0 {
-		return types.Path{}
-	}
-	return types.Path{
-		Node:  nodes[len(nodes)-1],
-		Stack: nodes[:len(nodes)-1],
-	}
-}
-
 func ident(name string) *ast.Ident { return ast.NewIdent(name) }
 
 func TestFind(t *testing.T) {
