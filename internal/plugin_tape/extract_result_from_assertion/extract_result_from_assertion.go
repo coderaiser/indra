@@ -1,6 +1,9 @@
 package extract_result_from_assertion
 
 import (
+	"go/ast"
+
+	"coderaiser/indra/compare"
 	. "coderaiser/indra/types"
 )
 
@@ -23,6 +26,24 @@ func Replace() Replacer {
 		"__a.Equal(__b, __array)":         "expected := __array\n__a.Equal(__b, expected)",
 		"__a.DeepEqual(__b, __array)":     "expected := __array\n__a.DeepEqual(__b, expected)",
 	}
+}
+
+// noResultInBlock is a guard that rejects re-extraction when a "result"
+// variable is already declared in the containing block (which would shadow the
+// injected declaration). Statement matching always runs inside a block.
+func noResultInBlock(_ Vars, block *ast.BlockStmt) bool {
+	return !blockDeclares(block, "result")
+}
+
+// blockDeclares reports whether any statement in block declares name via a
+// short variable declaration (:=).
+func blockDeclares(block *ast.BlockStmt, name string) bool {
+	for _, s := range block.List {
+		if compare.Compare(s, name+" := __a") != nil {
+			return true
+		}
+	}
+	return false
 }
 
 // Plugin wraps the rule for the registry: a replacer with a Match guard.
