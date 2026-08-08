@@ -23,20 +23,21 @@ func findNoErrorCalls(p Path, push func(Path)) {
 		return
 	}
 	found := false
-	ast.Inspect(file, func(n ast.Node) bool {
-		call, ok := n.(*ast.CallExpr)
-		if !ok {
-			return true
-		}
-		sel, ok := call.Fun.(*ast.SelectorExpr)
-		if !ok {
-			return true
-		}
-		if sel.Sel != nil && sel.Sel.Name == "NoError" {
-			found = true
-			return false
-		}
-		return true
+	p.Traverse(map[string]func(Path){
+		"*ast.CallExpr": func(callPath Path) {
+			if found {
+				return
+			}
+			call := callPath.Node.(*ast.CallExpr)
+			sel, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok {
+				return
+			}
+			if sel.Sel != nil && sel.Sel.Name == "NoError" {
+				found = true
+				callPath.Stop()
+			}
+		},
 	})
 	if found {
 		push(p)
@@ -51,19 +52,17 @@ func Fix(p Path, _ map[string]any) {
 	if !hasGoTapeImport(file) {
 		return
 	}
-	ast.Inspect(file, func(n ast.Node) bool {
-		call, ok := n.(*ast.CallExpr)
-		if !ok {
-			return true
-		}
-		sel, ok := call.Fun.(*ast.SelectorExpr)
-		if !ok {
-			return true
-		}
-		if sel.Sel != nil && sel.Sel.Name == "NoError" {
-			sel.Sel = &ast.Ident{Name: "NotOk"}
-		}
-		return true
+	p.Traverse(map[string]func(Path){
+		"*ast.CallExpr": func(callPath Path) {
+			call := callPath.Node.(*ast.CallExpr)
+			sel, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok {
+				return
+			}
+			if sel.Sel != nil && sel.Sel.Name == "NoError" {
+				sel.Sel = &ast.Ident{Name: "NotOk"}
+			}
+		},
 	})
 }
 

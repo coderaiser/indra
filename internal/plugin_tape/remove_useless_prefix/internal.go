@@ -2,6 +2,8 @@ package remove_useless_prefix
 
 import (
 	"go/ast"
+
+	. "coderaiser/indra/types"
 )
 
 const goTapePath = `"github.com/coderaiser/go-tape"`
@@ -27,16 +29,13 @@ func findTapeImport(file *ast.File) (string, *ast.ImportSpec) {
 // of a SelectorExpr. These are names that would clash if a prefix were removed
 // and a same-named selector member became bare: removing the prefix turns an
 // alias.X selector into a bare X, which collides with any pre-existing bare X.
-func usedBareNames(file *ast.File) map[string]bool {
+func usedBareNames(p Path) map[string]bool {
 	names := make(map[string]bool)
-	ast.Inspect(file, func(n ast.Node) bool {
-		if _, ok := n.(*ast.SelectorExpr); ok {
-			return false // skip the whole selector (X qualifier and Sel member)
-		}
-		if id, ok := n.(*ast.Ident); ok {
-			names[id.Name] = true
-		}
-		return true
+	p.Traverse(map[string]func(Path){
+		"*ast.SelectorExpr": func(sp Path) { sp.Skip() }, // skip the whole selector
+		"*ast.Ident": func(ip Path) {
+			names[ip.Node.(*ast.Ident).Name] = true
+		},
 	})
 	return names
 }
@@ -47,23 +46,25 @@ func usedBareNames(file *ast.File) map[string]bool {
 // identifier elsewhere. Skipping such files avoids emitting broken code where
 // the unqualified name would now resolve to a local decl or clash with an
 // existing bare usage.
-func hasLocalCollision(file *ast.File, alias string) bool {
+func hasLocalCollision(p Path, alias string) bool {
+	file := p.Node.(*ast.File)
 	declared := declaredNames(file)
-	usedBare := usedBareNames(file)
+	usedBare := usedBareNames(p)
 	collision := false
-	ast.Inspect(file, func(n ast.Node) bool {
-		sel, ok := n.(*ast.SelectorExpr)
-		if !ok {
-			return true
-		}
-		if !selMatchesAlias(sel, alias) {
-			return true
-		}
-		if declared[sel.Sel.Name] || usedBare[sel.Sel.Name] {
-			collision = true
-			return false
-		}
-		return true
+	p.Traverse(map[string]func(Path){
+		"*ast.SelectorExpr": func(sp Path) {
+			if collision {
+				return
+			}
+			sel := sp.Node.(*ast.SelectorExpr)
+			if !selMatchesAlias(sel, alias) {
+				return
+			}
+			if declared[sel.Sel.Name] || usedBare[sel.Sel.Name] {
+				collision = true
+				sp.Stop()
+			}
+		},
 	})
 	return collision
 }

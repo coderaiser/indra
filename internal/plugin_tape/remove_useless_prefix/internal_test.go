@@ -74,7 +74,7 @@ func TestFixNoAlias(t *testing.T) {
 func TestUsedBareNamesSkipsQualifier(t *testing.T) {
 	Test(t, "usedBareNames: qualifier X is not collected", func(t *T) {
 		file := parseFile(t, "package p\nfunc f() { _ = pkg.Method }\n")
-		names := usedBareNames(file)
+		names := usedBareNames(types.Path{Node: file})
 		t.NotOk(names["pkg"])
 
 		t.End()
@@ -84,7 +84,7 @@ func TestUsedBareNamesSkipsQualifier(t *testing.T) {
 func TestUsedBareNamesSkipsMember(t *testing.T) {
 	Test(t, "usedBareNames: selector member Sel is not collected", func(t *T) {
 		file := parseFile(t, "package p\nfunc f() { _ = pkg.Method }\n")
-		names := usedBareNames(file)
+		names := usedBareNames(types.Path{Node: file})
 		t.NotOk(names["Method"])
 
 		t.End()
@@ -94,7 +94,7 @@ func TestUsedBareNamesSkipsMember(t *testing.T) {
 func TestUsedBareNamesCollectsBare(t *testing.T) {
 	Test(t, "usedBareNames: bare ident is collected", func(t *T) {
 		file := parseFile(t, "package p\nfunc f() { _ = x }\n")
-		names := usedBareNames(file)
+		names := usedBareNames(types.Path{Node: file})
 		t.Ok(names["x"])
 		t.End()
 	})

@@ -57,20 +57,20 @@ func collectImports(file *ast.File) []importInfo {
 	return imports
 }
 
-func countIdentUses(file *ast.File) map[string]int {
+func countIdentUses(p types.Path) map[string]int {
 	used := make(map[string]int)
-	ast.Inspect(file, func(n ast.Node) bool {
-		if genDecl, ok := n.(*ast.GenDecl); ok && genDecl.Tok == token.IMPORT {
-			return false
-		}
-		ident, ok := n.(*ast.Ident)
-		// A hand-built *ast.File may have a typed-nil Name (ast.Walk visits
-		// File.Name unconditionally), so guard against a nil Ident.
-		if !ok || ident == nil {
-			return true
-		}
-		used[ident.Name]++
-		return true
+	p.Traverse(map[string]func(types.Path){
+		"*ast.GenDecl": func(gp types.Path) {
+			if gp.Node.(*ast.GenDecl).Tok == token.IMPORT {
+				gp.Skip()
+			}
+		},
+		"*ast.Ident": func(ip types.Path) {
+			id := ip.Node.(*ast.Ident)
+			if id != nil {
+				used[id.Name]++
+			}
+		},
 	})
 	return used
 }
@@ -90,7 +90,7 @@ func (f *importFinding) End() token.Pos { return f.spec.End() }
 func findUnusedImportsAndConsts(p types.Path, push func(types.Path)) {
 	file := p.Node.(*ast.File)
 	imports := collectImports(file)
-	used := countIdentUses(file)
+	used := countIdentUses(p)
 	for _, imp := range imports {
 		if imp.blank || imp.dot {
 			continue
@@ -163,7 +163,7 @@ func unusedConstNames(file *ast.File) []string {
 	if len(declared) == 0 {
 		return nil
 	}
-	used := countIdentUses(file) // reuse existing; counts all idents outside import blocks
+	used := countIdentUses(types.Path{Node: file}) // counts all idents outside import blocks
 	var unused []string
 	for _, name := range declared {
 		if used[name] <= 1 { // 1 = the const name appears at its own definition
@@ -322,12 +322,10 @@ func unusedVarNames(block *ast.BlockStmt) []string {
 }
 
 func countIdents(n ast.Node, reads map[string]int) {
-	ast.Inspect(n, func(node ast.Node) bool {
-		ident, ok := node.(*ast.Ident)
-		if ok {
-			reads[ident.Name]++
-		}
-		return true
+	types.Path{Node: n}.Traverse(map[string]func(types.Path){
+		"*ast.Ident": func(ip types.Path) {
+			reads[ip.Node.(*ast.Ident).Name]++
+		},
 	})
 }
 

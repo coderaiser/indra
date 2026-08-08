@@ -79,7 +79,7 @@ func TestFindForCallsPushes(t *testing.T) {
 func TestHasForCallTrue(t *testing.T) {
 	Test(t, "hasForCall: detects indratest.For", func(t *T) {
 		file := parse(t.TB(), "package fixture\nvar x = indratest.For(\"a\", f)\n")
-		t.Ok(hasForCall(file))
+		t.Ok(hasForCall(types.Path{Node: file}))
 
 		t.End()
 	})
@@ -88,7 +88,7 @@ func TestHasForCallTrue(t *testing.T) {
 func TestHasForCallFalse(t *testing.T) {
 	Test(t, "hasForCall: returns false without indratest.For", func(t *T) {
 		file := parse(t.TB(), "package fixture\nfunc f() {}\n")
-		t.NotOk(hasForCall(file))
+		t.NotOk(hasForCall(types.Path{Node: file}))
 
 		t.End()
 	})
@@ -97,7 +97,7 @@ func TestHasForCallFalse(t *testing.T) {
 func TestHasForCallNonIdentBase(t *testing.T) {
 	Test(t, "hasForCall: skips non-ident selector base", func(t *T) {
 		file := parse(t.TB(), "package fixture\nvar x = a.b.For(\"a\")\n")
-		t.NotOk(hasForCall(file))
+		t.NotOk(hasForCall(types.Path{Node: file}))
 
 		t.End()
 	})
@@ -145,7 +145,7 @@ func TestRewriteImportAliasMismatch(t *testing.T) {
 func TestRewriteCallsChanges(t *testing.T) {
 	Test(t, "rewriteCalls: replaces indratest.For with CreateTest", func(t *T) {
 		file := parse(t.TB(), "package fixture\nvar x = indratest.For(\"a\", f)\n")
-		rewriteCalls(file)
+		rewriteCalls(types.Path{Node: file})
 		result := printCallFun(file)
 		t.Equal(result, "CreateTest")
 
@@ -156,7 +156,7 @@ func TestRewriteCallsChanges(t *testing.T) {
 func TestRewriteCallsNotSelector(t *testing.T) {
 	Test(t, "rewriteCalls: skips plain call", func(t *T) {
 		file := parse(t.TB(), "package fixture\nvar x = f()\n")
-		rewriteCalls(file)
+		rewriteCalls(types.Path{Node: file})
 		result := printCallFun(file)
 		t.Equal(result, "f")
 
@@ -167,7 +167,7 @@ func TestRewriteCallsNotSelector(t *testing.T) {
 func TestRewriteCallsSelectorNotFor(t *testing.T) {
 	Test(t, "rewriteCalls: skips other indratest method", func(t *T) {
 		file := parse(t.TB(), "package fixture\nvar x = indratest.G(\"a\")\n")
-		rewriteCalls(file)
+		rewriteCalls(types.Path{Node: file})
 		result := printCallFun(file)
 		t.Equal(result, "indratest.G")
 
@@ -178,7 +178,7 @@ func TestRewriteCallsSelectorNotFor(t *testing.T) {
 func TestRewriteCallsNonIdentSel(t *testing.T) {
 	Test(t, "rewriteCalls: skips nested selector base", func(t *T) {
 		file := parse(t.TB(), "package fixture\nvar x = a.b.For(\"a\")\n")
-		rewriteCalls(file)
+		rewriteCalls(types.Path{Node: file})
 		result := printCallFun(file)
 		t.Equal(result, "a.b.For")
 
@@ -191,7 +191,7 @@ func TestRewriteCallsNonIdentSel(t *testing.T) {
 func TestRewriteTChanges(t *testing.T) {
 	Test(t, "rewriteT: replaces *indratest.T with *T", func(t *T) {
 		file := parse(t.TB(), "package fixture\nfunc f(t *indratest.T) {}\n")
-		rewriteT(file)
+		rewriteT(types.Path{Node: file})
 		result := printParamType(file)
 		t.Equal(result, "*T")
 
@@ -202,7 +202,7 @@ func TestRewriteTChanges(t *testing.T) {
 func TestRewriteTNotStar(t *testing.T) {
 	Test(t, "rewriteT: skips non-star param", func(t *T) {
 		file := parse(t.TB(), "package fixture\nfunc f(t indratest.T) {}\n")
-		rewriteT(file)
+		rewriteT(types.Path{Node: file})
 		result := printParamType(file)
 		t.Equal(result, "indratest.T")
 
@@ -213,7 +213,7 @@ func TestRewriteTNotStar(t *testing.T) {
 func TestRewriteTStarNonSelector(t *testing.T) {
 	Test(t, "rewriteT: skips star over non-selector", func(t *T) {
 		file := parse(t.TB(), "package fixture\nfunc f(p *int) {}\n")
-		rewriteT(file)
+		rewriteT(types.Path{Node: file})
 		result := printParamType(file)
 		t.Equal(result, "*int")
 
@@ -224,7 +224,7 @@ func TestRewriteTStarNonSelector(t *testing.T) {
 func TestRewriteTNotT(t *testing.T) {
 	Test(t, "rewriteT: skips other indratest type", func(t *T) {
 		file := parse(t.TB(), "package fixture\nfunc f(t *indratest.U) {}\n")
-		rewriteT(file)
+		rewriteT(types.Path{Node: file})
 		result := printParamType(file)
 		t.Equal(result, "*indratest.U")
 

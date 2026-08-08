@@ -17,29 +17,31 @@ func Traverse() Traverser {
 }
 
 func findForCalls(p Path, push func(Path)) {
-	file, ok := p.Node.(*ast.File)
+	_, ok := p.Node.(*ast.File)
 	if !ok {
 		return
 	}
-	if hasForCall(file) {
+	if hasForCall(p) {
 		push(p)
 	}
 }
 
-// hasForCall reports whether file references an indratest.For call.
-func hasForCall(file *ast.File) bool {
+// hasForCall reports whether the file rooted at p references an indratest.For
+// call.
+func hasForCall(p Path) bool {
 	found := false
-	ast.Inspect(file, func(n ast.Node) bool {
-		sel, ok := n.(*ast.SelectorExpr)
-		if !ok {
-			return true
-		}
-		id, ok := sel.X.(*ast.Ident)
-		if ok && id.Name == "indratest" && sel.Sel != nil && sel.Sel.Name == "For" {
-			found = true
-			return false
-		}
-		return true
+	p.Traverse(map[string]func(Path){
+		"*ast.SelectorExpr": func(sp Path) {
+			if found {
+				return
+			}
+			sel := sp.Node.(*ast.SelectorExpr)
+			id, ok := sel.X.(*ast.Ident)
+			if ok && id.Name == "indratest" && sel.Sel != nil && sel.Sel.Name == "For" {
+				found = true
+				sp.Stop()
+			}
+		},
 	})
 	return found
 }
@@ -52,8 +54,8 @@ func Fix(p Path, _ map[string]any) {
 		return
 	}
 	rewriteImport(file)
-	rewriteCalls(file)
-	rewriteT(file)
+	rewriteCalls(p)
+	rewriteT(p)
 }
 
 // rewriteImport turns `indratest "coderaiser/indra/internal/test"` into a dot
@@ -71,40 +73,36 @@ func rewriteImport(file *ast.File) {
 
 // rewriteCalls replaces `indratest.For(__a, __b)` call expressions with
 // `createTest(__a, __b)`.
-func rewriteCalls(file *ast.File) {
-	ast.Inspect(file, func(n ast.Node) bool {
-		call, ok := n.(*ast.CallExpr)
-		if !ok {
-			return true
-		}
-		sel, ok := call.Fun.(*ast.SelectorExpr)
-		if !ok {
-			return true
-		}
-		id, ok := sel.X.(*ast.Ident)
-		if ok && id.Name == "indratest" && sel.Sel != nil && sel.Sel.Name == "For" {
-			call.Fun = ast.NewIdent("CreateTest")
-		}
-		return true
+func rewriteCalls(p Path) {
+	p.Traverse(map[string]func(Path){
+		"*ast.CallExpr": func(cp Path) {
+			call := cp.Node.(*ast.CallExpr)
+			sel, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok {
+				return
+			}
+			id, ok := sel.X.(*ast.Ident)
+			if ok && id.Name == "indratest" && sel.Sel != nil && sel.Sel.Name == "For" {
+				call.Fun = ast.NewIdent("CreateTest")
+			}
+		},
 	})
 }
 
 // rewriteT replaces `*indratest.T` callback parameters with `*T`.
-func rewriteT(file *ast.File) {
-	ast.Inspect(file, func(n ast.Node) bool {
-		star, ok := n.(*ast.StarExpr)
-		if !ok {
-			return true
-		}
-		sel, ok := star.X.(*ast.SelectorExpr)
-		if !ok {
-			return true
-		}
-		id, ok := sel.X.(*ast.Ident)
-		if ok && id.Name == "indratest" && sel.Sel != nil && sel.Sel.Name == "T" {
-			star.X = ast.NewIdent("T")
-		}
-		return true
+func rewriteT(p Path) {
+	p.Traverse(map[string]func(Path){
+		"*ast.StarExpr": func(sp Path) {
+			star := sp.Node.(*ast.StarExpr)
+			sel, ok := star.X.(*ast.SelectorExpr)
+			if !ok {
+				return
+			}
+			id, ok := sel.X.(*ast.Ident)
+			if ok && id.Name == "indratest" && sel.Sel != nil && sel.Sel.Name == "T" {
+				star.X = ast.NewIdent("T")
+			}
+		},
 	})
 }
 

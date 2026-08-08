@@ -23,7 +23,7 @@ func findUselessPrefix(p Path, push func(Path)) {
 	if alias == "" {
 		return
 	}
-	if hasLocalCollision(file, alias) {
+	if hasLocalCollision(p, alias) {
 		return
 	}
 	push(p)
@@ -40,7 +40,7 @@ func Fix(p Path, _ map[string]any) {
 	if alias == "" {
 		return
 	}
-	if hasLocalCollision(file, alias) {
+	if hasLocalCollision(p, alias) {
 		return
 	}
 	spec.Name = &ast.Ident{Name: ".", NamePos: spec.Name.NamePos}
