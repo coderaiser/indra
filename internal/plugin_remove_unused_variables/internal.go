@@ -85,39 +85,118 @@ type importFinding struct {
 func (f *importFinding) Pos() token.Pos { return f.spec.Pos() }
 func (f *importFinding) End() token.Pos { return f.spec.End() }
 
+// collectSelectorQualifiers returns all X identifiers from X.Y selector
+// expressions in the file, excluding the import block.
+func collectSelectorQualifiers(filePath types.Path) map[string]bool {
+	qualifiers := make(map[string]bool)
+	filePath.Traverse(map[string]func(types.Path){
+		"*ast.GenDecl": func(declPath types.Path) {
+			genDecl := declPath.Node.(*ast.GenDecl)
+			if genDecl.Tok == token.IMPORT {
+				declPath.Skip()
+			}
+		},
+		"*ast.SelectorExpr": func(selectorPath types.Path) {
+			selector := selectorPath.Node.(*ast.SelectorExpr)
+			if ident, ok := selector.X.(*ast.Ident); ok {
+				qualifiers[ident.Name] = true
+			}
+		},
+	})
+	return qualifiers
+}
+
+// collectDeclaredNames returns all package-level declared identifiers.
+func collectDeclaredNames(filePath types.Path) map[string]bool {
+	names := make(map[string]bool)
+	filePath.Traverse(map[string]func(types.Path){
+		"*ast.FuncDecl": func(funcPath types.Path) {
+			funcDecl := funcPath.Node.(*ast.FuncDecl)
+			if funcDecl.Name != nil {
+				names[funcDecl.Name.Name] = true
+			}
+			funcPath.Skip()
+		},
+		"*ast.TypeSpec": func(typePath types.Path) {
+			typeSpec := typePath.Node.(*ast.TypeSpec)
+			if typeSpec.Name != nil {
+				names[typeSpec.Name.Name] = true
+			}
+		},
+		"*ast.ValueSpec": func(valuePath types.Path) {
+			valueSpec := valuePath.Node.(*ast.ValueSpec)
+			for _, name := range valueSpec.Names {
+				names[name.Name] = true
+			}
+		},
+	})
+	return names
+}
+
 // findUnusedImportsAndConsts visits *ast.File nodes during traversal.
 // It calls push once per unused import and once for unused consts.
 func findUnusedImportsAndConsts(p types.Path, push func(types.Path)) {
 	file := p.Node.(*ast.File)
 	imports := collectImports(file)
 	used := countIdentUses(p)
+	qualifiers := collectSelectorQualifiers(p)
+	declared := collectDeclaredNames(p)
+
+	// accounted: names explained by imports or local declarations
+	accounted := make(map[string]bool)
+	for _, imp := range imports {
+		if !imp.blank && !imp.dot {
+			accounted[imp.localName] = true
+		}
+	}
+	for name := range declared {
+		accounted[name] = true
+	}
+
+	// unaccounted qualifiers: used in selectors but not explained
+	var unaccounted []string
+	for qualifier := range qualifiers {
+		if !accounted[qualifier] {
+			unaccounted = append(unaccounted, qualifier)
+		}
+	}
+
+	// ambiguous: unnamed imports whose basename-derived name is not in used
+	var ambiguous []importInfo
 	for _, imp := range imports {
 		if imp.blank || imp.dot {
 			continue
 		}
-		if !importIsUsed(imp.localName, used) {
-			push(types.Path{Node: &importFinding{file: file, spec: imp.spec}})
+		if used[imp.localName] > 0 {
+			continue
+		}
+		ambiguous = append(ambiguous, imp)
+	}
+
+	// pair ambiguous imports with unaccounted qualifiers by declaration order
+	pairedPaths := make(map[string]bool)
+	for index, imp := range ambiguous {
+		if index < len(unaccounted) {
+			pairedPaths[imp.path] = true
 		}
 	}
+
+	for _, imp := range imports {
+		if imp.blank || imp.dot {
+			continue
+		}
+		if used[imp.localName] > 0 {
+			continue
+		}
+		if pairedPaths[imp.path] {
+			continue
+		}
+		push(types.Path{Node: &importFinding{file: file, spec: imp.spec}})
+	}
+
 	if len(unusedConstNames(file)) > 0 {
 		push(p)
 	}
-}
-
-// importIsUsed reports whether an import is referenced anywhere in the file.
-// The local name is derived from the import path basename, but the identifier
-// actually bound is the imported package's declared name, which may not match
-// the basename (e.g. a plugin_<name> directory declaring package <name>). So
-// when the basename itself is absent, also accept the basename with a leading
-// plugin_ prefix stripped, since that is how such packages are referenced.
-func importIsUsed(localName string, used map[string]int) bool {
-	if used[localName] > 0 {
-		return true
-	}
-	if strings.HasPrefix(localName, "plugin_") && used[strings.TrimPrefix(localName, "plugin_")] > 0 {
-		return true
-	}
-	return false
 }
 
 // fixOneUnusedImport removes a single import spec from the file's AST.
