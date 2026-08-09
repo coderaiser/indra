@@ -3,15 +3,10 @@
 // files by default, no glob restriction.
 package conditions
 
-import (
-	"coderaiser/indra/internal/plugin_conditions/remove_useless"
-	"coderaiser/indra/types"
-)
+import "coderaiser/indra/types"
 
 // Rules returns the conditions sub-rules. The engine-loader expands
-// "conditions" into "conditions/remove-useless", etc.
+// "conditions" into "conditions/remove-useless-comments", etc.
 func Rules() []types.Rule {
-	return []types.Rule{
-		{Name: "remove-useless", Plugin: remove_useless.Plugin{}},
-	}
+	return []types.Rule{}
 }

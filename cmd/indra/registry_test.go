@@ -23,11 +23,11 @@ func TestRegistry(t *testing.T) {
 		t.End()
 	})
 
-	Test(t, "registry: conditions group carries rules", func(t *T) {
+	Test(t, "registry: conditions group is registered", func(t *T) {
 		found := false
 		for _, p := range Registry {
 			if p.Name == "conditions" {
-				found = len(p.Rules) > 0
+				found = true
 			}
 		}
 		t.Ok(found)

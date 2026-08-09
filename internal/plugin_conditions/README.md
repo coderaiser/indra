@@ -5,30 +5,5 @@ the group is enabled for all files by default — no glob restriction needed.
 
 ## Rules
 
-- ✅ [remove-useless-condition](#remove-useless-condition)
-
-## remove-useless
-
-Removes a useless condition inside `Ok()` / `NotOk()`.
-
-### ❌ Incorrect
-
-```go
-package fixture
-
-func f() {
-	t.Ok(err != nil)
-	t.NotOk(err == nil)
-}
-```
-
-### ✅ Correct
-
-```go
-package fixture
-
-func f() {
-	t.Ok(err)
-	t.NotOk(err)
-}
-```
+*No rules yet — the group is empty after `remove-useless` moved to
+`tape/remove-useless-condition`.

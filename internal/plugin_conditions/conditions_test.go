@@ -9,14 +9,15 @@ import (
 )
 
 func TestRules(t *testing.T) {
-	Test(t, "plugin-conditions: remove-useless", func(t *T) {
+	Test(t, "plugin-conditions: Rules is empty after remove-useless move", func(t *T) {
 		found := false
 		for _, r := range Rules() {
 			if r.Name == "remove-useless" {
 				found = true
 			}
 		}
-		t.Ok(found)
+		t.NotOk(found)
+
 		t.End()
 	})
 }

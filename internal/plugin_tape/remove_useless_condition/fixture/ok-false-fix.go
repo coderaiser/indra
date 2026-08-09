@@ -3,5 +3,6 @@
 package fixture
 
 func f() {
-	t.NotOk(err == false)
+	t.Ok(x)
+
 }
