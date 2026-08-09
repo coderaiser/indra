@@ -306,3 +306,68 @@ func TestTransformUpdateHappy(t *testing.T) {
 		tt.End()
 	})
 }
+
+// ── operator name emission ─────────────────────────────────────────────────
+
+func TestReportOperatorName(t *testing.T) {
+	dir := writeDir(t, map[string]string{"match.go": matchSrc})
+	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}}
+	operatorName := ""
+	tape.Test(t, "test: Report emits operator report", func(tt *tape.T) {
+		tr := New(tt, engineLint("synth", replacer), []any{}, dir)
+		tr.reportCustom = func(ok bool, name, _ string, _, _ any) { operatorName = name }
+		tr.Report("match", "found it")
+		tt.End()
+	})
+	if operatorName != "report" {
+		t.Errorf("expected operator report, got %q", operatorName)
+	}
+}
+
+func TestNoReportOperatorName(t *testing.T) {
+	dir := writeDir(t, map[string]string{"clean.go": cleanSrc})
+	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}}
+	operatorName := ""
+	tape.Test(t, "test: NoReport emits operator noReport", func(tt *tape.T) {
+		tr := New(tt, engineLint("synth", replacer), []any{}, dir)
+		tr.reportCustom = func(ok bool, name, _ string, _, _ any) { operatorName = name }
+		tr.NoReport("clean")
+		tt.End()
+	})
+	if operatorName != "noReport" {
+		t.Errorf("expected operator noReport, got %q", operatorName)
+	}
+}
+
+func TestTransformOperatorName(t *testing.T) {
+	dir := writeDir(t, map[string]string{
+		"transform.go":     replaceSrc,
+		"transform-fix.go": replacedSrc,
+	})
+	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}, replace: types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}}
+	operatorName := ""
+	tape.Test(t, "test: Transform emits operator transform", func(tt *tape.T) {
+		tr := New(tt, engineLint("synth", replacer), []any{}, dir)
+		tr.reportCustom = func(ok bool, name, _ string, _, _ any) { operatorName = name }
+		tr.Transform("transform")
+		tt.End()
+	})
+	if operatorName != "transform" {
+		t.Errorf("expected operator transform, got %q", operatorName)
+	}
+}
+
+func TestNoTransformOperatorName(t *testing.T) {
+	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
+	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}}
+	operatorName := ""
+	tape.Test(t, "test: NoTransform emits operator noTransform", func(tt *tape.T) {
+		tr := New(tt, engineLint("synth", replacer), []any{}, dir)
+		tr.reportCustom = func(ok bool, name, _ string, _, _ any) { operatorName = name }
+		tr.NoTransform("replace")
+		tt.End()
+	})
+	if operatorName != "noTransform" {
+		t.Errorf("expected operator noTransform, got %q", operatorName)
+	}
+}

@@ -30,16 +30,25 @@ type PluginArg struct {
 // T wraps tape.T with plugin-level lint assertions.
 type T struct {
 	*tape.T
-	lint      types.Lint
-	plugins   []any
-	dir       string
-	fatal     func(format string, args ...any)
-	writeFile func(string, []byte, os.FileMode) error
+	lint         types.Lint
+	plugins      []any
+	dir          string
+	fatal        func(format string, args ...any)
+	writeFile    func(string, []byte, os.FileMode) error
+	reportCustom func(ok bool, operatorName, output string, got, expected any)
 }
 
 // New constructs a T for direct use in error-path tests.
 func New(tt *tape.T, lint types.Lint, plugins []any, dir string) *T {
-	return &T{T: tt, lint: lint, plugins: plugins, dir: dir, fatal: tt.TB().Fatalf, writeFile: os.WriteFile}
+	return &T{
+		T:            tt,
+		lint:         lint,
+		plugins:      plugins,
+		dir:          dir,
+		fatal:        tt.TB().Fatalf,
+		writeFile:    os.WriteFile,
+		reportCustom: tt.ReportCustom,
+	}
 }
 
 // CreateTest returns a test runner fixed to a single leaf rule whose plugin is
@@ -83,7 +92,8 @@ func callerFixtureDir(depth int) string {
 }
 
 // Report asserts the plugin emits at least one place whose first Message
-// equals message when run against fixture file <name>.go.
+// equals message when run against fixture file <name>.go. Emits operator name
+// "report" to match @putout/test.
 func (t *T) Report(name, message string) {
 	t.TB().Helper()
 	src := t.read(name)
@@ -96,10 +106,13 @@ func (t *T) Report(name, message string) {
 		t.fatal("Report(%q): expected at least one place, got none", name)
 		return
 	}
-	t.Equal(res.Places[0].Message, message)
+	got := res.Places[0].Message
+	r := tape.BuiltinOperators.Equal(got, message)
+	t.reportCustom(r.Ok, "report", r.Output, r.Result, r.Expected)
 }
 
 // NoReport asserts the plugin emits no places for fixture <name>.go.
+// Emits operator name "noReport" to match @putout/test.
 func (t *T) NoReport(name string) {
 	t.TB().Helper()
 	src := t.read(name)
@@ -112,12 +125,13 @@ func (t *T) NoReport(name string) {
 		t.fatal("NoReport(%q): expected no places, got %d", name, len(res.Places))
 		return
 	}
-	t.Pass("no report")
+	t.reportCustom(true, "noReport", "", nil, nil)
 }
 
 // Transform runs the plugin with fix=true on fixture <name>.go and asserts
 // the output matches fixture <name>-fix.go.
 // Set env UPDATE=1 to regenerate the fix fixture.
+// Emits operator name "transform" to match @putout/test.
 func (t *T) Transform(name string) {
 	t.TB().Helper()
 	src := t.read(name)
@@ -137,10 +151,12 @@ func (t *T) Transform(name string) {
 	}
 	fixSrc := t.read(name + "-fix")
 	gotStr := string(res.Out)
-	t.Equal(gotStr, string(fixSrc))
+	r := tape.BuiltinOperators.Equal(gotStr, string(fixSrc))
+	t.reportCustom(r.Ok, "transform", r.Output, r.Result, r.Expected)
 }
 
 // NoTransform asserts that fix=true leaves fixture <name>.go source unchanged.
+// Emits operator name "noTransform" to match @putout/test.
 func (t *T) NoTransform(name string) {
 	t.TB().Helper()
 	src := t.read(name)
@@ -150,7 +166,8 @@ func (t *T) NoTransform(name string) {
 		return
 	}
 	gotStr := string(res.Out)
-	t.Equal(gotStr, string(src))
+	r := tape.BuiltinOperators.Equal(gotStr, string(src))
+	t.reportCustom(r.Ok, "noTransform", r.Output, r.Result, r.Expected)
 }
 
 func (t *T) read(name string) []byte {
