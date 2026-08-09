@@ -2,6 +2,7 @@ package tape
 
 import (
 	"coderaiser/indra/internal/plugin_tape/add_t_end"
+	"coderaiser/indra/internal/plugin_tape/apply_dedent"
 	"coderaiser/indra/internal/plugin_tape/convert_equal_to_deep_equal"
 	"coderaiser/indra/internal/plugin_tape/convert_equal_to_not_ok"
 	"coderaiser/indra/internal/plugin_tape/convert_equal_to_ok"
@@ -21,6 +22,7 @@ func Rules() []types.Rule {
 	return []types.Rule{
 		{Name: "remove-skip", Plugin: remove_skip.Plugin{}},
 		{Name: "add-t-end", Plugin: add_t_end.Plugin{}},
+		{Name: "apply-dedent", Plugin: apply_dedent.Plugin{}},
 		{Name: "convert-equal-to-deep-equal", Plugin: convert_equal_to_deep_equal.Plugin{}},
 		{Name: "convert-equal-to-ok", Plugin: convert_equal_to_ok.Plugin{}},
 		{Name: "convert-equal-to-not-ok", Plugin: convert_equal_to_not_ok.Plugin{}},

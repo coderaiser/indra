@@ -67,6 +67,7 @@ Create `.indra.toml` in your project root:
 |---|---|
 | `tape/remove-skip` | Replace `Test.Skip` with `Test` |
 | `tape/add-t-end` | Add missing `t.End()` |
+| `tape/apply-dedent` | Remove `dedent.Dedent` wrappers |
 | `tape/convert-equal-to-deep-equal` | Use `DeepEqual` for slice args |
 | `tape/extract-result-from-assertion` | Extract inline expressions from assertions |
 | `tape/remove-useless-condition` | Remove useless condition inside `Ok`/`NotOk` |
