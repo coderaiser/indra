@@ -20,7 +20,8 @@ func TestTime(t *testing.T) {
 	Test(t, "time: mid-run returns empty", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
 		out := formtime.Format("a.go", nil, nil, 0, 3, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 

@@ -16,7 +16,8 @@ var place1 = types.Place{Rule: "tape/remove-skip", Message: "remove Test.Skip ca
 func TestJson(t *testing.T) {
 	Test(t, "json: returns empty mid-run", func(t *T) {
 		out := formjson.Format("a.go", nil, []types.Place{place1}, 0, 2, 1, 1)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 

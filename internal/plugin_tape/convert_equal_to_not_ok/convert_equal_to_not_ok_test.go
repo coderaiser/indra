@@ -39,4 +39,9 @@ func TestConvertEqualToNotOk(t *testing.T) {
 		t.Transform("convert-equal-false-to-not-ok")
 		t.End()
 	})
+
+	Test(t, "convert-equal-to-not-ok: transform: empty-string", func(t *T) {
+		t.Transform("empty-string")
+		t.End()
+	})
 }

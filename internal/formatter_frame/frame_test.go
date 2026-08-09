@@ -23,7 +23,8 @@ var place1 = types.Place{Rule: "r", Message: "m", Position: types.Position{Line:
 func TestFrame(t *testing.T) {
 	Test(t, "frame: mid-run returns empty (percent on stderr)", func(t *T) {
 		out := formframe.Format("a.go", src, nil, 0, 5, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 
@@ -35,7 +36,8 @@ func TestFrame(t *testing.T) {
 
 	Test(t, "frame: last file clean returns empty", func(t *T) {
 		out := formframe.Format("a.go", src, nil, 4, 5, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 

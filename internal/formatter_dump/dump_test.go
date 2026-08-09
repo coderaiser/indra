@@ -17,7 +17,8 @@ var places1 = []types.Place{
 func TestDumpNoPlacesMidRun(t *testing.T) {
 	Test(t, "dump: no places mid-run returns empty", func(t *T) {
 		out := dump.Format("foo.go", nil, nil, 0, 5, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 }
@@ -25,7 +26,8 @@ func TestDumpNoPlacesMidRun(t *testing.T) {
 func TestDumpNoPlacesLastFileNoErrors(t *testing.T) {
 	Test(t, "dump: no places last file no errors returns empty", func(t *T) {
 		out := dump.Format("foo.go", nil, nil, 4, 5, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 }

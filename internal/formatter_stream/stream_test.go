@@ -15,7 +15,8 @@ var place1 = types.Place{Rule: "tape/remove-skip", Message: "remove Test.Skip ca
 func TestStream(t *testing.T) {
 	Test(t, "stream: no places mid-run returns empty", func(t *T) {
 		out := formstream.Format("a.go", nil, nil, 0, 3, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 
@@ -51,7 +52,8 @@ func TestStream(t *testing.T) {
 
 	Test(t, "stream: last file clean no errors returns empty", func(t *T) {
 		out := formstream.Format("a.go", nil, nil, 2, 3, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 

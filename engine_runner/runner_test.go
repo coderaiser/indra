@@ -446,7 +446,8 @@ func TestPrintNodeNil(t *testing.T) {
 	got := printNode(nil)
 
 	Test(t, "runner: nil node prints empty", func(t *T) {
-		t.Equal(got, "")
+		t.NotOk(got)
+
 		t.End()
 	})
 }

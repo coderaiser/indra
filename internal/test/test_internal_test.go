@@ -96,7 +96,8 @@ func TestValidatePluginTraverserNoPanic(t *testing.T) {
 	run(t, "internal-test: validatePlugin: no panic for traverser plugin", func(tt *T) {
 		pf := loader.PluginFuncs{Name: "trav", Plugin: synthTraverser{}}
 		msg := catchPanic(func() { validatePlugin(loader.Load([]loader.PluginFuncs{pf}, loader.Config{})[0]) })
-		tt.Equal(msg, "")
+		tt.NotOk(msg)
+
 		tt.End()
 	})
 }

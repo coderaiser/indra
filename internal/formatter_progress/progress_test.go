@@ -16,7 +16,8 @@ func TestProgress(t *testing.T) {
 	Test(t, "progress: mid-run returns empty when below minCount", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_MIN", "10")
 		out := formprog.Format("a.go", nil, nil, 0, 3, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 
@@ -30,7 +31,8 @@ func TestProgress(t *testing.T) {
 	Test(t, "progress: mid-run at or above minCount returns empty", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_MIN", "0")
 		out := formprog.Format("a.go", nil, nil, 0, 5, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 

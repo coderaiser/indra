@@ -30,13 +30,15 @@ var place1 = types.Place{Rule: "r", Message: "remove unused variable: x", Positi
 func TestCodeframe(t *testing.T) {
 	Test(t, "codeframe: no places returns empty", func(t *T) {
 		out := formcf.Format("a.go", src, nil, 0, 1, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 
 	Test(t, "codeframe: no places mid-run returns empty", func(t *T) {
 		out := formcf.Format("a.go", src, nil, 0, 3, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 

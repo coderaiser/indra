@@ -19,7 +19,8 @@ var place1 = types.Place{Rule: "r", Message: "m", Position: types.Position{Line:
 func TestMemory(t *testing.T) {
 	Test(t, "memory: mid-run returns empty", func(t *T) {
 		out := formmem.Format("a.go", nil, nil, 0, 3, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 
@@ -58,7 +59,8 @@ func TestMemoryFallback(t *testing.T) {
 	Test(t, "memory fallback: mid-run returns empty when bar hidden", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
 		out := formmem.Format("a.go", nil, nil, 0, 3, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 

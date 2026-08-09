@@ -21,7 +21,8 @@ func TestProgressFormat(t *testing.T) {
 	Test(t, "progress-bar: mid-run returns empty string", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
 		out := pb.Format("foo.go", nil, nil, 0, 10, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 
@@ -56,7 +57,8 @@ func TestProgressBarLastFileNoIssues(t *testing.T) {
 	Test(t, "progress-bar: last file no issues returns empty", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
 		out := pb.Format("foo.go", nil, nil, 4, 5, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 }
@@ -75,7 +77,8 @@ func TestProgressBarForceShow(t *testing.T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
 		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
 		out := pb.Format("foo.go", nil, nil, 0, 10, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 }
@@ -128,7 +131,8 @@ func TestProgressBarShowTruncatedLine(t *testing.T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
 		t.TB().Setenv("INDRA_TERM_WIDTH", "5")
 		out := pb.Format("a-very-long-filename-indeed.go", nil, nil, 2, 3, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 }
@@ -148,7 +152,8 @@ func TestProgressBarShowMidRunReturnsEmpty(t *testing.T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
 		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
 		out := pb.Format("foo.go", nil, nil, 0, 10, 0, 0)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 }
@@ -158,7 +163,8 @@ func TestProgressBarShowWithErrors(t *testing.T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
 		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
 		out := pb.Format("foo.go", nil, nil, 3, 10, 1, 2)
-		t.Equal(out, "")
+		t.NotOk(out)
+
 		t.End()
 	})
 }
