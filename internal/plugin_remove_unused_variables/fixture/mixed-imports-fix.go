@@ -6,4 +6,4 @@ import (
 	"os"
 )
 
-func f() { _ = os.Args }
+func F() { _ = os.Args }

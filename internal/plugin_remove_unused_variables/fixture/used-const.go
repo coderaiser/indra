@@ -4,4 +4,4 @@ package fixture
 
 const timeout = 30
 
-func f() { _ = timeout }
+func F() { _ = timeout }

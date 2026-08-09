@@ -4,4 +4,4 @@ package fixture
 
 import myfmt "fmt"
 
-func f() { myfmt.Println("hi") }
+func F() { myfmt.Println("hi") }

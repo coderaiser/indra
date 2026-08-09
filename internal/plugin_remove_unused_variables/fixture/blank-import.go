@@ -4,4 +4,4 @@ package fixture
 
 import _ "fmt"
 
-func f() {}
+func F() {}

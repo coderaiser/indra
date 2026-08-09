@@ -2,7 +2,7 @@
 
 package fixture
 
-func f() int {
+func F() int {
 	x := 1
 	return x
 }

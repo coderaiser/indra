@@ -4,4 +4,4 @@ package fixture
 
 import . "fmt"
 
-func f() { Println("hi") }
+func F() { Println("hi") }

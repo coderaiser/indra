@@ -33,6 +33,21 @@ func f() {}
 	}
 }
 
+func TestFuncDeclFindingEnd(t *testing.T) {
+	file := parseDirect(t, `package fixture
+
+func unusedHelper() {}
+`)
+	funcDecl := file.Decls[0].(*ast.FuncDecl)
+	finding := &funcDeclFinding{file: file, decl: funcDecl}
+	if finding.End() != funcDecl.End() {
+		t.Fatal("End mismatch")
+	}
+	if finding.Pos() != funcDecl.Pos() {
+		t.Fatal("Pos mismatch")
+	}
+}
+
 func TestCollectDeclaredNamesWithType(t *testing.T) {
 	file := parseDirect(t, `package fixture
 

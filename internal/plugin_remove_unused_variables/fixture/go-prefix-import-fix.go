@@ -4,4 +4,4 @@ package fixture
 
 import "github.com/coderaiser/go-tape"
 
-func f() { tape.Test(nil, "", nil) }
+func F() { tape.Test(nil, "", nil) }

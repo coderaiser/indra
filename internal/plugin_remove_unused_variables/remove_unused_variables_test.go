@@ -288,4 +288,45 @@ func TestRemoveUnusedDeclarations(t *testing.T) {
 		t.Transform("remove-unused-variables")
 		t.End()
 	})
+
+	// unused private function cases
+	Test(t, "remove-unused-variables: report unused private function unused-private-func", func(t *T) {
+		t.Report("unused-private-func", "remove unused private function: unusedHelper")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: transform removes unused private function unused-private-func", func(t *T) {
+		t.Transform("unused-private-func")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: no report for called private function used-private-func", func(t *T) {
+		t.NoReport("used-private-func")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: no transform for called private function used-private-func", func(t *T) {
+		t.NoTransform("used-private-func")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: no report for private function used as value private-func-as-value", func(t *T) {
+		t.NoReport("private-func-as-value")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: no report for init function init-func", func(t *T) {
+		t.NoReport("init-func")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: no report for main function main-func", func(t *T) {
+		t.NoReport("main-func")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: no report for method method-func", func(t *T) {
+		t.NoReport("method-func")
+		t.End()
+	})
 }

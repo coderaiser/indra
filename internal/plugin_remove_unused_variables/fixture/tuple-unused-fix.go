@@ -2,9 +2,9 @@
 
 package fixture
 
-func g() (int, int) { return 1, 2 }
+func G() (int, int) { return 1, 2 }
 
-func f() {
-	a, _ := g()
+func F() {
+	a, _ := G()
 	_ = a
 }

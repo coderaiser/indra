@@ -2,7 +2,7 @@
 
 package fixture
 
-func f() {
+func F() {
 	var a, b = 1, 2
 	_ = a
 }

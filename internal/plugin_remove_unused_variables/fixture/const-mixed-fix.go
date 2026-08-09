@@ -6,7 +6,7 @@ const (
 	used = 1
 )
 
-func f() {
+func F() {
 	_ = used
 }
 

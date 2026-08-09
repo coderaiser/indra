@@ -6,6 +6,6 @@ import "fmt"
 
 const timeout = 30
 
-func f() {
+func F() {
 	x := 1
 }

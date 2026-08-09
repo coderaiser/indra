@@ -4,6 +4,6 @@ package fixture
 
 const timeout = 30
 
-func f() {}
+func F() {}
 
 type unusedType struct{}

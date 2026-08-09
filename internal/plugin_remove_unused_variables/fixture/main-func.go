@@ -2,6 +2,4 @@
 
 package fixture
 
-func F() {
-	_ = 1
-}
+func main() {}

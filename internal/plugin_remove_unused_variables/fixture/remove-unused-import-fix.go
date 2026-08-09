@@ -2,4 +2,4 @@
 
 package fixture
 
-func f() {}
+func F() {}

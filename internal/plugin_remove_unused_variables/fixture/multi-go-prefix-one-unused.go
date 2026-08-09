@@ -7,4 +7,4 @@ import (
 	"github.com/coderaiser/go-coverage"
 )
 
-func f() { tape.Test(nil, "", nil) }
+func F() { tape.Test(nil, "", nil) }

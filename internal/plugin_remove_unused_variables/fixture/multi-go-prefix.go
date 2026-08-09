@@ -7,7 +7,7 @@ import (
 	"github.com/coderaiser/go-tape"
 )
 
-func f() {
+func F() {
 	tape.Test(nil, "", nil)
 	coverage.Process("")
 }

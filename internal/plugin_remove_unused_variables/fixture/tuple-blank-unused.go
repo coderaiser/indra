@@ -2,8 +2,8 @@
 
 package fixture
 
-func g() (int, int) { return 1, 2 }
+func G() (int, int) { return 1, 2 }
 
-func f() {
-	_, x := g()
+func F() {
+	_, x := G()
 }

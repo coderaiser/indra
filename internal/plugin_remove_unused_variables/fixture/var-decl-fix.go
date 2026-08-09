@@ -2,7 +2,7 @@
 
 package fixture
 
-func f() {
+func F() {
 
 	_ = 0
 }

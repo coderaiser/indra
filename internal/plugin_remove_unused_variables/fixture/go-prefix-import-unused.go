@@ -4,4 +4,4 @@ package fixture
 
 import "github.com/coderaiser/go-tape"
 
-func f() {}
+func F() {}

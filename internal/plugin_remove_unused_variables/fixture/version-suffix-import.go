@@ -4,4 +4,4 @@ package fixture
 
 import "github.com/bmatcuk/doublestar/v4"
 
-func f() { doublestar.Match("", "") }
+func F() { doublestar.Match("", "") }
