@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"coderaiser/indra/internal/config"
-    "github.com/lithammer/dedent"
 
+	"github.com/lithammer/dedent"
 
 	. "github.com/coderaiser/go-tape"
 )
@@ -87,7 +87,7 @@ func TestLoadMalformed(t *testing.T) {
 		dir := t.TB().TempDir()
 		os.WriteFile(filepath.Join(dir, ".indra.toml"), []byte(`[bad`), 0644)
 		_, err := config.Load(dir)
-		
+
 		t.Ok(err)
 		t.End()
 	})
