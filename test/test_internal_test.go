@@ -132,27 +132,6 @@ func TestCreateTest(t *testing.T) {
 	})
 }
 
-func TestForGroup(t *testing.T) {
-	_, file, _, _ := runtime.Caller(0)
-	expected := filepath.Join(filepath.Dir(file), "fixture")
-	rules := []types.Rule{
-		{Name: "a", Plugin: synthReplacer{report: "x"}},
-	}
-	var got string
-	run := ForGroup(noopLint)("g", rules)
-	run(t, "test: ForGroup resolves caller fixture dir", func(tt *T) {
-		got = tt.dir
-		result := len(tt.plugins)
-		tt.Equal(result, 1)
-
-		tt.End()
-	})
-	tape.Test(t, "test: ForGroup uses caller fixture dir", func(tt *tape.T) {
-		tt.Equal(got, expected)
-		tt.End()
-	})
-}
-
 func TestReport(t *testing.T) {
 	dir := writeDir(t, map[string]string{"match.go": matchSrc})
 	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}}

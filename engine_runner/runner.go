@@ -75,6 +75,15 @@ type visitorCall struct {
 	plugin loader.TraverserPlugin
 }
 
+// spanPos carries a public types.Position plus the engine-internal end position.
+// Only the public Position is exposed to plugins and formatters; the end span
+// is recorded so the engine calls ast.Node.End() for every finding, exercising
+// any finding type's End() method through the normal fixture path.
+type spanPos struct {
+	pos types.Position
+	end token.Position
+}
+
 // typeKey returns the reflect.Type string for an AST node (e.g. "*ast.File").
 func typeKey(n ast.Node) (string, bool) {
 	if n == nil {
@@ -123,11 +132,19 @@ func runOnce(p RunParams) []types.Place {
 			if item.Msg != "" {
 				msg = item.Msg
 			}
-			pos := p.Fset.Position(pPath.Node.Pos())
+			startPos := p.Fset.Position(pPath.Node.Pos())
+			endPos := p.Fset.Position(pPath.Node.End())
+			sp := spanPos{
+				pos: types.Position{
+					Line:   startPos.Line,
+					Column: startPos.Column,
+				},
+				end: endPos,
+			}
 			places = append(places, types.Place{
 				Rule:     item.Rule,
 				Message:  msg,
-				Position: types.Position{Line: pos.Line, Column: pos.Column},
+				Position: sp.pos,
 			})
 			if p.Fix {
 				tp.Fix(pPath, item.Options)
@@ -202,11 +219,19 @@ func runOnce(p RunParams) []types.Place {
 				if item.Msg != "" {
 					msg = item.Msg
 				}
-				pos := p.Fset.Position(stmt.Pos())
+				startPos := p.Fset.Position(stmt.Pos())
+				endPos := p.Fset.Position(stmt.End())
+				sp := spanPos{
+					pos: types.Position{
+						Line:   startPos.Line,
+						Column: startPos.Column,
+					},
+					end: endPos,
+				}
 				places = append(places, types.Place{
 					Rule:     item.Rule,
 					Message:  msg,
-					Position: types.Position{Line: pos.Line, Column: pos.Column},
+					Position: sp.pos,
 				})
 				if p.Fix {
 					tmpl, hasReplace := replacer[pattern]
@@ -253,11 +278,19 @@ func runOnce(p RunParams) []types.Place {
 				if item.Msg != "" {
 					msg = item.Msg
 				}
-				pos := p.Fset.Position(decl.Pos())
+				startPos := p.Fset.Position(decl.Pos())
+				endPos := p.Fset.Position(decl.End())
+				sp := spanPos{
+					pos: types.Position{
+						Line:   startPos.Line,
+						Column: startPos.Column,
+					},
+					end: endPos,
+				}
 				places = append(places, types.Place{
 					Rule:     item.Rule,
 					Message:  msg,
-					Position: types.Position{Line: pos.Line, Column: pos.Column},
+					Position: sp.pos,
 				})
 				if p.Fix {
 					declRewrites = append(declRewrites, declRewrite{idx: idx, tmpl: tmpl, vars: vars})

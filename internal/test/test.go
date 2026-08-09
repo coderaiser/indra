@@ -17,9 +17,6 @@ type T = indratest.T
 // CreateTest is the exported CreateTest bound to indra's engine.
 var CreateTest = indratest.CreateTest(indraLint)
 
-// ForGroup is the exported ForGroup bound to indra's engine.
-var ForGroup = indratest.ForGroup(indraLint)
-
 // indraLint converts []any plugin args into runnable PluginItems and runs
 // indra's engine over src.
 func indraLint(src []byte, fix bool, plugins []any) (types.LintResult, error) {

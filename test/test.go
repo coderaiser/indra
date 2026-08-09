@@ -68,24 +68,8 @@ func CreateTest(lint types.Lint) func(rule string, plugin any) func(*testing.T, 
 	}
 }
 
-// ForGroup returns a test runner for every rule of a group. It is used by a
-// group's own test file to exercise all sub-rules at once (e.g. tape.Rules()).
-func ForGroup(lint types.Lint) func(name string, rules []types.Rule) func(*testing.T, string, func(*T)) {
-	return func(name string, rules []types.Rule) func(*testing.T, string, func(*T)) {
-		plugins := make([]any, 0, len(rules))
-		for _, rule := range rules {
-			plugins = append(plugins, PluginArg{Rule: rule.Name, Plugin: rule.Plugin})
-		}
-		dir := callerFixtureDir(1)
-		return tape.Extend(func(base *tape.T) *T {
-			return New(base, lint, plugins, dir)
-		})
-	}
-}
-
 // callerFixtureDir returns the fixture/ directory next to the test file that
-// called CreateTest/ForGroup. depth is the position of CreateTest/ForGroup's
-// caller frame.
+// called CreateTest. depth is the position of CreateTest's caller frame.
 func callerFixtureDir(depth int) string {
 	_, file, _, _ := runtime.Caller(depth + 1)
 	return filepath.Join(filepath.Dir(file), "fixture")

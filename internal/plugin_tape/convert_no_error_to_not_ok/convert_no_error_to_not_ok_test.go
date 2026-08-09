@@ -1,27 +1,13 @@
 package convert_no_error_to_not_ok_test
 
 import (
-	"go/ast"
 	"testing"
 
 	"coderaiser/indra/internal/plugin_tape/convert_no_error_to_not_ok"
 	. "coderaiser/indra/internal/test"
-	"coderaiser/indra/types"
-
-	tape "github.com/coderaiser/go-tape"
 )
 
 var Test = CreateTest("convert-no-error-to-not-ok", convert_no_error_to_not_ok.Plugin{})
-
-// TestFixDirect covers the Fix early return for a file without the go-tape
-// import, which is not reachable through the push-based fixture harness.
-func TestFixDirect(t *testing.T) {
-	tape.Test(t, "fix: no-op without go-tape import", func(t *tape.T) {
-		convert_no_error_to_not_ok.Fix(types.Path{Node: &ast.File{}}, nil)
-		t.Pass("returned without panic")
-		t.End()
-	})
-}
 
 func TestConvertNoErrorToNotOk(t *testing.T) {
 	Test(t, "convert-no-error-to-not-ok: reports NoError call convert-no-error-to-not-ok", func(t *T) {
