@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"coderaiser/indra/formatter"
-	formjson "coderaiser/indra/internal/formatter_json"
+	formatter_json "coderaiser/indra/internal/formatter_json"
 	"fmt"
 
 	. "github.com/coderaiser/go-tape"
@@ -21,7 +21,7 @@ func TestChoose(t *testing.T) {
 		t.TB().Setenv("CI", "")
 		f := formatter.ChooseByName("json")
 		result := fmt.Sprintf("%p", f)
-		t.Equal(result, fmt.Sprintf("%p", formjson.Format))
+		t.Equal(result, fmt.Sprintf("%p", formatter_json.Format))
 		t.End()
 	})
 }

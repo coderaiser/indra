@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	pb "coderaiser/indra/internal/formatter_progress_bar"
-	formtime "coderaiser/indra/internal/formatter_time"
+	formatter_time "coderaiser/indra/internal/formatter_time"
 	"coderaiser/indra/types"
 
 	. "github.com/coderaiser/go-tape"
@@ -19,7 +19,7 @@ var place1 = types.Place{Rule: "r", Message: "m", Position: types.Position{Line:
 func TestTime(t *testing.T) {
 	Test(t, "time: mid-run returns empty", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
-		out := formtime.Format("a.go", nil, nil, 0, 3, 0, 0)
+		out := formatter_time.Format("a.go", nil, nil, 0, 3, 0, 0)
 		t.NotOk(out)
 
 		t.End()
@@ -27,32 +27,32 @@ func TestTime(t *testing.T) {
 
 	Test(t, "time: last file with issues contains dump summary", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
-		formtime.Format("a.go", nil, nil, 0, 3, 0, 0)
-		formtime.Format("b.go", nil, nil, 1, 3, 0, 0)
-		out := formtime.Format("c.go", nil, []types.Place{place1}, 2, 3, 1, 1)
+		formatter_time.Format("a.go", nil, nil, 0, 3, 0, 0)
+		formatter_time.Format("b.go", nil, nil, 1, 3, 0, 0)
+		out := formatter_time.Format("c.go", nil, []types.Place{place1}, 2, 3, 1, 1)
 		t.Ok(strings.Contains(out, "1 error in 1 file"))
 		t.End()
 	})
 
 	Test(t, "time: last file contains Time section", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
-		out := formtime.Format("a.go", nil, nil, 0, 1, 0, 0)
+		out := formatter_time.Format("a.go", nil, nil, 0, 1, 0, 0)
 		t.Ok(strings.Contains(out, "Time:"))
 		t.End()
 	})
 
 	Test(t, "time: elapsed is non-negative", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
-		formtime.Format("a.go", nil, nil, 0, 2, 0, 0)
-		out := formtime.Format("b.go", nil, nil, 1, 2, 0, 0)
+		formatter_time.Format("a.go", nil, nil, 0, 2, 0, 0)
+		out := formatter_time.Format("b.go", nil, nil, 1, 2, 0, 0)
 		t.Ok(strings.Contains(out, "ms") || strings.Contains(out, "µs") || strings.Contains(out, "s"))
 		t.End()
 	})
 
 	Test(t, "time: state resets between runs", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
-		formtime.Format("a.go", nil, nil, 0, 1, 0, 0)
-		out := formtime.Format("a.go", nil, nil, 0, 1, 0, 0)
+		formatter_time.Format("a.go", nil, nil, 0, 1, 0, 0)
+		out := formatter_time.Format("a.go", nil, nil, 0, 1, 0, 0)
 		t.Ok(strings.Contains(out, "Time:"))
 		t.End()
 	})
@@ -81,9 +81,9 @@ func TestTimeProgressBar(t *testing.T) {
 		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
 
 		out := captureStderr(t, func() {
-			formtime.Format("a.go", nil, nil, 0, 3, 0, 0)
-			formtime.Format("b.go", nil, nil, 1, 3, 0, 0)
-			formtime.Format("c.go", nil, nil, 2, 3, 0, 0)
+			formatter_time.Format("a.go", nil, nil, 0, 3, 0, 0)
+			formatter_time.Format("b.go", nil, nil, 1, 3, 0, 0)
+			formatter_time.Format("c.go", nil, nil, 2, 3, 0, 0)
 		})
 		t.Ok(strings.Contains(out, pb.HideCursor))
 		t.End()
@@ -94,9 +94,9 @@ func TestTimeProgressBar(t *testing.T) {
 		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
 
 		out := captureStderr(t, func() {
-			formtime.Format("a.go", nil, nil, 0, 3, 0, 0)
-			formtime.Format("b.go", nil, nil, 1, 3, 0, 0)
-			formtime.Format("c.go", nil, nil, 2, 3, 0, 0)
+			formatter_time.Format("a.go", nil, nil, 0, 3, 0, 0)
+			formatter_time.Format("b.go", nil, nil, 1, 3, 0, 0)
+			formatter_time.Format("c.go", nil, nil, 2, 3, 0, 0)
 		})
 		t.Ok(strings.Contains(out, pb.ShowCursor))
 		t.End()
@@ -107,9 +107,9 @@ func TestTimeProgressBar(t *testing.T) {
 		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
 
 		out := captureStderr(t, func() {
-			formtime.Format("a.go", nil, nil, 0, 3, 0, 0)
-			formtime.Format("b.go", nil, nil, 1, 3, 0, 0)
-			formtime.Format("c.go", nil, nil, 2, 3, 0, 0)
+			formatter_time.Format("a.go", nil, nil, 0, 3, 0, 0)
+			formatter_time.Format("b.go", nil, nil, 1, 3, 0, 0)
+			formatter_time.Format("c.go", nil, nil, 2, 3, 0, 0)
 		})
 		t.Ok(strings.Contains(out, "⏳"))
 		t.End()
@@ -120,10 +120,10 @@ func TestTimeProgressBar(t *testing.T) {
 		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
 
 		captureStderr(t, func() {
-			formtime.Format("a.go", nil, nil, 0, 3, 0, 0)
-			formtime.Format("b.go", nil, nil, 1, 3, 0, 0)
+			formatter_time.Format("a.go", nil, nil, 0, 3, 0, 0)
+			formatter_time.Format("b.go", nil, nil, 1, 3, 0, 0)
 		})
-		out := formtime.Format("c.go", nil, []types.Place{place1}, 2, 3, 1, 1)
+		out := formatter_time.Format("c.go", nil, []types.Place{place1}, 2, 3, 1, 1)
 		t.Ok(strings.Contains(out, "1 error in 1 file"))
 		t.End()
 	})
@@ -133,10 +133,10 @@ func TestTimeProgressBar(t *testing.T) {
 		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
 
 		captureStderr(t, func() {
-			formtime.Format("a.go", nil, nil, 0, 3, 0, 0)
-			formtime.Format("b.go", nil, nil, 1, 3, 0, 0)
+			formatter_time.Format("a.go", nil, nil, 0, 3, 0, 0)
+			formatter_time.Format("b.go", nil, nil, 1, 3, 0, 0)
 		})
-		out := formtime.Format("c.go", nil, []types.Place{place1}, 2, 3, 1, 1)
+		out := formatter_time.Format("c.go", nil, []types.Place{place1}, 2, 3, 1, 1)
 		t.Ok(strings.Contains(out, "Time:"))
 		t.End()
 	})
@@ -146,8 +146,8 @@ func TestTimeProgressBar(t *testing.T) {
 		t.TB().Setenv("INDRA_TERM_WIDTH", "10")
 
 		captureStderr(t, func() {
-			formtime.Format("a-very-long-filename-indeed.go", nil, nil, 0, 2, 0, 0)
-			formtime.Format("b.go", nil, nil, 1, 2, 0, 0)
+			formatter_time.Format("a-very-long-filename-indeed.go", nil, nil, 0, 2, 0, 0)
+			formatter_time.Format("b.go", nil, nil, 1, 2, 0, 0)
 		})
 		t.End()
 	})

@@ -5,16 +5,16 @@ package formatter
 import (
 	"os"
 
-	formcf "coderaiser/indra/internal/formatter_codeframe"
+	formatter_codeframe "coderaiser/indra/internal/formatter_codeframe"
 	dump "coderaiser/indra/internal/formatter_dump"
-	formframe "coderaiser/indra/internal/formatter_frame"
-	formjson "coderaiser/indra/internal/formatter_json"
-	jsonlines "coderaiser/indra/internal/formatter_json_lines"
-	formmem "coderaiser/indra/internal/formatter_memory"
-	formprog "coderaiser/indra/internal/formatter_progress"
+	formatter_frame "coderaiser/indra/internal/formatter_frame"
+	formatter_json "coderaiser/indra/internal/formatter_json"
+	formatter_json_lines "coderaiser/indra/internal/formatter_json_lines"
+	formatter_memory "coderaiser/indra/internal/formatter_memory"
+	formatter_progress "coderaiser/indra/internal/formatter_progress"
 	pb "coderaiser/indra/internal/formatter_progress_bar"
-	formstream "coderaiser/indra/internal/formatter_stream"
-	formtime "coderaiser/indra/internal/formatter_time"
+	formatter_stream "coderaiser/indra/internal/formatter_stream"
+	formatter_time "coderaiser/indra/internal/formatter_time"
 	"coderaiser/indra/types"
 )
 
@@ -40,21 +40,21 @@ func ChooseByName(name string) Func {
 	}
 	switch name {
 	case "json":
-		return formjson.Format
+		return formatter_json.Format
 	case "json-lines":
-		return jsonlines.Format
+		return formatter_json_lines.Format
 	case "progress":
-		return formprog.Format
+		return formatter_progress.Format
 	case "codeframe":
-		return formcf.Format
+		return formatter_codeframe.Format
 	case "frame":
-		return formframe.Format
+		return formatter_frame.Format
 	case "memory":
-		return formmem.Format
+		return formatter_memory.Format
 	case "time":
-		return formtime.Format
+		return formatter_time.Format
 	case "stream":
-		return formstream.Format
+		return formatter_stream.Format
 	case "dump":
 		return dump.Format
 	default:

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	formframe "coderaiser/indra/internal/formatter_frame"
+	formatter_frame "coderaiser/indra/internal/formatter_frame"
 	"coderaiser/indra/types"
 
 	. "github.com/coderaiser/go-tape"
@@ -22,27 +22,27 @@ var place1 = types.Place{Rule: "r", Message: "m", Position: types.Position{Line:
 
 func TestFrame(t *testing.T) {
 	Test(t, "frame: mid-run returns empty (percent on stderr)", func(t *T) {
-		out := formframe.Format("a.go", src, nil, 0, 5, 0, 0)
+		out := formatter_frame.Format("a.go", src, nil, 0, 5, 0, 0)
 		t.NotOk(out)
 
 		t.End()
 	})
 
 	Test(t, "frame: last file returns codeframe output", func(t *T) {
-		out := formframe.Format("a.go", src, []types.Place{place1}, 4, 5, 1, 1)
+		out := formatter_frame.Format("a.go", src, []types.Place{place1}, 4, 5, 1, 1)
 		t.Ok(strings.Contains(out, "1 error in 1 file"))
 		t.End()
 	})
 
 	Test(t, "frame: last file clean returns empty", func(t *T) {
-		out := formframe.Format("a.go", src, nil, 4, 5, 0, 0)
+		out := formatter_frame.Format("a.go", src, nil, 4, 5, 0, 0)
 		t.NotOk(out)
 
 		t.End()
 	})
 
 	Test(t, "frame: single file returns codeframe immediately", func(t *T) {
-		out := formframe.Format("a.go", src, []types.Place{place1}, 0, 1, 1, 1)
+		out := formatter_frame.Format("a.go", src, []types.Place{place1}, 0, 1, 1, 1)
 		t.Ok(strings.Contains(strip(out), "> 4"))
 		t.End()
 	})

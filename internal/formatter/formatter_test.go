@@ -5,16 +5,16 @@ import (
 	"testing"
 
 	"coderaiser/indra/internal/formatter"
-	formcf "coderaiser/indra/internal/formatter_codeframe"
+	formatter_codeframe "coderaiser/indra/internal/formatter_codeframe"
 	dump "coderaiser/indra/internal/formatter_dump"
-	formframe "coderaiser/indra/internal/formatter_frame"
-	formjson "coderaiser/indra/internal/formatter_json"
-	jsonlines "coderaiser/indra/internal/formatter_json_lines"
-	formmem "coderaiser/indra/internal/formatter_memory"
-	formprog "coderaiser/indra/internal/formatter_progress"
+	formatter_frame "coderaiser/indra/internal/formatter_frame"
+	formatter_json "coderaiser/indra/internal/formatter_json"
+	formatter_json_lines "coderaiser/indra/internal/formatter_json_lines"
+	formatter_memory "coderaiser/indra/internal/formatter_memory"
+	formatter_progress "coderaiser/indra/internal/formatter_progress"
 	pb "coderaiser/indra/internal/formatter_progress_bar"
-	formstream "coderaiser/indra/internal/formatter_stream"
-	formtime "coderaiser/indra/internal/formatter_time"
+	formatter_stream "coderaiser/indra/internal/formatter_stream"
+	formatter_time "coderaiser/indra/internal/formatter_time"
 
 	. "github.com/coderaiser/go-tape"
 )
@@ -24,7 +24,7 @@ func TestChooseByName(t *testing.T) {
 		t.TB().Setenv("CI", "")
 		f := formatter.ChooseByName("json")
 		result := fmt.Sprintf("%p", f)
-		t.Equal(result, fmt.Sprintf("%p", formjson.Format))
+		t.Equal(result, fmt.Sprintf("%p", formatter_json.Format))
 		t.End()
 	})
 
@@ -32,7 +32,7 @@ func TestChooseByName(t *testing.T) {
 		t.TB().Setenv("CI", "")
 		f := formatter.ChooseByName("time")
 		result := fmt.Sprintf("%p", f)
-		t.Equal(result, fmt.Sprintf("%p", formtime.Format))
+		t.Equal(result, fmt.Sprintf("%p", formatter_time.Format))
 		t.End()
 	})
 
@@ -40,7 +40,7 @@ func TestChooseByName(t *testing.T) {
 		t.TB().Setenv("CI", "")
 		f := formatter.ChooseByName("memory")
 		result := fmt.Sprintf("%p", f)
-		t.Equal(result, fmt.Sprintf("%p", formmem.Format))
+		t.Equal(result, fmt.Sprintf("%p", formatter_memory.Format))
 		t.End()
 	})
 
@@ -48,7 +48,7 @@ func TestChooseByName(t *testing.T) {
 		t.TB().Setenv("CI", "")
 		f := formatter.ChooseByName("frame")
 		result := fmt.Sprintf("%p", f)
-		t.Equal(result, fmt.Sprintf("%p", formframe.Format))
+		t.Equal(result, fmt.Sprintf("%p", formatter_frame.Format))
 		t.End()
 	})
 
@@ -56,7 +56,7 @@ func TestChooseByName(t *testing.T) {
 		t.TB().Setenv("CI", "")
 		f := formatter.ChooseByName("codeframe")
 		result := fmt.Sprintf("%p", f)
-		t.Equal(result, fmt.Sprintf("%p", formcf.Format))
+		t.Equal(result, fmt.Sprintf("%p", formatter_codeframe.Format))
 		t.End()
 	})
 
@@ -64,7 +64,7 @@ func TestChooseByName(t *testing.T) {
 		t.TB().Setenv("CI", "")
 		f := formatter.ChooseByName("stream")
 		result := fmt.Sprintf("%p", f)
-		t.Equal(result, fmt.Sprintf("%p", formstream.Format))
+		t.Equal(result, fmt.Sprintf("%p", formatter_stream.Format))
 		t.End()
 	})
 
@@ -72,7 +72,7 @@ func TestChooseByName(t *testing.T) {
 		t.TB().Setenv("CI", "")
 		f := formatter.ChooseByName("progress")
 		result := fmt.Sprintf("%p", f)
-		t.Equal(result, fmt.Sprintf("%p", formprog.Format))
+		t.Equal(result, fmt.Sprintf("%p", formatter_progress.Format))
 		t.End()
 	})
 
@@ -80,7 +80,7 @@ func TestChooseByName(t *testing.T) {
 		t.TB().Setenv("CI", "")
 		f := formatter.ChooseByName("json-lines")
 		result := fmt.Sprintf("%p", f)
-		t.Equal(result, fmt.Sprintf("%p", jsonlines.Format))
+		t.Equal(result, fmt.Sprintf("%p", formatter_json_lines.Format))
 		t.End()
 	})
 
@@ -135,7 +135,7 @@ func TestChoose(t *testing.T) {
 		t.TB().Setenv("INDRA_FORMATTER", "json-lines")
 		f := formatter.Choose()
 		result := fmt.Sprintf("%p", f)
-		t.Equal(result, fmt.Sprintf("%p", jsonlines.Format))
+		t.Equal(result, fmt.Sprintf("%p", formatter_json_lines.Format))
 
 		t.End()
 	})

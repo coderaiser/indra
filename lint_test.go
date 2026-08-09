@@ -279,7 +279,7 @@ func TestIndraDumpFormatterReports(t *testing.T) {
 	})
 }
 
-func TestIndraJsonLinesFormatter(t *testing.T) {
+func TestIndraformatter_json_linesFormatter(t *testing.T) {
 	Test(t, "lint: Indra dir with json-lines formatter outputs JSON", func(t *T) {
 		dir := t.TB().TempDir()
 		writeFile(t.TB(), dir, "bad.go", matchSrc)
