@@ -5,7 +5,7 @@ import (
 
 	"coderaiser/indra/formatter"
 	"fmt"
-	"formjson"
+	formjson "coderaiser/indra/internal/formatter_json"
 
 	. "github.com/coderaiser/go-tape"
 )
