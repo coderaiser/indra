@@ -17,13 +17,39 @@ var places1 = []types.Place{
 	{Rule: "tape/remove-skip", Message: "remove Test.Skip call", Position: types.Position{Line: 5, Column: 2}},
 }
 
-func TestProgressBarMidRunReturnsEmpty(t *testing.T) {
+func TestProgressFormat(t *testing.T) {
 	Test(t, "progress-bar: mid-run returns empty string", func(t *T) {
 		t.TB().Setenv("INDRA_PROGRESS_BAR", "0")
 		out := pb.Format("foo.go", nil, nil, 0, 10, 0, 0)
 		t.Equal(out, "")
 		t.End()
 	})
+
+	Test(t, "progress-bar: clears line when file has issues", func(t *T) {
+		t.TB().Setenv("INDRA_PROGRESS_BAR", "1")
+		t.TB().Setenv("INDRA_TERM_WIDTH", "80")
+
+		oldStderr := os.Stderr
+		r, w, _ := os.Pipe()
+		os.Stderr = w
+
+		t.TB().Cleanup(func() {
+			w.Close()
+			os.Stderr = oldStderr
+			r.Close()
+		})
+
+		pb.Format("foo.go", nil, places1, 0, 2, 1, 1)
+
+		w.Close()
+
+		var buf bytes.Buffer
+		io.Copy(&buf, r)
+
+		t.Ok(strings.Contains(buf.String(), "\r\033[2K"))
+		t.End()
+	})
+
 }
 
 func TestProgressBarLastFileNoIssues(t *testing.T) {
