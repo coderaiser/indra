@@ -78,6 +78,7 @@ Rules enabled for all files — nothing tape-specific.
 
 | Rule | Description |
 |---|---|
+| `conditions/remove-useless-comments` | Remove separator banner comments |
 
 ### 🔧 Single rules
 

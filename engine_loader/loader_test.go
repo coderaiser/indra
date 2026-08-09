@@ -29,8 +29,6 @@ func (testTraverser) Fix(_ types.Path, _ map[string]any) {}
 
 func fileVisitor(p types.Path, push func(types.Path)) {}
 
-// ── malformed shapes ─────────────────────────────────────────────────────────
-
 // badReplaceSignature has a Replace method of the wrong type.
 type badReplaceSignature struct{}
 
@@ -208,8 +206,6 @@ func TestDefaultConfigEmpty(t *testing.T) {
 		t.Fatal("expected empty default config")
 	}
 }
-
-// ── panic / malformed-shape paths ────────────────────────────────────────────
 
 func catchPanic(fn func()) (msg string) {
 	defer func() {

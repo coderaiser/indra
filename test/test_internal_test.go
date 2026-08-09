@@ -17,8 +17,6 @@ import (
 	tape "github.com/coderaiser/go-tape"
 )
 
-// ── fixture sources ──────────────────────────────────────────────────────────
-
 const matchSrc = `package fixture
 
 func f() {
@@ -46,8 +44,6 @@ func f() {
 
 }
 `
-
-// ── synthetic lints ──────────────────────────────────────────────────────────
 
 // noopLint does nothing and returns an empty result.
 func noopLint(_ []byte, _ bool, _ []any) (types.LintResult, error) {
@@ -82,8 +78,6 @@ func engineLint(rule string, plugin any) types.Lint {
 	}
 }
 
-// ── synthetic plugin ─────────────────────────────────────────────────────────
-
 type synthReplacer struct {
 	report  string
 	match   types.Matcher
@@ -93,8 +87,6 @@ type synthReplacer struct {
 func (s synthReplacer) Report() string          { return s.report }
 func (s synthReplacer) Match() types.Matcher    { return s.match }
 func (s synthReplacer) Replace() types.Replacer { return s.replace }
-
-// ── helpers ──────────────────────────────────────────────────────────────────
 
 // newRecording builds a T whose fatal is a recording stub so error paths can be
 // exercised without aborting the enclosing test.
@@ -124,8 +116,6 @@ func assertFatal(t *testing.T, calls []string) {
 		t.Error("expected a fatal error to be recorded")
 	}
 }
-
-// ── CreateTest / ForGroup ────────────────────────────────────────────────────
 
 func TestCreateTest(t *testing.T) {
 	_, file, _, _ := runtime.Caller(0)
@@ -162,8 +152,6 @@ func TestForGroup(t *testing.T) {
 		tt.End()
 	})
 }
-
-// ── happy-path tests ─────────────────────────────────────────────────────────
 
 func TestReport(t *testing.T) {
 	dir := writeDir(t, map[string]string{"match.go": matchSrc})
@@ -207,8 +195,6 @@ func TestNoTransform(t *testing.T) {
 		tt.End()
 	})
 }
-
-// ── error-path tests ─────────────────────────────────────────────────────────
 
 func TestReportParseError(t *testing.T) {
 	dir := writeDir(t, map[string]string{"bad.go": "package p\nfunc (\n"})
@@ -306,8 +292,6 @@ func TestTransformUpdateHappy(t *testing.T) {
 		tt.End()
 	})
 }
-
-// ── operator name emission ─────────────────────────────────────────────────
 
 func TestReportOperatorName(t *testing.T) {
 	dir := writeDir(t, map[string]string{"match.go": matchSrc})

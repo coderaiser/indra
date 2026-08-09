@@ -60,8 +60,6 @@ func (Plugin) Report(p types.Path) string            { return Report(p) }
 func (Plugin) Traverse() types.Traverser             { return Traverse() }
 func (Plugin) Fix(p types.Path, opts map[string]any) { Fix(p, opts) }
 
-// ── imports ──────────────────────────────────────────────────────────────────
-
 type importInfo struct {
 	spec      *ast.ImportSpec
 	localName string
@@ -340,8 +338,6 @@ func fixOneUnusedImport(file *ast.File, target *ast.ImportSpec) {
 	file.Imports = newImports
 }
 
-// ── consts ───────────────────────────────────────────────────────────────────
-
 // unusedConstNames returns names of file-level consts never referenced.
 func unusedConstNames(file *ast.File) []string {
 	declared := collectConstNames(file)
@@ -411,8 +407,6 @@ func fixUnusedConsts(file *ast.File) {
 	}
 	file.Decls = kept
 }
-
-// ── variables ────────────────────────────────────────────────────────────────
 
 // unusedVarNames returns the names declared via `:=` or `var` in block that
 // are never read afterwards.

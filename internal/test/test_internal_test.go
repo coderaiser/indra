@@ -16,8 +16,6 @@ import (
 // It uses tape.Extend bound to indraLint so *T carries Ok, Equal, etc.
 var run = CreateTest("internal-test", remove_skip.Plugin{})
 
-// ── indraLint ────────────────────────────────────────────────────────────────
-
 func TestIndraLintSuccess(t *testing.T) {
 	src := []byte("package p\n\nfunc f() {\n\tTest.Skip(t, \"foo: something\", func(t *Test.T) {\n\t\tt.End()\n\t})\n}\n")
 	plugins := []any{indratest.PluginArg{Rule: "remove-skip", Plugin: remove_skip.Plugin{}}}
@@ -43,8 +41,6 @@ func TestIndraLintParseError(t *testing.T) {
 		tt.End()
 	})
 }
-
-// ── validatePlugin ───────────────────────────────────────────────────────────
 
 type synthReplacer struct {
 	report  string

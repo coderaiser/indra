@@ -309,8 +309,6 @@ func TestOverrideRulesSortedMerge(t *testing.T) {
 	})
 }
 
-// ── Default / Merge ───────────────────────────────────────────────────────────
-
 func TestDefaultReturnsNonEmptyRules(t *testing.T) {
 	Test(t, "config: Default returns non-empty rules", func(t *T) {
 		cfg := config.Default()
@@ -430,8 +428,6 @@ func TestMergeProgressMinCountUserWins(t *testing.T) {
 		t.End()
 	})
 }
-
-// ── Load with defaults ────────────────────────────────────────────────────────
 
 func TestLoadReturnsDefaultsWhenFileAbsent(t *testing.T) {
 	Test(t, "config: Load returns defaults when file absent", func(t *T) {
