@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"coderaiser/indra/internal/config"
+    "github.com/lithammer/dedent"
+
 
 	. "github.com/coderaiser/go-tape"
 )
@@ -32,10 +34,10 @@ func TestLoadMissingFileEmptyPatterns(t *testing.T) {
 func TestLoadWithPatternsNoError(t *testing.T) {
 	Test(t, "config: Load returns no error for .indra.toml", func(t *T) {
 		dir := t.TB().TempDir()
-		os.WriteFile(filepath.Join(dir, ".indra.toml"), []byte(`
-[ignore]
-patterns = ["vendor/**", "testdata/**"]
-`), 0644)
+		os.WriteFile(filepath.Join(dir, ".indra.toml"), []byte(dedent.Dedent(`
+            [ignore]
+            patterns = ["vendor/**", "testdata/**"]
+            `)), 0644)
 		_, err := config.Load(dir)
 		t.NotOk(err)
 
@@ -80,11 +82,13 @@ func TestLoadProgressMinCount(t *testing.T) {
 
 func TestLoadMalformed(t *testing.T) {
 	Test(t, "config: Load returns error for malformed toml", func(t *T) {
+		t.TB().Setenv("CI", "")
+
 		dir := t.TB().TempDir()
 		os.WriteFile(filepath.Join(dir, ".indra.toml"), []byte(`[bad`), 0644)
 		_, err := config.Load(dir)
+		
 		t.Ok(err)
-
 		t.End()
 	})
 }
@@ -478,23 +482,12 @@ func TestLoadUserTomlMergeKeepsDefaults(t *testing.T) {
 func TestLoadUserTomlMergeAddsUserRule(t *testing.T) {
 	Test(t, "config: Load adds user rule on merge", func(t *T) {
 		dir := t.TB().TempDir()
-		os.WriteFile(filepath.Join(dir, ".indra.toml"), []byte(`
-[rules]
-"indra" = "on"
-`), 0644)
+		os.WriteFile(filepath.Join(dir, ".indra.toml"), []byte(dedent.Dedent(`
+            [rules]
+            "indra" = "on"
+        `)), 0644)
 		cfg, _ := config.Load(dir)
 		t.Equal(cfg.Rules["indra"], "on")
-		t.End()
-	})
-}
-
-func TestLoadMalformedTomlReturnsError(t *testing.T) {
-	Test(t, "config: Load returns error for malformed toml", func(t *T) {
-		dir := t.TB().TempDir()
-		os.WriteFile(filepath.Join(dir, ".indra.toml"), []byte("["), 0644)
-		_, err := config.Load(dir)
-		t.Ok(err)
-
 		t.End()
 	})
 }

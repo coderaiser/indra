@@ -42,7 +42,6 @@ func TestConfigureMinAtThreshold(t *testing.T) {
 		Configure(Config{Color: defaultColor, MinCount: 5})
 		result := ShouldShow(5)
 		t.Ok(result)
-
 		t.End()
 	})
 }
