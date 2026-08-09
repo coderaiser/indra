@@ -33,8 +33,8 @@ func writeFile(t *testing.T, dir, name, content string) string {
 	return path
 }
 
-const matchSrc = "package p\n\nfunc f() {\n\tt.Equal(1, []int{1})\n}\n"
-const cleanSrc = "package p\n\nfunc f() {}\n"
+const matchSrc = "package p\n\nfunc F() {\n\tt.Equal(1, []int{1})\n}\n"
+const cleanSrc = "package p\n\nfunc F() {}\n"
 const badSrc = "package p\nfunc (\n"
 
 func TestLintReports(t *testing.T) {
