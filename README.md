@@ -69,8 +69,13 @@ Create `.indra.toml` in your project root:
 | `tape/add-t-end` | Add missing `t.End()` |
 | `tape/apply-dedent` | Remove `dedent.Dedent` wrappers |
 | `tape/convert-equal-to-deep-equal` | Use `DeepEqual` for slice args |
+| `tape/convert-equal-to-ok` | Convert `Equal(x, true)` to `Ok(x)` |
+| `tape/convert-equal-to-not-ok` | Convert `Equal(x, nil)` to `NotOk(x)` |
+| `tape/convert-ok-to-not-ok` | Convert `Ok(err == nil)` to `NotOk(err)` |
+| `tape/convert-no-error-to-not-ok` | Convert `NoError(err)` to `NotOk(err)` |
 | `tape/extract-result-from-assertion` | Extract inline expressions from assertions |
 | `tape/remove-useless-condition` | Remove useless condition inside `Ok`/`NotOk` |
+| `tape/remove-useless-prefix` | Dot-import tape instead of `tape.` prefix |
 
 ### 🚦 conditions
 
@@ -79,6 +84,7 @@ Rules enabled for all files — nothing tape-specific.
 | Rule | Description |
 |---|---|
 | `conditions/remove-useless-comments` | Remove separator banner comments |
+| `conditions/convert-switch-to-if` | Use `if` instead of `switch` |
 
 ### 🔧 Single rules
 
