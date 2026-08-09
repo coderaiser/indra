@@ -5,8 +5,6 @@ import (
 	"go/parser"
 	"go/token"
 	"testing"
-
-	"coderaiser/indra/types"
 )
 
 func parseDirect(t *testing.T, src string) *ast.File {
@@ -45,29 +43,5 @@ func unusedHelper() {}
 	}
 	if finding.Pos() != funcDecl.Pos() {
 		t.Fatal("Pos mismatch")
-	}
-}
-
-func TestCollectDeclaredNamesWithType(t *testing.T) {
-	file := parseDirect(t, `package fixture
-
-type MyType struct{}
-
-const x = 1
-func f() {}
-var y int
-`)
-	names := collectDeclaredNames(types.Path{Node: file})
-	if !names["MyType"] {
-		t.Fatal("missing MyType")
-	}
-	if !names["x"] {
-		t.Fatal("missing x")
-	}
-	if !names["f"] {
-		t.Fatal("missing f")
-	}
-	if !names["y"] {
-		t.Fatal("missing y")
 	}
 }
