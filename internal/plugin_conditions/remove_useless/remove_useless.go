@@ -6,8 +6,9 @@ func Report() string { return "Avoid useless condition" }
 
 func Replace() Replacer {
 	return Replacer{
-		"__a != nil": "__b",
-		"__a == nil": "!__a",
+		"__a != nil":   "__b",
+		"__a == nil":   "!__a",
+		"__a == false": "!__a",
 	}
 }
 

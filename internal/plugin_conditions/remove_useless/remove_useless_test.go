@@ -49,4 +49,9 @@ func TestRemoveUselessCondition(t *testing.T) {
 		t.NoTransform("not-ok-direct")
 		t.End()
 	})
+
+	Test(t, "conditions: remove-useless: no transform for NotOk(err) not-ok-direct", func(t *T) {
+		t.Transform("false")
+		t.End()
+	})
 }
