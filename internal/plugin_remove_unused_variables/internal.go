@@ -315,8 +315,8 @@ func unusedVarNames(block *ast.BlockStmt) []string {
 		// handle: x := expr
 		if assign, ok := stmt.(*ast.AssignStmt); ok && assign.Tok == token.DEFINE {
 			for _, lhs := range assign.Lhs {
-				ident, ok := lhs.(*ast.Ident)
-				if !ok || ident.Name == "_" {
+				ident := lhs.(*ast.Ident)
+				if ident.Name == "_" {
 					continue
 				}
 				if !seen[ident.Name] {
@@ -412,8 +412,8 @@ func fixUnusedVars(block *ast.BlockStmt) {
 		if assign, ok := stmt.(*ast.AssignStmt); ok && assign.Tok == token.DEFINE {
 			allUnused := true
 			for _, lhs := range assign.Lhs {
-				ident, ok := lhs.(*ast.Ident)
-				if !ok || ident.Name == "_" {
+				ident := lhs.(*ast.Ident)
+				if ident.Name == "_" {
 					continue
 				}
 				if !unused[ident.Name] {
