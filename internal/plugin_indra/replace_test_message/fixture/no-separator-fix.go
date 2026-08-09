@@ -9,7 +9,7 @@ import . "coderaiser/indra/internal/test"
 var Test = CreateTest("remove-skip", nil)
 
 func f(t *testing.T) {
-	Test(t, "report missing some-fix", func(t *T) {
+	Test(t, "report missing: some-fix", func(t *T) {
 		t.Report("some-fix", "remove Test.Skip call")
 		t.End()
 	})

@@ -134,7 +134,7 @@ func applyFixtureNames(p Path) {
 			if len(msg) >= 2 {
 				inner := msg[1 : len(msg)-1]
 				if !strings.Contains(afterSeparator(inner), fixtureName) {
-					msgLit.Value = `"` + inner + " " + fixtureName + `"`
+					msgLit.Value = `"` + inner + ": " + fixtureName + `"`
 				}
 			}
 		},
