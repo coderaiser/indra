@@ -214,4 +214,24 @@ func TestRemoveUnusedDeclarations(t *testing.T) {
 		t.NoReport("method-func")
 		t.End()
 	})
+
+	Test(t, "remove-unused-variables: report unused var in partial := decl assign-partial-unused", func(t *T) {
+		t.Report("assign-partial-unused", "remove unused variable: b")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: transform blanks unused var in partial := decl assign-partial-unused", func(t *T) {
+		t.Transform("assign-partial-unused")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: report unused var in := decl with blank unused assign-blank-unused", func(t *T) {
+		t.Report("assign-blank-unused", "remove unused variable: b")
+		t.End()
+	})
+
+	Test(t, "remove-unused-variables: transform blanks unused var in := decl with blank assign-blank-unused", func(t *T) {
+		t.Transform("assign-blank-unused")
+		t.End()
+	})
 }
