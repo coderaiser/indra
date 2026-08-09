@@ -4,6 +4,7 @@
 package conditions
 
 import (
+	"coderaiser/indra/internal/plugin_conditions/convert_switch_to_if"
 	"coderaiser/indra/internal/plugin_conditions/remove_useless_comments"
 	"coderaiser/indra/types"
 )
@@ -13,5 +14,6 @@ import (
 func Rules() []types.Rule {
 	return []types.Rule{
 		{Name: "remove-useless-comments", Plugin: remove_useless_comments.Plugin{}},
+		{Name: "convert-switch-to-if", Plugin: convert_switch_to_if.Plugin{}},
 	}
 }

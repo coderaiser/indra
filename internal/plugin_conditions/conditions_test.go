@@ -19,4 +19,15 @@ func TestRules(t *testing.T) {
 		t.Ok(found)
 		t.End()
 	})
+
+	Test(t, "plugin-conditions: convert-switch-to-if is registered", func(t *T) {
+		found := false
+		for _, r := range Rules() {
+			if r.Name == "convert-switch-to-if" {
+				found = true
+			}
+		}
+		t.Ok(found)
+		t.End()
+	})
 }
