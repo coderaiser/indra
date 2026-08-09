@@ -7,7 +7,7 @@ the group is enabled for all files by default — no glob restriction needed.
 
 - ✅ [remove-useless-condition](#remove-useless-condition)
 
-## remove-useless-condition
+## remove-useless
 
 Removes a useless condition inside `Ok()` / `NotOk()`.
 

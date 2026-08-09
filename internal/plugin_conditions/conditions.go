@@ -4,14 +4,14 @@
 package conditions
 
 import (
-	"coderaiser/indra/internal/plugin_conditions/remove_useless_condition"
+	"coderaiser/indra/internal/plugin_conditions/remove_useless"
 	"coderaiser/indra/types"
 )
 
 // Rules returns the conditions sub-rules. The engine-loader expands
-// "conditions" into "conditions/remove-useless-condition", etc.
+// "conditions" into "conditions/remove-useless", etc.
 func Rules() []types.Rule {
 	return []types.Rule{
-		{Name: "remove-useless-condition", Plugin: remove_useless_condition.Plugin{}},
+		{Name: "remove-useless", Plugin: remove_useless.Plugin{}},
 	}
 }

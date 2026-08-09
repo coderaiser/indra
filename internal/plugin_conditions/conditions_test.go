@@ -9,10 +9,10 @@ import (
 )
 
 func TestRules(t *testing.T) {
-	Test(t, "plugin-conditions: remove-useless-condition is present", func(t *T) {
+	Test(t, "plugin-conditions: remove-useless is present", func(t *T) {
 		found := false
 		for _, r := range Rules() {
-			if r.Name == "remove-useless-condition" {
+			if r.Name == "remove-useless" {
 				found = true
 			}
 		}
