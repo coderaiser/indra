@@ -63,35 +63,50 @@ Create `.indra.toml` in your project root:
 
 ### 📼 tape
 
-| Rule | Description |
-|---|---|
-| `tape/remove-skip` | Replace `Test.Skip` with `Test` |
-| `tape/add-t-end` | Add missing `t.End()` |
-| `tape/apply-dedent` | Remove `dedent.Dedent` wrappers |
-| `tape/convert-equal-to-deep-equal` | Use `DeepEqual` for slice args |
-| `tape/convert-equal-to-ok` | Convert `Equal(x, true)` to `Ok(x)` |
-| `tape/convert-equal-to-not-ok` | Convert `Equal(x, nil)` to `NotOk(x)` |
-| `tape/convert-ok-to-not-ok` | Convert `Ok(err == nil)` to `NotOk(err)` |
-| `tape/convert-no-error-to-not-ok` | Convert `NoError(err)` to `NotOk(err)` |
-| `tape/extract-result-from-assertion` | Extract inline expressions from assertions |
-| `tape/remove-useless-condition` | Remove useless condition inside `Ok`/`NotOk` |
-| `tape/remove-useless-prefix` | Dot-import tape instead of `tape.` prefix |
+Rules for [go-tape](https://github.com/coderaiser/go-tape) test files.
+Enabled for `*_test.go` by default.
+
+| Rule | README | Description |
+|---|---|---|
+| `tape/remove-skip` | [📖](internal/plugin_tape/remove_skip/README.md) | Replace `Test.Skip` with `Test` |
+| `tape/add-t-end` | [📖](internal/plugin_tape/add_t_end/README.md) | Add missing `t.End()` |
+| `tape/apply-dedent` | [📖](internal/plugin_tape/apply_dedent/README.md) | Remove `dedent.Dedent` wrappers |
+| `tape/convert-equal-to-deep-equal` | [📖](internal/plugin_tape/convert_equal_to_deep_equal/README.md) | Use `DeepEqual` for slice args |
+| `tape/convert-equal-to-not-ok` | [📖](internal/plugin_tape/convert_equal_to_not_ok/README.md) | Convert `Equal(x, nil/false)` to `NotOk(x)` |
+| `tape/convert-equal-to-ok` | [📖](internal/plugin_tape/convert_equal_to_ok/README.md) | Convert `Equal(x, true)` to `Ok(x)` |
+| `tape/convert-no-error-to-not-ok` | [📖](internal/plugin_tape/convert_no_error_to_not_ok/README.md) | Convert `NoError` to `NotOk` |
+| `tape/convert-ok-to-not-ok` | [📖](internal/plugin_tape/convert_ok_to_not_ok/README.md) | Convert `Ok(err == nil)` to `NotOk(err)` |
+| `tape/extract-result-from-assertion` | [📖](internal/plugin_tape/extract_result_from_assertion/README.md) | Extract inline call from assertion |
+| `tape/remove-useless-condition` | [📖](internal/plugin_tape/remove_useless_condition/README.md) | Remove useless condition in `Ok`/`NotOk` |
+| `tape/remove-useless-prefix` | [📖](internal/plugin_tape/remove_useless_prefix/README.md) | Remove redundant tape qualifier |
 
 ### 🚦 conditions
 
-Rules enabled for all files — nothing tape-specific.
+General Go code-quality rules. Enabled for all files by default.
 
-| Rule | Description |
-|---|---|
-| `conditions/remove-useless-comments` | Remove separator banner comments |
-| `conditions/convert-switch-to-if` | Use `if` instead of `switch` |
+| Rule | README | Description |
+|---|---|---|
+| `conditions/remove-useless-comments` | [📖](internal/plugin_conditions/remove_useless_comments/README.md) | Remove separator banner comments |
+| `conditions/convert-switch-to-if` | [📖](internal/plugin_conditions/convert_switch_to_if/README.md) | Replace qualifying `switch` with `if` chains |
 
-### 🔧 Single rules
+### 🔧 indra
 
-| Rule | Description |
-|---|---|
-| `remove-unused-import` | Remove unused imports |
-| `remove-unused-variable` | Remove unused variables |
+Meta-rules for indra plugin authoring. Enabled via `"indra" = "on"`.
+
+| Rule | README | Default | Description |
+|---|---|---|---|
+| `indra/remove-useless-match` | [📖](internal/plugin_indra/remove_useless_match/README.md) | off | Remove nil/empty `Match()` entries |
+| `indra/apply-compare` | [📖](internal/plugin_indra/apply_compare/README.md) | on | Use `Compare` over `GetTemplateValues != nil` |
+| `indra/apply-fixture-name-to-message` | [📖](internal/plugin_indra/apply_fixture_name_to_message/README.md) | on | Prefix test message with rule name |
+| `indra/replace-test-message` | [📖](internal/plugin_indra/replace_test_message/README.md) | on | Include fixture name in test message |
+| `indra/convert-for-to-create-test` | [📖](internal/plugin_indra/convert_for_to_create/README.md) | off | Rename `For` to `CreateTest` |
+| `indra/convert-inspect-to-traverse` | [📖](internal/plugin_indra/convert_inspect_to_traverse/README.md) | on | Replace `ast.Inspect` with `path.Traverse` |
+
+### 📦 Single rules
+
+| Rule | README | Description |
+|---|---|---|
+| `remove-unused-variables` | [📖](internal/plugin_remove_unused_variables/README.md) | Remove unused imports, variables, constants, private functions |
 
 ## 🍄 License
 
