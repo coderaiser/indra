@@ -156,9 +156,19 @@ func (t *T) Transform(name string) {
 }
 
 // NoTransform asserts that fix=true leaves fixture <name>.go source unchanged.
+// Set env UPDATE=1 to delete a stale <name>-fix.go fixture instead.
 // Emits operator name "noTransform" to match @putout/test.
 func (t *T) NoTransform(name string) {
 	t.TB().Helper()
+	if os.Getenv("UPDATE") == "1" {
+		fixPath := filepath.Join(t.dir, name+"-fix.go")
+		if err := os.Remove(fixPath); err != nil && !os.IsNotExist(err) {
+			t.fatal("NoTransform(%q): remove fix fixture: %v", name, err)
+			return
+		}
+		t.Pass("fix fixture removed")
+		return
+	}
 	src := t.read(name)
 	res, err := t.lint(src, true, t.plugins)
 	if err != nil {

@@ -371,3 +371,49 @@ func TestNoTransformOperatorName(t *testing.T) {
 		t.Errorf("expected operator noTransform, got %q", operatorName)
 	}
 }
+
+func TestNoTransformUpdateRemovesStaleFix(t *testing.T) {
+	dir := writeDir(t, map[string]string{
+		"replace.go":     replaceSrc,
+		"replace-fix.go": "stale content\n",
+	})
+	t.Setenv("UPDATE", "1")
+	tape.Test(t, "test: NoTransform UPDATE removes stale fix fixture", func(tt *tape.T) {
+		tr := New(tt, noopLint, []any{}, dir)
+		tr.NoTransform("replace")
+		if _, err := os.Stat(filepath.Join(dir, "replace-fix.go")); !os.IsNotExist(err) {
+			t.Error("expected stale fix fixture to be removed")
+		}
+		tt.End()
+	})
+}
+
+func TestNoTransformUpdatePassesWithoutFixFile(t *testing.T) {
+	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
+	t.Setenv("UPDATE", "1")
+	tape.Test(t, "test: NoTransform UPDATE passes without a fix fixture", func(tt *tape.T) {
+		tr := New(tt, noopLint, []any{}, dir)
+		tr.NoTransform("replace")
+		tt.End()
+	})
+}
+
+func TestNoTransformUpdateRemoveError(t *testing.T) {
+	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
+	fixDir := filepath.Join(dir, "replace-fix.go", "inner")
+	if err := os.MkdirAll(fixDir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(fixDir, "x"), []byte("x"), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	t.Setenv("UPDATE", "1")
+	tape.Test(t, "test: NoTransform UPDATE reports remove error", func(tt *tape.T) {
+		tr, calls := newRecording(tt, noopLint, []any{}, dir)
+		tr.NoTransform("replace")
+		if len(*calls) == 0 {
+			t.Error("expected a fatal error to be recorded")
+		}
+		tt.End()
+	})
+}
