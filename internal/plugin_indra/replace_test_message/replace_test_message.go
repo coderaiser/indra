@@ -247,7 +247,6 @@ func fixMessage(msgLit *ast.BasicLit, verb, fixtureName string) {
 	}
 }
 
-
 // Plugin wraps the rule for the registry: an AST-walking plugin.
 type Plugin struct{}
 
