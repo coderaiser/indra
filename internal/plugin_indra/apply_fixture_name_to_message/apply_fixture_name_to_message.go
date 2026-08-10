@@ -1,7 +1,6 @@
 package apply_fixture_name_to_message
 
 import (
-	"fmt"
 	"go/ast"
 	"strings"
 
