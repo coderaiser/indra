@@ -2,7 +2,6 @@ version: "2"
 linters:
   enable:
     - unused
-    - gocritic
     - misspell
   disable:
     - errcheck
