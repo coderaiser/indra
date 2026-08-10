@@ -157,61 +157,96 @@ func hasMismatch(p Path) bool {
 func applyFix(path Path) {
 	path.Traverse(map[string]func(Path){
 		"*ast.CallExpr": func(callPath Path) {
-			call := callPath.Node.(*ast.CallExpr)
-			ident, ok := call.Fun.(*ast.Ident)
-			if !ok || ident.Name != "Test" || len(call.Args) < 3 {
-				return
-			}
-			msgLit, ok := call.Args[1].(*ast.BasicLit)
-			if !ok {
-				return
-			}
-			fnLit, ok := call.Args[2].(*ast.FuncLit)
-			if !ok {
-				return
-			}
-			verb := extractVerb(fnLit)
-			if verb == "" {
-				return
-			}
-			bodyPath := Path{Node: fnLit.Body, Stack: append(callPath.Stack, callPath.Node)}
-			fixtureName := extractFixtureName(bodyPath)
-			if fixtureName == "" {
-				return
-			}
-			msg := msgLit.Value
-			if len(msg) >= 2 {
-				inner := msg[1 : len(msg)-1]
-				parts := strings.Split(inner, ": ")
-				changed := false
-				if len(parts) < 2 {
-					inner = verb + ": " + fixtureName
-					changed = true
-				} else if len(parts) == 2 {
-					if parts[len(parts)-1] != fixtureName {
-						inner = inner + ": " + fixtureName
-						changed = true
-					}
-				} else {
-					if parts[1] != verb {
-						parts[1] = verb
-						changed = true
-					}
-					if parts[len(parts)-1] != fixtureName {
-						parts[len(parts)-1] = fixtureName
-						changed = true
-					}
-					if changed {
-						inner = strings.Join(parts, ": ")
-					}
-				}
-				if changed {
-					msgLit.Value = `"` + inner + `"`
-				}
-			}
+			fixTestCall(callPath)
 		},
 	})
 }
+
+func fixTestCall(callPath Path) {
+	call, ok := callPath.Node.(*ast.CallExpr)
+	if !ok {
+		return
+	}
+
+	msgLit, fnLit, ok := testCallParts(call)
+	if !ok {
+		return
+	}
+
+	verb := extractVerb(fnLit)
+	if verb == "" {
+		return
+	}
+
+	fixtureName := extractFixtureName(Path{
+		Node:  fnLit.Body,
+		Stack: append(callPath.Stack, callPath.Node),
+	})
+	if fixtureName == "" {
+		return
+	}
+
+	fixMessage(msgLit, verb, fixtureName)
+}
+
+func testCallParts(call *ast.CallExpr) (*ast.BasicLit, *ast.FuncLit, bool) {
+	ident, ok := call.Fun.(*ast.Ident)
+	if !ok || ident.Name != "Test" || len(call.Args) < 3 {
+		return nil, nil, false
+	}
+
+	msgLit, ok := call.Args[1].(*ast.BasicLit)
+	if !ok {
+		return nil, nil, false
+	}
+
+	fnLit, ok := call.Args[2].(*ast.FuncLit)
+	if !ok {
+		return nil, nil, false
+	}
+
+	return msgLit, fnLit, true
+}
+
+func fixMessage(msgLit *ast.BasicLit, verb, fixtureName string) {
+	msg := msgLit.Value
+	if len(msg) < 2 {
+		return
+	}
+
+	inner := msg[1 : len(msg)-1]
+	parts := strings.Split(inner, ": ")
+
+	changed := false
+
+	switch len(parts) {
+	case 0, 1:
+		parts = []string{verb, fixtureName}
+		changed = true
+
+	case 2:
+		if parts[1] != fixtureName {
+			parts = append(parts, fixtureName)
+			changed = true
+		}
+
+	default:
+		if parts[1] != verb {
+			parts[1] = verb
+			changed = true
+		}
+
+		if parts[len(parts)-1] != fixtureName {
+			parts[len(parts)-1] = fixtureName
+			changed = true
+		}
+	}
+
+	if changed {
+		msgLit.Value = `"` + strings.Join(parts, ": ") + `"`
+	}
+}
+
 
 // Plugin wraps the rule for the registry: an AST-walking plugin.
 type Plugin struct{}
