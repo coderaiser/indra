@@ -48,17 +48,20 @@ func extractVerb(fnLit *ast.FuncLit) string {
 		if !ok || id.Name != "t" {
 			continue
 		}
-		switch sel.Sel.Name {
-		case "Report":
+		if sel.Sel.Name == "Report" {
 			return "report"
-		case "Transform":
+		}
+		if sel.Sel.Name == "Transform" {
 			return "transform"
-		case "NoReport":
+		}
+		if sel.Sel.Name == "NoReport" {
 			return "no report"
-		case "NoTransform":
+		}
+		if sel.Sel.Name == "NoTransform" {
 			return "no transform"
 		}
 	}
+
 	return ""
 }
 

@@ -1,6 +1,10 @@
 github.com/BurntSushi/toml v1.6.0 h1:dRaEfpa2VI55EwlIW72hMRHdWouJeRF7TPYhI+AUQjk=
 github.com/BurntSushi/toml v1.6.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
+github.com/alecthomas/chroma/v2 v2.27.0/go.mod h1:NjJ3ciIgrqBNeIkWZ4e46nseoLDslxU1LmfCoL+wcY8=
+github.com/bmatcuk/doublestar/v4 v4.10.0/go.mod h1:xBQ8jztBU6kakFMg+8WGxn0c6z1fTSPVIjEY1Wr7jzc=
+github.com/coderaiser/go-coverage v1.5.2/go.mod h1:DA4x8bBn+cjeMN/fuWyySzS9OV1DiqBWzDAZZc+nSN8=
 github.com/coderaiser/go-tape v1.3.4 h1:tFA5XKa2mCYI4zd/w62Yi5ssz+KloEgZYrx/vljXfS8=
 github.com/coderaiser/go-tape v1.3.4/go.mod h1:9bbfHZyOlYmkAQ/rWopLUKgj8/82cX+oVMfflCbrYT8=
+github.com/dlclark/regexp2/v2 v2.5.2/go.mod h1:avUrQvPaLz2DrFNHJF0taWAFFX2C1GMSSoeiqFjcBmU=
 golang.org/x/tools v0.48.0 h1:3+hClM1aLL5mjMKm5ovokw9epgRXPuu2tILgismM6RE=
 golang.org/x/tools v0.48.0/go.mod h1:08xX0orndb/F7jJxGDicx061tyd5pcMto75YMAXr6lk=

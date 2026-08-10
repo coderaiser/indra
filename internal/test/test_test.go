@@ -10,12 +10,12 @@ import (
 var Test = CreateTest("remove-skip", remove_skip.Plugin{})
 
 func TestShim(t *testing.T) {
-	Test(t, "remove-skip: internal/test: shim CreateTest transforms fixture skip", func(t *T) {
+	Test(t, "remove-skip: transform: skip", func(t *T) {
 		t.Transform("skip")
 		t.End()
 	})
 
-	Test(t, "remove-skip: internal/test: shim CreateTest reports fixture skip", func(t *T) {
+	Test(t, "remove-skip: report: skip", func(t *T) {
 		t.Report("skip", "remove Test.Skip call")
 		t.End()
 	})
