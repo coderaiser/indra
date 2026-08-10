@@ -8,6 +8,7 @@ var Test = CreateTest("remove-skip", nil)
 
 func f(t *testing.T) {
 	Test(t, "remove-skip: report: remove-skip", func(t *T) {
+		t.Report("remove-skip", "remove Test.Skip call")
 		t.End()
 	})
 }

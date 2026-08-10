@@ -221,7 +221,7 @@ func fixMessage(msgLit *ast.BasicLit, verb, fixtureName string) {
 
 	switch len(parts) {
 	case 0, 1:
-		parts = []string{verb, fixtureName}
+		parts = append(parts, fixtureName)
 		changed = true
 
 	case 2:
