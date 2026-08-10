@@ -69,40 +69,34 @@ var fixtureMethods = map[string]bool{
 
 func extractFixtureName(bodyPath Path) string {
 	result := ""
-	fmt.Printf("DEBUG extractFixtureName bodyPath.Node type=%T\n", bodyPath.Node)
-	ast.Inspect(bodyPath.Node, func(n ast.Node) bool {
-		fmt.Printf("DEBUG ast.Inspect visiting %T\n", n)
-		if result != "" {
-			return true
-		}
-		call, ok := n.(*ast.CallExpr)
-		if !ok {
-			return true
-		}
-		sel, ok := call.Fun.(*ast.SelectorExpr)
-		if !ok {
-			return true
-		}
-		id, ok := sel.X.(*ast.Ident)
-		if !ok || id.Name != "t" || !fixtureMethods[sel.Sel.Name] {
-			return true
-		}
-		if len(call.Args) < 1 {
-			return true
-		}
-		lit, ok := call.Args[0].(*ast.BasicLit)
-		if !ok {
-			return true
-		}
-		s := lit.Value
-		fmt.Printf("DEBUG ast.Inspect found: %s = %q\n", sel.Sel.Name, s)
-		if len(s) >= 2 {
-			result = s[1 : len(s)-1]
-			fmt.Printf("DEBUG result=%q\n", result)
-		}
-		return true
+	bodyPath.Traverse(map[string]func(Path){
+ 		"*ast.CallExpr": func(cp Path) {
+ 			if result != "" {
+ 				return
+ 			}
+ 			call := cp.Node.(*ast.CallExpr)
+ 			sel, ok := call.Fun.(*ast.SelectorExpr)
+ 			if !ok {
+ 				return
+ 			}
+ 			id, ok := sel.X.(*ast.Ident)
+ 			if !ok || id.Name != "t" || !fixtureMethods[sel.Sel.Name] {
+ 				return
+ 			}
+ 			if len(call.Args) < 1 {
+ 				return
+  			}
+ 			lit, ok := call.Args[0].(*ast.BasicLit)
+ 			if !ok {
+ 				return
+ 			}
+ 			s := lit.Value
+  			if len(s) >= 2 {
+ 				result = s[1 : len(s)-1]
+ 			}
+ 		},
 	})
-	fmt.Printf("DEBUG extractFixtureName returning: %q\n", result)
+	
 	return result
 }
 
