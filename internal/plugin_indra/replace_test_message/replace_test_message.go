@@ -70,11 +70,11 @@ func extractVerb(fnLit *ast.FuncLit) string {
 func extractFixtureName(bodyPath Path) string {
 	result := ""
 	bodyPath.Traverse(map[string]func(Path){
-		"*ast.CallExpr": func(cp Path) {
+		"*ast.CallExpr": func(callPath Path) {
 			if result != "" {
 				return
 			}
-			call := cp.Node.(*ast.CallExpr)
+			call := callPath.Node.(*ast.CallExpr)
 			sel, ok := call.Fun.(*ast.SelectorExpr)
 			if !ok {
 				return
@@ -105,8 +105,8 @@ func extractFixtureName(bodyPath Path) string {
 func hasMismatch(p Path) bool {
 	found := false
 	p.Traverse(map[string]func(Path){
-		"*ast.CallExpr": func(cp Path) {
-			call := cp.Node.(*ast.CallExpr)
+		"*ast.CallExpr": func(callPath Path) {
+			call := callPath.Node.(*ast.CallExpr)
 			ident, ok := call.Fun.(*ast.Ident)
 			if !ok || ident.Name != "Test" || len(call.Args) < 3 {
 				return
@@ -123,7 +123,7 @@ func hasMismatch(p Path) bool {
 			if verb == "" {
 				return
 			}
-			bodyPath := Path{Node: fnLit.Body, Stack: append(cp.Stack, cp.Node)}
+			bodyPath := Path{Node: fnLit.Body, Stack: append(callPath.Stack, callPath.Node)}
 			fixtureName := extractFixtureName(bodyPath)
 			if fixtureName == "" {
 				return
@@ -134,17 +134,17 @@ func hasMismatch(p Path) bool {
 				parts := strings.Split(inner, ": ")
 				if len(parts) < 2 {
 					found = true
-					cp.Stop()
+					callPath.Stop()
 					return
 				}
 				if parts[len(parts)-1] != fixtureName {
 					found = true
-					cp.Stop()
+					callPath.Stop()
 					return
 				}
 				if len(parts) >= 3 && parts[1] != verb {
 					found = true
-					cp.Stop()
+					callPath.Stop()
 				}
 			}
 		},
@@ -154,10 +154,10 @@ func hasMismatch(p Path) bool {
 
 // applyFix rewrites each Test message so its verb segment matches the callback
 // method and its last ": "-separated segment equals the fixture name.
-func applyFix(p Path) {
-	p.Traverse(map[string]func(Path){
-		"*ast.CallExpr": func(cp Path) {
-			call := cp.Node.(*ast.CallExpr)
+func applyFix(path Path) {
+	path.Traverse(map[string]func(Path){
+		"*ast.CallExpr": func(callPath Path) {
+			call := callPath.Node.(*ast.CallExpr)
 			ident, ok := call.Fun.(*ast.Ident)
 			if !ok || ident.Name != "Test" || len(call.Args) < 3 {
 				return
@@ -174,7 +174,7 @@ func applyFix(p Path) {
 			if verb == "" {
 				return
 			}
-			bodyPath := Path{Node: fnLit.Body, Stack: append(cp.Stack, cp.Node)}
+			bodyPath := Path{Node: fnLit.Body, Stack: append(callPath.Stack, callPath.Node)}
 			fixtureName := extractFixtureName(bodyPath)
 			if fixtureName == "" {
 				return
