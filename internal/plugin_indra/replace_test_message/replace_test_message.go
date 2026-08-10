@@ -19,23 +19,47 @@ func Report(_ Path) string { return "replace test message" }
 func Traverse() Traverser {
 	return Traverser{
 		"*ast.File": func(p Path, push func(Path)) {
-			if hasMissingFixtureName(p) {
+			if hasMismatch(p) {
 				push(p)
 			}
 		},
 	}
 }
 
-func Fix(p Path, _ map[string]any) { applyFixtureNames(p) }
+func Fix(p Path, _ map[string]any) { applyFix(p) }
 
-// afterSeparator returns the part of inner that follows the first ": " rule
-// prefix separator. When there is no separator the whole string is returned.
-func afterSeparator(inner string) string {
-	idx := strings.Index(inner, ": ")
-	if idx < 0 {
-		return inner
+// extractVerb returns the canonical verb for the first t.X method call in the
+// callback body.
+func extractVerb(fnLit *ast.FuncLit) string {
+	for _, stmt := range fnLit.Body.List {
+		exprStmt, ok := stmt.(*ast.ExprStmt)
+		if !ok {
+			continue
+		}
+		call, ok := exprStmt.X.(*ast.CallExpr)
+		if !ok {
+			continue
+		}
+		sel, ok := call.Fun.(*ast.SelectorExpr)
+		if !ok {
+			continue
+		}
+		id, ok := sel.X.(*ast.Ident)
+		if !ok || id.Name != "t" {
+			continue
+		}
+		switch sel.Sel.Name {
+		case "Report":
+			return "report"
+		case "Transform":
+			return "transform"
+		case "NoReport":
+			return "no report"
+		case "NoTransform":
+			return "no transform"
+		}
 	}
-	return inner[idx+2:]
+	return ""
 }
 
 // extractFixtureName walks a callback body Path and returns the fixture name
@@ -72,10 +96,10 @@ func extractFixtureName(bodyPath Path) string {
 	return result
 }
 
-// hasMissingFixtureName returns true if any Test(t, msg, ...) call whose
-// callback names a fixture has a msg that lacks the fixture name after the
-// ": " rule separator.
-func hasMissingFixtureName(p Path) bool {
+// hasMismatch returns true if any Test(t, msg, ...) call has a verb segment
+// that does not match the callback method, or a missing/wrong fixture name at
+// the end of the message.
+func hasMismatch(p Path) bool {
 	found := false
 	p.Traverse(map[string]func(Path){
 		"*ast.CallExpr": func(cp Path) {
@@ -92,24 +116,42 @@ func hasMissingFixtureName(p Path) bool {
 			if !ok {
 				return
 			}
+			verb := extractVerb(fnLit)
+			if verb == "" {
+				return
+			}
 			bodyPath := Path{Node: fnLit.Body, Stack: append(cp.Stack, cp.Node)}
 			fixtureName := extractFixtureName(bodyPath)
 			if fixtureName == "" {
 				return
 			}
 			msg := msgLit.Value
-			if len(msg) >= 2 && !strings.Contains(afterSeparator(msg[1:len(msg)-1]), fixtureName) {
-				found = true
-				cp.Stop()
+			if len(msg) >= 2 {
+				inner := msg[1 : len(msg)-1]
+				parts := strings.Split(inner, ": ")
+				if len(parts) < 2 {
+					found = true
+					cp.Stop()
+					return
+				}
+				if parts[len(parts)-1] != fixtureName {
+					found = true
+					cp.Stop()
+					return
+				}
+				if len(parts) >= 3 && parts[1] != verb {
+					found = true
+					cp.Stop()
+				}
 			}
 		},
 	})
 	return found
 }
 
-// applyFixtureNames appends " <fixtureName>" to every Test message that is
-// missing its fixture name after the ": " separator.
-func applyFixtureNames(p Path) {
+// applyFix rewrites each Test message so its verb segment matches the callback
+// method and its last ": "-separated segment equals the fixture name.
+func applyFix(p Path) {
 	p.Traverse(map[string]func(Path){
 		"*ast.CallExpr": func(cp Path) {
 			call := cp.Node.(*ast.CallExpr)
@@ -125,6 +167,10 @@ func applyFixtureNames(p Path) {
 			if !ok {
 				return
 			}
+			verb := extractVerb(fnLit)
+			if verb == "" {
+				return
+			}
 			bodyPath := Path{Node: fnLit.Body, Stack: append(cp.Stack, cp.Node)}
 			fixtureName := extractFixtureName(bodyPath)
 			if fixtureName == "" {
@@ -133,8 +179,31 @@ func applyFixtureNames(p Path) {
 			msg := msgLit.Value
 			if len(msg) >= 2 {
 				inner := msg[1 : len(msg)-1]
-				if !strings.Contains(afterSeparator(inner), fixtureName) {
-					msgLit.Value = `"` + inner + ": " + fixtureName + `"`
+				parts := strings.Split(inner, ": ")
+				changed := false
+				if len(parts) < 2 {
+					inner = verb + ": " + fixtureName
+					changed = true
+				} else if len(parts) == 2 {
+					if parts[len(parts)-1] != fixtureName {
+						inner = inner + ": " + fixtureName
+						changed = true
+					}
+				} else {
+					if parts[1] != verb {
+						parts[1] = verb
+						changed = true
+					}
+					if parts[len(parts)-1] != fixtureName {
+						parts[len(parts)-1] = fixtureName
+						changed = true
+					}
+					if changed {
+						inner = strings.Join(parts, ": ")
+					}
+				}
+				if changed {
+					msgLit.Value = `"` + inner + `"`
 				}
 			}
 		},

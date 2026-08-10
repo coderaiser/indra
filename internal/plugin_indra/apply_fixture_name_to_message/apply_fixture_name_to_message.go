@@ -1,6 +1,7 @@
 package apply_fixture_name_to_message
 
 import (
+	"fmt"
 	"go/ast"
 	"strings"
 
@@ -61,8 +62,65 @@ func extractRuleName(p Path) string {
 	return result
 }
 
+var fixtureMethods = map[string]bool{
+	"Report": true, "Transform": true,
+	"NoReport": true, "NoTransform": true,
+}
+
+func extractFixtureName(bodyPath Path) string {
+	result := ""
+	fmt.Printf("DEBUG extractFixtureName bodyPath.Node type=%T\n", bodyPath.Node)
+	ast.Inspect(bodyPath.Node, func(n ast.Node) bool {
+		fmt.Printf("DEBUG ast.Inspect visiting %T\n", n)
+		if result != "" {
+			return true
+		}
+		call, ok := n.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+		sel, ok := call.Fun.(*ast.SelectorExpr)
+		if !ok {
+			return true
+		}
+		id, ok := sel.X.(*ast.Ident)
+		if !ok || id.Name != "t" || !fixtureMethods[sel.Sel.Name] {
+			return true
+		}
+		if len(call.Args) < 1 {
+			return true
+		}
+		lit, ok := call.Args[0].(*ast.BasicLit)
+		if !ok {
+			return true
+		}
+		s := lit.Value
+		fmt.Printf("DEBUG ast.Inspect found: %s = %q\n", sel.Sel.Name, s)
+		if len(s) >= 2 {
+			result = s[1 : len(s)-1]
+			fmt.Printf("DEBUG result=%q\n", result)
+		}
+		return true
+	})
+	fmt.Printf("DEBUG extractFixtureName returning: %q\n", result)
+	return result
+}
+
+func extractFixtureNameFromTest(cp Path) string {
+	call := cp.Node.(*ast.CallExpr)
+	if len(call.Args) < 3 {
+		return ""
+	}
+	fnLit, ok := call.Args[2].(*ast.FuncLit)
+	if !ok {
+		return ""
+	}
+	bodyPath := Path{Node: fnLit.Body, Stack: append(cp.Stack, cp.Node)}
+	return extractFixtureName(bodyPath)
+}
+
 // hasMissingPrefix returns true if any Test(t, msg, ...) call in the file has
-// a msg not starting with "<ruleName>: ".
+// a msg not starting with "<ruleName>: " or not ending with ": <fixtureName>".
 func hasMissingPrefix(p Path, ruleName string) bool {
 	prefix := ruleName + ": "
 	found := false
@@ -78,16 +136,27 @@ func hasMissingPrefix(p Path, ruleName string) bool {
 				return
 			}
 			msg := lit.Value
-			if len(msg) >= 2 && !strings.HasPrefix(msg[1:len(msg)-1], prefix) {
-				found = true
-				cp.Stop()
+			if len(msg) >= 2 {
+				inner := msg[1 : len(msg)-1]
+				if !strings.HasPrefix(inner, prefix) {
+					found = true
+					cp.Stop()
+					return
+				}
+				fixtureName := extractFixtureNameFromTest(cp)
+				if fixtureName != "" && !strings.HasSuffix(inner, ": "+fixtureName) {
+					found = true
+					cp.Stop()
+				}
 			}
 		},
 	})
 	return found
 }
 
-// applyPrefix prepends "<ruleName>: " to each Test message that lacks it.
+// applyPrefix prepends "<ruleName>: " to each Test message that lacks it, and
+// replaces the last ": "-separated segment with the fixture name when it is
+// missing or wrong.
 func applyPrefix(p Path, ruleName string) {
 	prefix := ruleName + ": "
 	p.Traverse(map[string]func(Path){
@@ -104,8 +173,28 @@ func applyPrefix(p Path, ruleName string) {
 			msg := lit.Value
 			if len(msg) >= 2 {
 				inner := msg[1 : len(msg)-1]
+				changed := false
 				if !strings.HasPrefix(inner, prefix) {
-					lit.Value = `"` + prefix + inner + `"`
+					inner = prefix + inner
+					changed = true
+				}
+				fixtureName := extractFixtureNameFromTest(cp)
+				if fixtureName != "" && !strings.HasSuffix(inner, ": "+fixtureName) {
+					if changed {
+						inner = inner + ": " + fixtureName
+					} else {
+						parts := strings.Split(inner, ": ")
+						if len(parts) >= 2 {
+							parts[len(parts)-1] = fixtureName
+							inner = strings.Join(parts, ": ")
+						} else {
+							inner = inner + ": " + fixtureName
+						}
+					}
+					changed = true
+				}
+				if changed {
+					lit.Value = `"` + inner + `"`
 				}
 			}
 		},
