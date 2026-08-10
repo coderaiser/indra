@@ -70,33 +70,33 @@ var fixtureMethods = map[string]bool{
 func extractFixtureName(bodyPath Path) string {
 	result := ""
 	bodyPath.Traverse(map[string]func(Path){
- 		"*ast.CallExpr": func(cp Path) {
- 			if result != "" {
- 				return
- 			}
- 			call := cp.Node.(*ast.CallExpr)
- 			sel, ok := call.Fun.(*ast.SelectorExpr)
- 			if !ok {
- 				return
- 			}
- 			id, ok := sel.X.(*ast.Ident)
- 			if !ok || id.Name != "t" || !fixtureMethods[sel.Sel.Name] {
- 				return
- 			}
- 			if len(call.Args) < 1 {
- 				return
-  			}
- 			lit, ok := call.Args[0].(*ast.BasicLit)
- 			if !ok {
- 				return
- 			}
- 			s := lit.Value
-  			if len(s) >= 2 {
- 				result = s[1 : len(s)-1]
- 			}
- 		},
+		"*ast.CallExpr": func(cp Path) {
+			if result != "" {
+				return
+			}
+			call := cp.Node.(*ast.CallExpr)
+			sel, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok {
+				return
+			}
+			id, ok := sel.X.(*ast.Ident)
+			if !ok || id.Name != "t" || !fixtureMethods[sel.Sel.Name] {
+				return
+			}
+			if len(call.Args) < 1 {
+				return
+			}
+			lit, ok := call.Args[0].(*ast.BasicLit)
+			if !ok {
+				return
+			}
+			s := lit.Value
+			if len(s) >= 2 {
+				result = s[1 : len(s)-1]
+			}
+		},
 	})
-	
+
 	return result
 }
 
