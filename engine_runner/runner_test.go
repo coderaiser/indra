@@ -615,6 +615,39 @@ func TestRunTraverserMultiplePatternKeys(t *testing.T) {
 	})
 }
 
+func TestRunTraverserFindParentReachesFile(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n"
+	file, fset := parse(t, src)
+	var foundFile ast.Node
+	funcs := loader.PluginFuncs{
+		Name: "findparent",
+		Plugin: traverser{
+			report: "found",
+			tr: types.Traverser{
+				"t.Equal(__a, __b)": func(p types.Path, push func(types.Path)) {
+					ancestor, ok := p.FindParent(func(a types.Path) bool {
+						_, isFile := a.Node.(*ast.File)
+						return isFile
+					})
+					if ok {
+						foundFile = ancestor.Node
+					}
+					push(p)
+				},
+			},
+			fix: func(p types.Path, opts map[string]any) {},
+		},
+	}
+	pl := items([]loader.PluginFuncs{funcs})
+	RunPlugins(RunParams{File: file, Fset: fset, Plugins: pl})
+
+	Test(t, "runner: FindParent from pattern key reaches *ast.File", func(t *T) {
+		_, result := foundFile.(*ast.File)
+		t.Ok(result)
+		t.End()
+	})
+}
+
 func TestSubstituteAndParseError(t *testing.T) {
 	stmts := substituteAndParse("func (", Vars{})
 
