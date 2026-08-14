@@ -5,6 +5,7 @@ package types
 import (
 	"fmt"
 	"go/ast"
+	"strings"
 
 	"golang.org/x/tools/go/ast/astutil"
 
@@ -102,28 +103,64 @@ func (p Path) InsertAfter(n ast.Node) {
 // Each path.Traverse call has its own early-exit state, so stopping or
 // skipping within one call never affects a later, independent Traverse call.
 func (p Path) Traverse(visitors map[string]func(Path)) {
+	// Split up front: type-keyed ("*ast.X") vs pattern-keyed (everything else).
+	typeVisitors := make(map[string]func(Path), len(visitors))
+	type patEntry struct {
+		pattern string
+		fn      func(Path)
+	}
+	var patVisitors []patEntry
+	for key, fn := range visitors {
+		if strings.HasPrefix(key, "*ast.") {
+			typeVisitors[key] = fn
+		} else {
+			patVisitors = append(patVisitors, patEntry{key, fn})
+		}
+	}
+
 	state := &traverseState{}
 	astutil.Apply(p.Node, func(c *astutil.Cursor) bool {
 		if state.stopped {
 			return false
 		}
 		state.skip = false
-		key := fmt.Sprintf("%T", c.Node())
-		if fn, ok := visitors[key]; ok {
-			child := Path{
-				Node:   c.Node(),
-				Stack:  append(append([]ast.Node{}, p.Stack...), p.Node),
-				Cursor: c,
-				state:  state,
-			}
+		n := c.Node()
+		child := Path{
+			Node:   n,
+			Stack:  append(append([]ast.Node{}, p.Stack...), p.Node),
+			Cursor: c,
+			state:  state,
+		}
+
+		// Type-keyed dispatch.
+		key := fmt.Sprintf("%T", n)
+		if fn, ok := typeVisitors[key]; ok {
 			fn(child)
 			if state.stopped {
 				return false
 			}
 			if state.skip {
-				return false // skip this node's children only
+				return false
 			}
 		}
+
+		// Pattern-keyed dispatch — only *ast.ExprStmt nodes can match,
+		// because parsePattern wraps patterns in a func body and returns
+		// Body.List[0], which is always *ast.ExprStmt.
+		if _, ok := n.(*ast.ExprStmt); ok {
+			for _, e := range patVisitors {
+				if compare.GetTemplateValues(n, e.pattern) != nil {
+					e.fn(child)
+					if state.stopped {
+						return false
+					}
+					if state.skip {
+						return false
+					}
+				}
+			}
+		}
+
 		return true
 	}, nil)
 }

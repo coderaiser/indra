@@ -294,6 +294,83 @@ func TestPathSkipNoOpOnEnginePath(t *testing.T) {
 	})
 }
 
+func TestPathTraversePatternKey(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tt.Equal(a, b)\n\tt.Ok(x)\n}\n"
+	fset := token.NewFileSet()
+	file, _ := parser.ParseFile(fset, "", src, 0)
+	funcDecl := file.Decls[0].(*ast.FuncDecl)
+	p := types.Path{Node: funcDecl.Body}
+
+	Test(t, "Path.Traverse: pattern key fires on matching ExprStmt", func(t *T) {
+		count := 0
+		p.Traverse(map[string]func(types.Path){
+			"t.Equal(__a, __b)": func(_ types.Path) { count++ },
+		})
+		t.Equal(count, 1)
+		t.End()
+	})
+
+	Test(t, "Path.Traverse: pattern key does not fire on non-matching node", func(t *T) {
+		count := 0
+		p.Traverse(map[string]func(types.Path){
+			"t.Equal(__a, __b, __c)": func(_ types.Path) { count++ },
+		})
+		t.Equal(count, 0)
+		t.End()
+	})
+
+	Test(t, "Path.Traverse: type key fires on all ExprStmt nodes", func(t *T) {
+		count := 0
+		p.Traverse(map[string]func(types.Path){
+			"*ast.ExprStmt": func(_ types.Path) { count++ },
+		})
+		t.Equal(count, 2)
+		t.End()
+	})
+
+	Test(t, "Path.Traverse: pattern key fires once when one stmt matches", func(t *T) {
+		count := 0
+		p.Traverse(map[string]func(types.Path){
+			"t.Equal(__a, __b)": func(_ types.Path) { count++ },
+		})
+		t.Equal(count, 1)
+		t.End()
+	})
+
+	Test(t, "Path.Traverse: pattern key Stop halts after first match", func(t *T) {
+		src2 := "package p\n\nfunc f() {\n\tt.Equal(a, b)\n\tt.Equal(c, d)\n}\n"
+		fset2 := token.NewFileSet()
+		file2, _ := parser.ParseFile(fset2, "", src2, 0)
+		fn2 := file2.Decls[0].(*ast.FuncDecl)
+		p2 := types.Path{Node: fn2.Body}
+		count := 0
+		p2.Traverse(map[string]func(types.Path){
+			"t.Equal(__a, __b)": func(child types.Path) {
+				count++
+				child.Stop()
+			},
+		})
+		t.Equal(count, 1)
+		t.End()
+	})
+
+	Test(t, "Path.Traverse: pattern key Skip skips matched node children", func(t *T) {
+		src3 := "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n"
+		fset3 := token.NewFileSet()
+		file3, _ := parser.ParseFile(fset3, "", src3, 0)
+		fn3 := file3.Decls[0].(*ast.FuncDecl)
+		p3 := types.Path{Node: fn3.Body}
+		callExprs := 0
+		p3.Traverse(map[string]func(types.Path){
+			"t.Equal(__a, __b)": func(child types.Path) { child.Skip() },
+			"*ast.CallExpr":     func(_ types.Path) { callExprs++ },
+		})
+		// the t.Equal(a, b) CallExpr is a child of the skipped ExprStmt
+		t.Equal(callExprs, 0)
+		t.End()
+	})
+}
+
 func TestPathTraverse(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tx := 1\n\treturn\n}\n"
 	fset := token.NewFileSet()
