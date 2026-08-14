@@ -39,8 +39,15 @@ type ReportFn = func(p Path) string
 // FixFn fixes one found path. options is per-plugin config from PluginItem.Options.
 type FixFn = func(p Path, options map[string]any)
 
-// Traverser maps AST node type key → finder. Returned by Traverse().
-// Keys: "*ast.File", "*ast.BlockStmt"
+// Traverser maps key → visitor function. Returned by Traverse().
+// Key formats:
+//   - "*ast.File", "*ast.CallExpr", or any "*ast.*" type name:
+//     visitor receives every node of that type.
+//   - any other string: treated as a compare pattern (e.g. "t.Equal(__a, __b)");
+//     visitor receives every *ast.ExprStmt whose AST matches the pattern.
+//
+// The engine merges all Traverser visitors from all plugins into one
+// astutil.Apply pass. The same key formats are accepted by path.Traverse.
 type Traverser map[string]FindFn
 
 // Path is a node together with its ancestor stack, matching Babel's path API.
