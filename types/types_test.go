@@ -270,6 +270,30 @@ func TestPathCursorMethodsNoOpWhenNil(t *testing.T) {
 	})
 }
 
+func TestPathStopNoOpOnEnginePath(t *testing.T) {
+	path := types.Path{Node: ast.NewIdent("x")}
+
+	// Should not panic — state is nil on engine-constructed paths
+	path.Stop()
+
+	Test(t, "Path.Stop: no-op on engine-constructed path", func(t *T) {
+		t.Pass("no panic")
+		t.End()
+	})
+}
+
+func TestPathSkipNoOpOnEnginePath(t *testing.T) {
+	path := types.Path{Node: ast.NewIdent("x")}
+
+	// Should not panic — state is nil on engine-constructed paths
+	path.Skip()
+
+	Test(t, "Path.Skip: no-op on engine-constructed path", func(t *T) {
+		t.Pass("no panic")
+		t.End()
+	})
+}
+
 func TestPathTraverse(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tx := 1\n\treturn\n}\n"
 	fset := token.NewFileSet()
