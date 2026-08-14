@@ -249,6 +249,18 @@ func TestRunPreorderStackPathHasAncestors(t *testing.T) {
 
 		t.End()
 	})
+
+	Test(t, "runner: PreorderStack stack is non-empty for FuncDecl", func(t *T) {
+		result := len(stacks[0]) > 0
+		t.Ok(result)
+		t.End()
+	})
+
+	Test(t, "runner: PreorderStack stack[0] is *ast.File", func(t *T) {
+		_, result := stacks[0][0].(*ast.File)
+		t.Ok(result)
+		t.End()
+	})
 }
 
 func TestRunEmptyPlugins(t *testing.T) {
