@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+		"coderaiser/indra/operator"
 	"coderaiser/indra/types"
 )
 
@@ -294,13 +295,17 @@ func findUnusedPrivateFuncs(file *ast.File, used map[string]int) []*ast.FuncDecl
 
 // fixOneUnusedPrivateFunc removes a single function declaration from the file.
 func fixOneUnusedPrivateFunc(file *ast.File, target *ast.FuncDecl) {
-	kept := file.Decls[:0]
-	for _, decl := range file.Decls {
-		if decl != target {
-			kept = append(kept, decl)
+	for i, decl := range file.Decls {
+		if decl == target {
+			operator.Remove(&operator.Path{
+				Node:   decl,
+				Parent: file,
+				Field:  "Decls",
+				Index:  i,
+			})
+			return
 		}
 	}
-	file.Decls = kept
 }
 
 // fixOneUnusedImport removes a single import spec from the file's AST.
@@ -310,13 +315,17 @@ func fixOneUnusedImport(file *ast.File, target *ast.ImportSpec) {
 		if !ok || genDecl.Tok != token.IMPORT {
 			continue
 		}
-		kept := genDecl.Specs[:0]
-		for _, spec := range genDecl.Specs {
-			if spec != target {
-				kept = append(kept, spec)
+		for i, spec := range genDecl.Specs {
+			if spec == target {
+				operator.Remove(&operator.Path{
+					Node:   spec,
+					Parent: genDecl,
+					Field:  "Specs",
+					Index:  i,
+				})
+				break
 			}
 		}
-		genDecl.Specs = kept
 	}
 	// drop empty import blocks
 	kept := file.Decls[:0]
@@ -377,24 +386,34 @@ func fixUnusedConsts(file *ast.File) {
 	for _, name := range unusedConstNames(file) {
 		unused[name] = true
 	}
-	for _, decl := range file.Decls {
+		for _, decl := range file.Decls {
 		genDecl, ok := decl.(*ast.GenDecl)
 		if !ok || genDecl.Tok != token.CONST {
 			continue
 		}
-		kept := genDecl.Specs[:0]
-		for _, spec := range genDecl.Specs {
+		// Collect indices of all-unused specs, then remove in reverse order
+		// so earlier indices stay valid.
+		var toRemove []int
+		for i, spec := range genDecl.Specs {
 			allUnused := true
 			for _, name := range spec.(*ast.ValueSpec).Names {
 				if !unused[name.Name] {
 					allUnused = false
 				}
 			}
-			if !allUnused {
-				kept = append(kept, spec)
+			if allUnused {
+				toRemove = append(toRemove, i)
 			}
 		}
-		genDecl.Specs = kept
+		for i := len(toRemove) - 1; i >= 0; i-- {
+			idx := toRemove[i]
+			operator.Remove(&operator.Path{
+				Node:   genDecl.Specs[idx],
+				Parent: genDecl,
+				Field:  "Specs",
+				Index:  idx,
+			})
+		}
 	}
 	// drop empty const blocks
 	kept := file.Decls[:0]

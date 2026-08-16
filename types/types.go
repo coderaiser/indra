@@ -15,6 +15,15 @@ import (
 // Vars is the hole-bindings map from compare.
 type Vars = compare.Vars
 
+// Re-exported compare symbols for plugin dot-import convenience.
+type BodySlice = compare.BodySlice
+type ArgSlice = compare.ArgSlice
+
+func Compare(node ast.Node, pattern string) bool { return compare.GetTemplateValues(node, pattern) != nil }
+func GetTemplateValues(node ast.Node, pattern string) map[string]ast.Node {
+	return compare.GetTemplateValues(node, pattern)
+}
+
 // MatchFn is a guard run after pattern match. Its second argument is the
 // *ast.BlockStmt containing the matched statement (nil for declaration-level
 // matches). Every Matcher entry must supply a non-nil MatchFn. To express

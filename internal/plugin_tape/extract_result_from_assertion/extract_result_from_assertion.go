@@ -3,7 +3,6 @@ package extract_result_from_assertion
 import (
 	"go/ast"
 
-	. "coderaiser/indra/operator"
 	. "coderaiser/indra/types"
 )
 

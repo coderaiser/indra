@@ -25,6 +25,9 @@ func Remove(path *Path) {
 		if path.Index >= 0 && path.Index < len(p.Decls) {
 			p.Decls = append(p.Decls[:path.Index], p.Decls[path.Index+1:]...)
 		}
+		if path.Index >= 0 && path.Index < len(p.Imports) {
+			p.Imports = append(p.Imports[:path.Index], p.Imports[path.Index+1:]...)
+		}
 	}
 }
 

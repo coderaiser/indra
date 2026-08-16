@@ -3,7 +3,6 @@ package add_t_end
 import (
 	"go/ast"
 
-	. "coderaiser/indra/operator"
 	. "coderaiser/indra/types"
 )
 
