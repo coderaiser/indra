@@ -210,6 +210,9 @@ func runOnce(p RunParams) []types.Place {
 				if vars == nil {
 					continue
 				}
+				// Inject the file so guards can use operator.FileFromVars / HasImport
+				// to scope themselves by import presence, mirroring putout's $file.
+				vars["$file"] = p.File
 				// The containing block is passed to the guard so it can inspect
 				// prior declarations (e.g. to avoid shadowing an injected var).
 				if guard, ok := matcher[pattern]; ok && !guard(vars, block) {
@@ -271,6 +274,7 @@ func runOnce(p RunParams) []types.Place {
 				if vars == nil {
 					return
 				}
+				vars["$file"] = p.File
 				if guard, ok := matcher[pattern]; ok && !guard(vars, nil) {
 					return
 				}

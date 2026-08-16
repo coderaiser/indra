@@ -26,6 +26,11 @@ func inRange(idx, n int) bool {
 	return idx >= 0 && idx < n
 }
 
+// remove is the method form of Remove, mirroring putout's path.remove().
+func (p *Path) remove() {
+	Remove(p)
+}
+
 // Remove removes path.Node from its parent, preserving comments.
 //
 // It handles three parent shapes:
@@ -138,6 +143,9 @@ func commentGroups(n ast.Node) []*ast.CommentGroup {
 // keeps the original source location while printing the replacement.
 func setPos(n ast.Node, pos token.Pos) {
 	ast.Inspect(n, func(node ast.Node) bool {
+		if node == nil {
+			return true
+		}
 		e := reflect.ValueOf(node).Elem()
 		t := e.Type()
 		for i := 0; i < e.NumField(); i++ {
@@ -153,7 +161,7 @@ func setPos(n ast.Node, pos token.Pos) {
 // original node's position so the printer keeps its source location.
 func ReplaceWith(path *Path, node ast.Node) {
 	replaceInSlice(path, func(list reflect.Value, i int) {
-		list.Set(reflect.AppendSlice(list.Slice(0, i), reflect.Append(list.Slice(i+1, list.Len()), reflect.ValueOf(node))))
+		list.Set(reflect.AppendSlice(reflect.Append(list.Slice(0, i), reflect.ValueOf(node)), list.Slice(i+1, list.Len())))
 	})
 	setPos(node, path.Node.Pos())
 }
@@ -208,14 +216,14 @@ func replaceSlice(path *Path, nodes []ast.Node) {
 		for _, n := range nodes {
 			vals = append(vals, reflect.ValueOf(n))
 		}
-		s.Set(reflect.AppendSlice(s.Slice(0, i), reflect.Append(s.Slice(i+1, s.Len()), vals...)))
+		s.Set(reflect.AppendSlice(reflect.Append(s.Slice(0, i), vals...), s.Slice(i+1, s.Len())))
 	})
 }
 
 // insertSlice inserts node in the parent slice at path.Index+offset.
 func insertSlice(path *Path, node ast.Node, offset int) {
 	replaceInSlice(path, func(s reflect.Value, i int) {
-		s.Set(reflect.AppendSlice(s.Slice(0, i+offset), reflect.Append(s.Slice(i+offset, s.Len()), reflect.ValueOf(node))))
+		s.Set(reflect.AppendSlice(reflect.Append(s.Slice(0, i+offset), reflect.ValueOf(node)), s.Slice(i+offset, s.Len())))
 	})
 }
 
