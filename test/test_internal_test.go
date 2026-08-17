@@ -3,7 +3,6 @@ package test
 import (
 	"errors"
 	"fmt"
-	"go/ast"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -134,7 +133,7 @@ func TestCreateTest(t *testing.T) {
 
 func TestReport(t *testing.T) {
 	dir := writeDir(t, map[string]string{"match.go": matchSrc})
-	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}}
+	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ types.Path) bool { return true }}}
 	tape.Test(t, "test: Report correct message match", func(tt *tape.T) {
 		tr := New(tt, engineLint("synth", replacer), []any{}, dir)
 		tr.Report("match", "found it")
@@ -144,7 +143,7 @@ func TestReport(t *testing.T) {
 
 func TestNoReport(t *testing.T) {
 	dir := writeDir(t, map[string]string{"clean.go": cleanSrc})
-	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}}
+	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ types.Path) bool { return true }}}
 	tape.Test(t, "test: NoReport clean fixture", func(tt *tape.T) {
 		tr := New(tt, engineLint("synth", replacer), []any{}, dir)
 		tr.NoReport("clean")
@@ -157,7 +156,7 @@ func TestTransform(t *testing.T) {
 		"replace.go":     replaceSrc,
 		"replace-fix.go": replacedSrc,
 	})
-	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}, replace: types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}}
+	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ types.Path) bool { return true }}, replace: types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}}
 	tape.Test(t, "test: Transform matches fix fixture replace", func(tt *tape.T) {
 		tr := New(tt, engineLint("synth", replacer), []any{}, dir)
 		tr.Transform("replace")
@@ -167,7 +166,7 @@ func TestTransform(t *testing.T) {
 
 func TestNoTransform(t *testing.T) {
 	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
-	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}}
+	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ types.Path) bool { return true }}}
 	tape.Test(t, "test: NoTransform unchanged fixture replace", func(tt *tape.T) {
 		tr := New(tt, engineLint("synth", replacer), []any{}, dir)
 		tr.NoTransform("replace")
@@ -274,7 +273,7 @@ func TestTransformUpdateHappy(t *testing.T) {
 
 func TestReportOperatorName(t *testing.T) {
 	dir := writeDir(t, map[string]string{"match.go": matchSrc})
-	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}}
+	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ types.Path) bool { return true }}}
 	operatorName := ""
 	tape.Test(t, "test: Report emits operator report", func(tt *tape.T) {
 		tr := New(tt, engineLint("synth", replacer), []any{}, dir)
@@ -289,7 +288,7 @@ func TestReportOperatorName(t *testing.T) {
 
 func TestNoReportOperatorName(t *testing.T) {
 	dir := writeDir(t, map[string]string{"clean.go": cleanSrc})
-	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}}
+	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ types.Path) bool { return true }}}
 	operatorName := ""
 	tape.Test(t, "test: NoReport emits operator noReport", func(tt *tape.T) {
 		tr := New(tt, engineLint("synth", replacer), []any{}, dir)
@@ -307,7 +306,7 @@ func TestTransformOperatorName(t *testing.T) {
 		"transform.go":     replaceSrc,
 		"transform-fix.go": replacedSrc,
 	})
-	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}, replace: types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}}
+	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ types.Path) bool { return true }}, replace: types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}}
 	operatorName := ""
 	tape.Test(t, "test: Transform emits operator transform", func(tt *tape.T) {
 		tr := New(tt, engineLint("synth", replacer), []any{}, dir)
@@ -322,7 +321,7 @@ func TestTransformOperatorName(t *testing.T) {
 
 func TestNoTransformOperatorName(t *testing.T) {
 	dir := writeDir(t, map[string]string{"replace.go": replaceSrc})
-	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}}
+	replacer := synthReplacer{report: "found it", match: types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ types.Path) bool { return true }}}
 	operatorName := ""
 	tape.Test(t, "test: NoTransform emits operator noTransform", func(tt *tape.T) {
 		tr := New(tt, engineLint("synth", replacer), []any{}, dir)

@@ -61,7 +61,7 @@ func replacerItem() []loader.PluginFuncs {
 		Name: "eq",
 		Plugin: replacer{
 			report:  "use DeepEqual",
-			match:   types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }},
+			match:   types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ types.Path) bool { return true }},
 			replace: types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"},
 		},
 	}}
@@ -283,7 +283,7 @@ func TestRunGuardRejects(t *testing.T) {
 		Name: "guarded",
 		Plugin: replacer{
 			report:  "m",
-			match:   types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return false }},
+			match:   types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ types.Path) bool { return false }},
 			replace: types.Replacer{"t.Equal(__a, __b)": "x"},
 		},
 	}
@@ -417,7 +417,7 @@ func TestRunRenderArgSlice(t *testing.T) {
 		Name: "args",
 		Plugin: replacer{
 			report:  "m",
-			match:   types.Matcher{"use(__args)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }},
+			match:   types.Matcher{"use(__args)": func(v types.Vars, _ types.Path) bool { return true }},
 			replace: types.Replacer{"use(__args)": "wrap(__args)"},
 		},
 	}}
@@ -438,7 +438,7 @@ func TestRunRenderBodySlice(t *testing.T) {
 		Name: "body",
 		Plugin: replacer{
 			report: "m",
-			match:  types.Matcher{"Test(__a, __b, func(__r *T) { __body })": func(v types.Vars, _ *ast.BlockStmt) bool { return true }},
+			match:  types.Matcher{"Test(__a, __b, func(__r *T) { __body })": func(v types.Vars, _ types.Path) bool { return true }},
 			replace: types.Replacer{
 				"Test(__a, __b, func(__r *T) { __body })": "Test(__a, __b, func(__r *T) {\n__body\n__r.End()\n})",
 			},
@@ -471,7 +471,7 @@ func TestApplyRewritesMultipleInBlock(t *testing.T) {
 		Name: "multi",
 		Plugin: replacer{
 			report:  "m",
-			match:   types.Matcher{"makeSlices(__x)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }},
+			match:   types.Matcher{"makeSlices(__x)": func(v types.Vars, _ types.Path) bool { return true }},
 			replace: types.Replacer{"makeSlices(__x)": "v := __x"},
 		},
 	}}
@@ -494,7 +494,7 @@ func TestRunUnparsableReplace(t *testing.T) {
 		Name: "badreplace",
 		Plugin: replacer{
 			report:  "m",
-			match:   types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }},
+			match:   types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ types.Path) bool { return true }},
 			replace: types.Replacer{"t.Equal(__a, __b)": "func ("},
 		},
 	}}
@@ -665,7 +665,7 @@ func declFuncs() []loader.PluginFuncs {
 		Name: "decl",
 		Plugin: replacer{
 			report:  "decl issue",
-			match:   types.Matcher{`func Match() Matcher { return Matcher{__a: nil} }`: func(v types.Vars, _ *ast.BlockStmt) bool { return true }},
+			match:   types.Matcher{`func Match() Matcher { return Matcher{__a: nil} }`: func(v types.Vars, _ types.Path) bool { return true }},
 			replace: types.Replacer{`func Match() Matcher { return Matcher{__a: nil} }`: ""},
 		},
 	}}
@@ -692,7 +692,7 @@ func TestRunDeclRewritesGuardRejects(t *testing.T) {
 		Name: "decl",
 		Plugin: replacer{
 			report:  "decl issue",
-			match:   types.Matcher{`func Match() Matcher { return Matcher{__a: nil} }`: func(v types.Vars, _ *ast.BlockStmt) bool { return false }},
+			match:   types.Matcher{`func Match() Matcher { return Matcher{__a: nil} }`: func(v types.Vars, _ types.Path) bool { return false }},
 			replace: types.Replacer{`func Match() Matcher { return Matcher{__a: nil} }`: ""},
 		},
 	}}
@@ -778,7 +778,7 @@ func TestRunMatchOnlyFixNoRewrite(t *testing.T) {
 		Name: "report-only",
 		Plugin: replacer{
 			report:  "m",
-			match:   types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }},
+			match:   types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ types.Path) bool { return true }},
 			replace: types.Replacer{},
 		},
 	}}
@@ -827,19 +827,24 @@ func TestRunReplaceOnlyRewrites(t *testing.T) {
 	})
 }
 
-func TestRunPassesBlockToGuard(t *testing.T) {
+func TestRunPassesPathToGuard(t *testing.T) {
 	src := "package p\nfunc f() { t.Equal(1, 2) }\n"
 	file, fset := parse(t, src)
 	guardCalled := false
-	sawBlock := false
+	sawPath := false
+	stackRootsAtFile := false
 	pf := loader.PluginFuncs{
-		Name: "block-guard",
+		Name: "path-guard",
 		Plugin: replacer{
 			report: "found",
 			match: types.Matcher{
-				"t.Equal(__a, __b)": func(vars types.Vars, block *ast.BlockStmt) bool {
+				"t.Equal(__a, __b)": func(vars types.Vars, path types.Path) bool {
 					guardCalled = true
-					sawBlock = block != nil
+					sawPath = path.Node != nil
+					if len(path.Stack) > 0 {
+						_, ok := path.Stack[0].(*ast.File)
+						stackRootsAtFile = ok
+					}
 					return true
 				},
 			},
@@ -848,8 +853,8 @@ func TestRunPassesBlockToGuard(t *testing.T) {
 	}
 	RunPlugins(RunParams{File: file, Fset: fset, Plugins: items([]loader.PluginFuncs{pf})})
 
-	Test(t, "runner: block passed to guard as second argument", func(t *T) {
-		t.Ok(guardCalled && sawBlock)
+	Test(t, "runner: path passed to guard as second argument", func(t *T) {
+		t.Ok(guardCalled && sawPath && stackRootsAtFile)
 		t.End()
 	})
 }

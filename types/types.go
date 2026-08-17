@@ -24,11 +24,11 @@ func GetTemplateValues(node ast.Node, pattern string) map[string]ast.Node {
 	return compare.GetTemplateValues(node, pattern)
 }
 
-// MatchFn is a guard run after pattern match. Its second argument is the
-// *ast.BlockStmt containing the matched statement (nil for declaration-level
-// matches). Every Matcher entry must supply a non-nil MatchFn. To express
-// "no guard", omit the key from Match() entirely.
-type MatchFn = func(Vars, *ast.BlockStmt) bool
+// MatchFn is a guard run after pattern match. Its second argument is the Path
+// of the matched statement (declaration-level matches receive a Path whose
+// Node is the matched declaration). Every Matcher entry must supply a non-nil
+// MatchFn. To express "no guard", omit the key from Match() entirely.
+type MatchFn = func(Vars, Path) bool
 
 // Matcher maps pattern string → optional guard. Returned by Match().
 type Matcher map[string]MatchFn

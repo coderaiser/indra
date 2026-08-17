@@ -1,20 +1,19 @@
 package extract_result_from_assertion
 
 import (
-	"go/ast"
-
+	. "coderaiser/indra/operator"
 	. "coderaiser/indra/types"
 )
 
 func Report() string { return "extract inline expression from assertion" }
 
 // Match guards the call-extraction patterns so a function-call result is not
-// re-extracted when a "result" variable is already declared in the containing
-// block (which would shadow the injected declaration).
+// re-extracted when a "result" variable is already declared in scope (which
+// would shadow the injected declaration).
 func Match() Matcher {
 	return Matcher{
-		"__a.Equal(__b(__args), __c)":     noResultInBlock,
-		"__a.DeepEqual(__b(__args), __c)": noResultInBlock,
+		"__a.Equal(__b(__args), __c)":     noResultInScope,
+		"__a.DeepEqual(__b(__args), __c)": noResultInScope,
 	}
 }
 
@@ -27,22 +26,11 @@ func Replace() Replacer {
 	}
 }
 
-// noResultInBlock is a guard that rejects re-extraction when a "result"
-// variable is already declared in the containing block (which would shadow the
-// injected declaration). Statement matching always runs inside a block.
-func noResultInBlock(_ Vars, block *ast.BlockStmt) bool {
-	return !blockDeclares(block, "result")
-}
-
-// blockDeclares reports whether any statement in block declares name via a
-// short variable declaration (:=).
-func blockDeclares(block *ast.BlockStmt, name string) bool {
-	for _, s := range block.List {
-		if Compare(s, name+" := __a") {
-			return true
-		}
-	}
-	return false
+// noResultInScope is a guard that rejects re-extraction when a "result"
+// variable is already declared in scope (which would shadow the injected
+// declaration). Statement matching always runs inside a block.
+func noResultInScope(_ Vars, path Path) bool {
+	return GetBinding(path, "result") == nil
 }
 
 // Plugin wraps the rule for the registry: a replacer with a Match guard.

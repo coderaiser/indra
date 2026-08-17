@@ -2,7 +2,6 @@ package processor_go
 
 import (
 	"errors"
-	"go/ast"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,7 +18,7 @@ type eqReplacer struct{}
 
 func (eqReplacer) Report() string { return "use DeepEqual" }
 func (eqReplacer) Match() types.Matcher {
-	return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ *ast.BlockStmt) bool { return true }}
+	return types.Matcher{"t.Equal(__a, __b)": func(v types.Vars, _ types.Path) bool { return true }}
 }
 func (eqReplacer) Replace() types.Replacer {
 	return types.Replacer{"t.Equal(__a, __b)": "t.DeepEqual(__a, __b)"}

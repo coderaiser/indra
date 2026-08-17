@@ -1,7 +1,6 @@
 package test
 
 import (
-	"go/ast"
 	"strings"
 	"testing"
 
@@ -81,7 +80,7 @@ func TestValidatePluginNilGuard(t *testing.T) {
 
 func TestValidatePluginOrphanKey(t *testing.T) {
 	run(t, "internal-test: validatePlugin: panics on orphan Match key", func(tt *T) {
-		pf := loader.PluginFuncs{Name: "orphan-key", Plugin: synthReplacer{report: "x", match: types.Matcher{"p": func(types.Vars, *ast.BlockStmt) bool { return true }}, replace: types.Replacer{}}}
+		pf := loader.PluginFuncs{Name: "orphan-key", Plugin: synthReplacer{report: "x", match: types.Matcher{"p": func(types.Vars, types.Path) bool { return true }}, replace: types.Replacer{}}}
 		msg := catchPanic(func() { validatePlugin(loader.Load([]loader.PluginFuncs{pf}, loader.Config{})[0]) })
 		tt.Ok(strings.Contains(msg, "Match key not in Replace"))
 		tt.End()

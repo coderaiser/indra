@@ -509,40 +509,6 @@ func TestCommentGroups(t *testing.T) {
 		t.End()
 	})
 }
-func TestCompareReexports(t *testing.T) {
-	Test(t, "Compare: true on match", func(t *T) {
-		block := funcBody(t.TB(), "package p\nfunc f() {\n\tfoo(x)\n}\n")
-		t.Ok(Compare(block.List[0], "foo(__a)"))
-		t.End()
-	})
-
-	Test(t, "Compare: false on mismatch", func(t *T) {
-		block := funcBody(t.TB(), "package p\nfunc f() {\n\tfoo(x)\n}\n")
-		t.NotOk(Compare(block.List[0], "bar(__a)"))
-		t.End()
-	})
-
-	Test(t, "GetTemplateValues: binds holes on match", func(t *T) {
-		block := funcBody(t.TB(), "package p\nfunc f() {\n\tfoo(x)\n}\n")
-		vars := GetTemplateValues(block.List[0], "foo(__a)")
-		t.Ok(vars != nil)
-		t.End()
-	})
-
-	Test(t, "GetTemplateValues: nil on mismatch", func(t *T) {
-		block := funcBody(t.TB(), "package p\nfunc f() {\n\tfoo(x)\n}\n")
-		t.NotOk(GetTemplateValues(block.List[0], "bar(__a)") != nil)
-		t.End()
-	})
-
-	Test(t, "type aliases: BodySlice and ArgSlice are re-exported", func(t *T) {
-		var b BodySlice
-		var a ArgSlice
-		t.Ok(b.Stmts == nil && a.Args == nil)
-		t.End()
-	})
-}
-
 func TestBlockDeclaresEdgeCases(t *testing.T) {
 	Test(t, "blockDeclaresStmt: a const declaration is not a var binding", func(t *T) {
 		block := funcBody(t.TB(), "package p\nfunc f() {\n\tconst x = 1\n\t_ = x\n}\n")

@@ -190,7 +190,7 @@ func runOnce(p RunParams) []types.Place {
 
 	// Pattern-based (replacer) plugins run over every statement.
 	var rewrites []rewrite
-	walkStmts(p.File, func(stmt ast.Stmt, block *ast.BlockStmt, idx int) {
+	walkStmts(p.File, func(stmt ast.Stmt, path types.Path, block *ast.BlockStmt, idx int) {
 		// At most one rule rewrites a given statement per pass. Applying
 		// several conflicting rewrites to the same statement (e.g. an
 		// Equal-with-array matches both convert-equal-to-deep-equal and
@@ -210,12 +210,9 @@ func runOnce(p RunParams) []types.Place {
 				if vars == nil {
 					continue
 				}
-				// Inject the file so guards can use operator.FileFromVars / HasImport
-				// to scope themselves by import presence, mirroring putout's $file.
-				vars["$file"] = p.File
-				// The containing block is passed to the guard so it can inspect
-				// prior declarations (e.g. to avoid shadowing an injected var).
-				if guard, ok := matcher[pattern]; ok && !guard(vars, block) {
+				// The matched statement's Path is passed to the guard so it can
+				// resolve bindings (e.g. operator.GetBinding) to scope itself.
+				if guard, ok := matcher[pattern]; ok && !guard(vars, path) {
 					continue
 				}
 				msg := rp.Report()
@@ -274,8 +271,7 @@ func runOnce(p RunParams) []types.Place {
 				if vars == nil {
 					return
 				}
-				vars["$file"] = p.File
-				if guard, ok := matcher[pattern]; ok && !guard(vars, nil) {
+				if guard, ok := matcher[pattern]; ok && !guard(vars, types.Path{Node: decl}) {
 					return
 				}
 				msg := rp.Report()
@@ -357,14 +353,23 @@ func replacerPatterns(matcher types.Matcher, replacer types.Replacer) []string {
 }
 
 // walkStmts visits every statement of every block in the file.
-func walkStmts(file *ast.File, fn func(stmt ast.Stmt, block *ast.BlockStmt, idx int)) {
-	ast.Inspect(file, func(n ast.Node) bool {
-		block, ok := n.(*ast.BlockStmt)
-		if !ok {
-			return true
+// For each statement it builds a types.Path carrying the statement's ancestor
+// stack (so replacer guards can resolve bindings via operator.GetBinding).
+func walkStmts(file *ast.File, fn func(stmt ast.Stmt, path types.Path, block *ast.BlockStmt, idx int)) {
+	var stack []ast.Node
+	astutil.Apply(file, func(c *astutil.Cursor) bool {
+		stack = append(stack, c.Node())
+		if block, ok := c.Node().(*ast.BlockStmt); ok {
+			stack := append([]ast.Node{}, stack[:len(stack)-1]...)
+			for i, stmt := range block.List {
+				stmtStack := append(append([]ast.Node{}, stack...), block)
+				fn(stmt, types.Path{Node: stmt, Stack: stmtStack}, block, i)
+			}
 		}
-		for i, stmt := range block.List {
-			fn(stmt, block, i)
+		return true
+	}, func(c *astutil.Cursor) bool {
+		if len(stack) > 0 {
+			stack = stack[:len(stack)-1]
 		}
 		return true
 	})

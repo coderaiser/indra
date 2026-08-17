@@ -36,8 +36,8 @@ func stmtsContainEnd(stmts []ast.Stmt) bool {
 }
 
 // missingEnd is a guard that accepts a test body which does not already end
-// with t.End(). The block argument is unused but kept to satisfy MatchFn.
-func missingEnd(vars Vars, _ *ast.BlockStmt) bool {
+// with t.End(). The path argument is unused but kept to satisfy MatchFn.
+func missingEnd(vars Vars, _ Path) bool {
 	return !stmtsContainEnd(vars["__body"].(BodySlice).Stmts)
 }
 
