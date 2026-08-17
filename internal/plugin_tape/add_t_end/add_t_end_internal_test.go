@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"coderaiser/indra/types"
+	"go/ast"
 )
 
 // TestMissingEndBadBody covers the defensive !ok branch of missingEnd: when
@@ -11,7 +12,7 @@ import (
 // because Match only fires once the pattern has bound __body to one), the guard
 // must reject the node rather than panicking.
 func TestMissingEndBadBody(t *testing.T) {
-	if missingEnd(types.Vars{"__body": "not-a-body"}, types.Path{}) {
+	if missingEnd(types.Vars{"__body": &ast.Ident{Name: "x"}}, types.Path{}) {
 		t.Fatal("expected missingEnd to return false for a non-BodySlice __body")
 	}
 }
