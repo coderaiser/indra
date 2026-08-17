@@ -2,6 +2,8 @@
 
 package fixture
 
+import "github.com/coderaiser/go-tape"
+
 func f() {
 	t.NotOk(err == nil)
 }

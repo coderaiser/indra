@@ -16,7 +16,7 @@ import (
 var run = CreateTest("internal-test", remove_skip.Plugin{})
 
 func TestIndraLintSuccess(t *testing.T) {
-	src := []byte("package p\n\nfunc f() {\n\tTest.Skip(t, \"foo: something\", func(t *Test.T) {\n\t\tt.End()\n\t})\n}\n")
+	src := []byte("package p\n\nimport \"github.com/coderaiser/go-tape\"\n\nfunc f() {\n\tTest.Skip(t, \"foo: something\", func(t *Test.T) {\n\t\tt.End()\n\t})\n}\n")
 	plugins := []any{indratest.PluginArg{Rule: "remove-skip", Plugin: remove_skip.Plugin{}}}
 
 	run(t, "internal-test: indraLint: fixes without error", func(tt *T) {

@@ -3,8 +3,7 @@ package remove_useless_prefix
 import (
 	"go/ast"
 
-	"golang.org/x/tools/go/ast/astutil"
-
+	. "coderaiser/indra/operator"
 	. "coderaiser/indra/types"
 )
 
@@ -38,12 +37,15 @@ func Fix(p Path, _ map[string]any) {
 
 	spec.Name = &ast.Ident{Name: ".", NamePos: spec.Name.NamePos}
 
-	astutil.Apply(file, func(c *astutil.Cursor) bool {
-		if sel, ok := c.Node().(*ast.SelectorExpr); ok && selMatchesAlias(sel, alias) {
-			c.Replace(sel.Sel)
-		}
-		return true
-	}, nil)
+	p.Traverse(map[string]func(Path){
+		"*ast.SelectorExpr": func(sp Path) {
+			sel, ok := sp.Node.(*ast.SelectorExpr)
+			if !ok || !selMatchesAlias(sel, alias) {
+				return
+			}
+			ReplaceWith(sp, sel.Sel)
+		},
+	})
 }
 
 // findTapeImport returns the local alias (and its import spec) for a named
