@@ -19,7 +19,9 @@ type Vars = compare.Vars
 type BodySlice = compare.BodySlice
 type ArgSlice = compare.ArgSlice
 
-func Compare(node ast.Node, pattern string) bool { return compare.GetTemplateValues(node, pattern) != nil }
+func Compare(node ast.Node, pattern string) bool {
+	return compare.GetTemplateValues(node, pattern) != nil
+}
 func GetTemplateValues(node ast.Node, pattern string) map[string]ast.Node {
 	return compare.GetTemplateValues(node, pattern)
 }

@@ -85,11 +85,6 @@ func withCursor(file *ast.File, want ast.Node, fn func(types.Path)) {
 }
 
 // firstStmt returns the first statement in block.
-func firstStmt(t *testing.T, src string) *ast.ExprStmt {
-	t.Helper()
-	block := funcBody(t, src)
-	return block.List[0].(*ast.ExprStmt)
-}
 
 func TestRemove(t *testing.T) {
 	Test(t, "Remove: deletes the matched statement from its block", func(t *T) {
@@ -100,7 +95,9 @@ func TestRemove(t *testing.T) {
 		withCursor(file, block.List[0], func(p types.Path) {
 			Remove(p)
 		})
-		t.Equal(len(block.List), before-1)
+		result := len(block.List)
+		t.Equal(result, before-1)
+
 		t.End()
 	})
 
@@ -112,7 +109,9 @@ func TestRemove(t *testing.T) {
 		withCursor(file, file.Imports[1], func(p types.Path) {
 			Remove(p)
 		})
-		t.Equal(len(gd.Specs), before-1)
+		result := len(gd.Specs)
+		t.Equal(result, before-1)
+
 		t.End()
 	})
 }
@@ -159,7 +158,9 @@ func TestReplaceWithMultiple(t *testing.T) {
 		withCursor(file, block.List[0], func(p types.Path) {
 			ReplaceWithMultiple(p, []ast.Node{})
 		})
-		t.Equal(len(block.List), 1)
+		result := len(block.List)
+		t.Equal(result, 1)
+
 		t.End()
 	})
 
@@ -213,7 +214,8 @@ func TestGetBinding(t *testing.T) {
 		stmt := block.List[1]
 		p := types.Path{Node: stmt, Stack: []ast.Node{block, fn, file}}
 		binding := GetBinding(p, "result")
-		t.Ok(binding != nil)
+		t.Ok(binding)
+
 		t.End()
 	})
 
@@ -226,7 +228,8 @@ func TestGetBinding(t *testing.T) {
 		stmt := inner.List[0]
 		p := types.Path{Node: stmt, Stack: []ast.Node{inner, outer, fn, file}}
 		binding := GetBinding(p, "result")
-		t.Ok(binding != nil)
+		t.Ok(binding)
+
 		t.End()
 	})
 
@@ -248,7 +251,8 @@ func TestGetBinding(t *testing.T) {
 		stmt := block.List[1]
 		p := types.Path{Node: stmt, Stack: []ast.Node{block, fn, file}}
 		binding := GetBinding(p, "result")
-		t.Ok(binding != nil)
+		t.Ok(binding)
+
 		t.End()
 	})
 
@@ -257,7 +261,8 @@ func TestGetBinding(t *testing.T) {
 		fn := file.Decls[1].(*ast.FuncDecl)
 		p := types.Path{Node: fn, Stack: []ast.Node{file}}
 		binding := GetBinding(p, "myfmt")
-		t.Ok(binding != nil)
+		t.Ok(binding)
+
 		t.End()
 	})
 
@@ -267,7 +272,8 @@ func TestGetBinding(t *testing.T) {
 		stmt := fn.Body.List[0]
 		p := types.Path{Node: stmt, Stack: []ast.Node{fn.Body, fn, file}}
 		binding := GetBinding(p, "Helper")
-		t.Ok(binding != nil)
+		t.Ok(binding)
+
 		t.End()
 	})
 
@@ -277,7 +283,8 @@ func TestGetBinding(t *testing.T) {
 		stmt := fn.Body.List[0]
 		p := types.Path{Node: stmt, Stack: []ast.Node{fn.Body, fn, file}}
 		binding := GetBinding(p, "x")
-		t.Ok(binding != nil)
+		t.Ok(binding)
+
 		t.End()
 	})
 
@@ -287,7 +294,8 @@ func TestGetBinding(t *testing.T) {
 		stmt := fn.Body.List[0]
 		p := types.Path{Node: stmt, Stack: []ast.Node{fn.Body, fn, file}}
 		binding := GetBinding(p, "T")
-		t.Ok(binding != nil)
+		t.Ok(binding)
+
 		t.End()
 	})
 }
@@ -300,7 +308,8 @@ func TestGetBindingScope(t *testing.T) {
 		stmt := fn.Body.List[0]
 		p := types.Path{Node: stmt, Stack: []ast.Node{fn.Body, fn, file}}
 		binding := GetBinding(p, "arg")
-		t.Ok(binding != nil)
+		t.Ok(binding)
+
 		t.End()
 	})
 
@@ -311,7 +320,8 @@ func TestGetBindingScope(t *testing.T) {
 		stmt := fnLit.Body.List[0]
 		p := types.Path{Node: stmt, Stack: []ast.Node{fnLit.Body, fnLit, gd, file}}
 		binding := GetBinding(p, "x")
-		t.Ok(binding != nil)
+		t.Ok(binding)
+
 		t.End()
 	})
 
@@ -351,25 +361,33 @@ func TestRename(t *testing.T) {
 
 func TestExtract(t *testing.T) {
 	Test(t, "Extract: identifier name", func(t *T) {
-		t.Equal(Extract(ast.NewIdent("Equal")), "Equal")
+		result := Extract(ast.NewIdent("Equal"))
+		t.Equal(result, "Equal")
+
 		t.End()
 	})
 
 	Test(t, "Extract: string literal is unquoted", func(t *T) {
 		lit := &ast.BasicLit{Kind: token.STRING, Value: `"hello"`}
-		t.Equal(Extract(lit), "hello")
+		result := Extract(lit)
+		t.Equal(result, "hello")
+
 		t.End()
 	})
 
 	Test(t, "Extract: non-string literal keeps raw value", func(t *T) {
 		lit := &ast.BasicLit{Kind: token.INT, Value: "42"}
-		t.Equal(Extract(lit), "42")
+		result := Extract(lit)
+		t.Equal(result, "42")
+
 		t.End()
 	})
 
 	Test(t, "Extract: selector expression is X.Sel", func(t *T) {
 		sel := &ast.SelectorExpr{X: ast.NewIdent("t"), Sel: ast.NewIdent("Equal")}
-		t.Equal(Extract(sel), "t.Equal")
+		result := Extract(sel)
+		t.Equal(result, "t.Equal")
+
 		t.End()
 	})
 
@@ -421,7 +439,9 @@ func TestPreserveComments(t *testing.T) {
 		}
 		file.Decls[0] = gd
 		preserveComments(types.Path{Node: gd, Stack: []ast.Node{file}})
-		t.Equal(len(file.Comments), 1)
+		result := len(file.Comments)
+		t.Equal(result, 1)
+
 		t.End()
 	})
 
@@ -430,7 +450,9 @@ func TestPreserveComments(t *testing.T) {
 		before := len(file.Comments)
 		fd := file.Decls[0].(*ast.FuncDecl)
 		preserveComments(types.Path{Node: fd, Stack: []ast.Node{file}})
-		t.Equal(len(file.Comments), before)
+		result := len(file.Comments)
+		t.Equal(result, before)
+
 		t.End()
 	})
 }
@@ -460,13 +482,17 @@ func TestFindFile(t *testing.T) {
 
 func TestCommentGroups(t *testing.T) {
 	Test(t, "commentGroups: nil node", func(t *T) {
-		t.Equal(len(commentGroups(nil)), 0)
+		result := len(commentGroups(nil))
+		t.Equal(result, 0)
+
 		t.End()
 	})
 
 	Test(t, "commentGroups: typed nil pointer", func(t *T) {
 		var id *ast.Ident
-		t.Equal(len(commentGroups(id)), 0)
+		result := len(commentGroups(id))
+		t.Equal(result, 0)
+
 		t.End()
 	})
 
@@ -478,13 +504,17 @@ func TestCommentGroups(t *testing.T) {
 				&ast.ValueSpec{Names: []*ast.Ident{ast.NewIdent("x")}},
 			},
 		}
-		t.Equal(len(commentGroups(gd)), 1)
+		result := len(commentGroups(gd))
+		t.Equal(result, 1)
+
 		t.End()
 	})
 
 	Test(t, "commentGroups: skips a nil pointer child", func(t *T) {
 		fd := &ast.FuncDecl{Name: ast.NewIdent("f"), Body: nil, Doc: nil}
-		t.Equal(len(commentGroups(fd)), 0)
+		result := len(commentGroups(fd))
+		t.Equal(result, 0)
+
 		t.End()
 	})
 
@@ -493,19 +523,25 @@ func TestCommentGroups(t *testing.T) {
 			Name: ast.NewIdent("f"),
 			Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ExprStmt{X: ast.NewIdent("x")}}},
 		}
-		t.Equal(len(commentGroups(fd)), 0)
+		result := len(commentGroups(fd))
+		t.Equal(result, 0)
+
 		t.End()
 	})
 
 	Test(t, "commentGroups: recurses into an interface child", func(t *T) {
 		e := &ast.ExprStmt{X: ast.NewIdent("x")}
-		t.Equal(len(commentGroups(e)), 0)
+		result := len(commentGroups(e))
+		t.Equal(result, 0)
+
 		t.End()
 	})
 
 	Test(t, "commentGroups: skips a non-node pointer field (File.Scope)", func(t *T) {
 		span := &ast.File{Name: ast.NewIdent("p"), Scope: ast.NewScope(nil)}
-		t.Equal(len(commentGroups(span)), 0)
+		result := len(commentGroups(span))
+		t.Equal(result, 0)
+
 		t.End()
 	})
 }

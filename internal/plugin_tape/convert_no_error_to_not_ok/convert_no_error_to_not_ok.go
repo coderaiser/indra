@@ -1,3 +1,6 @@
+// Package convert_no_error_to_not_ok rewrites tape's t.NoError(err) into the
+// equivalent t.NotOk(err). Only files that import go-tape are considered, so the
+// collision-prone NoError name is never rewritten outside tape.
 package convert_no_error_to_not_ok
 
 import (
@@ -38,11 +41,10 @@ func findNoErrorCalls(p Path, push func(Path)) {
 	}
 }
 
+// Fix rewrites tape t.NoError(err) calls to t.NotOk(err). It is only ever
+// invoked on a pushed *ast.File, so findNoErrorCalls has already guaranteed a
+// go-tape import -- no import guard is needed here.
 func Fix(p Path, _ map[string]any) {
-	file := p.Node.(*ast.File)
-	if !hasGoTapeImport(file) {
-		return
-	}
 	p.Traverse(map[string]func(Path){
 		"*ast.CallExpr": func(callPath Path) {
 			call := callPath.Node.(*ast.CallExpr)

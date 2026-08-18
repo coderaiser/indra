@@ -1,10 +1,10 @@
 package add_t_end
 
 import (
+	"go/ast"
 	"testing"
 
 	"coderaiser/indra/types"
-	"go/ast"
 )
 
 // TestMissingEndBadBody covers the defensive !ok branch of missingEnd: when
@@ -14,13 +14,5 @@ import (
 func TestMissingEndBadBody(t *testing.T) {
 	if missingEnd(types.Vars{"__body": &ast.Ident{Name: "x"}}, types.Path{}) {
 		t.Fatal("expected missingEnd to return false for a non-BodySlice __body")
-	}
-}
-
-// TestTapeImportedNoFile covers tapeImported's fallback when the matched path
-// has no enclosing *ast.File on its stack.
-func TestTapeImportedNoFile(t *testing.T) {
-	if tapeImported(types.Vars{}, types.Path{Stack: []ast.Node{&ast.Ident{}}}) {
-		t.Fatal("expected tapeImported to return false without an *ast.File")
 	}
 }

@@ -44,7 +44,6 @@ func IsSimple(node ast.Node) bool {
 	return false
 }
 
-
 // Remove deletes path.Node from its parent, preserving comments by migrating
 // them to the file's Comments slice when path.Node is the last child in its
 // parent.
@@ -130,7 +129,6 @@ func GetBinding(path types.Path, name string) *types.Path {
 
 // GetBindingPath is an alias for GetBinding. Mirrors putout naming.
 var GetBindingPath = GetBinding
-
 
 // preserveComments appends any comment groups found within path.Node to the
 // file's Comments slice, skipping groups the file already tracks.
@@ -263,7 +261,6 @@ func blockDeclaresStmt(block *ast.BlockStmt, name string) (ast.Stmt, bool) {
 	return nil, false
 }
 
-
 // fileDeclares reports whether file declares name as an import, a top-level
 // var/const/type, or a function, returning the declaring node.
 func fileDeclares(file *ast.File, name string) ast.Node {
@@ -312,4 +309,3 @@ func paramsDeclare(fields *ast.FieldList, name string) bool {
 	}
 	return false
 }
-
