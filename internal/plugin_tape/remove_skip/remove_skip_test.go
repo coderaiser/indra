@@ -29,4 +29,34 @@ func TestRemoveSkip(t *testing.T) {
 		t.NoTransform("no-skip")
 		t.End()
 	})
+
+	Test(t, "remove-skip: report: skip-skip", func(t *T) {
+		t.Report("skip-skip", "remove Test.Skip call")
+		t.End()
+	})
+
+	Test(t, "remove-skip: transform: skip-skip", func(t *T) {
+		t.Transform("skip-skip")
+		t.End()
+	})
+
+	Test(t, "remove-skip: report: with-options", func(t *T) {
+		t.Report("with-options", "remove Test.Skip call")
+		t.End()
+	})
+
+	Test(t, "remove-skip: transform: with-options", func(t *T) {
+		t.Transform("with-options")
+		t.End()
+	})
+
+	Test(t, "remove-skip: no report: not-test", func(t *T) {
+		t.NoReport("not-test")
+		t.End()
+	})
+
+	Test(t, "remove-skip: no transform: not-test", func(t *T) {
+		t.NoTransform("not-test")
+		t.End()
+	})
 }
