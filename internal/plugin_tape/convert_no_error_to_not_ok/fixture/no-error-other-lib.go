@@ -5,5 +5,5 @@ package fixture
 import "testing"
 
 func f() {
-	t.NoError(err)
+	obj.NoError(err)
 }

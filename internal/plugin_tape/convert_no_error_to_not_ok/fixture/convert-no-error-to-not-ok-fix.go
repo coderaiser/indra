@@ -9,4 +9,5 @@ func f() {
 	foo()
 	t.NotOk(other)
 	t.NotOk(err)
+
 }
