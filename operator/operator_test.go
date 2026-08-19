@@ -574,3 +574,179 @@ func TestBlockDeclaresEdgeCases(t *testing.T) {
 		t.End()
 	})
 }
+
+func TestCompute(t *testing.T) {
+	Test(t, "Compute: int literal", func(t *T) {
+		ok, val := Compute(&ast.BasicLit{Kind: token.INT, Value: "42"})
+		t.Ok(ok && val == int64(42))
+		t.End()
+	})
+
+	Test(t, "Compute: hex int literal", func(t *T) {
+		ok, val := Compute(&ast.BasicLit{Kind: token.INT, Value: "0x0"})
+		t.Ok(ok && val == int64(0))
+		t.End()
+	})
+
+	Test(t, "Compute: float literal", func(t *T) {
+		ok, val := Compute(&ast.BasicLit{Kind: token.FLOAT, Value: "1.5"})
+		t.Ok(ok && val == 1.5)
+		t.End()
+	})
+
+	Test(t, "Compute: string literal is unquoted", func(t *T) {
+		ok, val := Compute(&ast.BasicLit{Kind: token.STRING, Value: `"hi"`})
+		t.Ok(ok && val == "hi")
+		t.End()
+	})
+
+	Test(t, "Compute: char literal returns raw value", func(t *T) {
+		ok, val := Compute(&ast.BasicLit{Kind: token.CHAR, Value: "'a'"})
+		t.Ok(ok && val == "'a'")
+		t.End()
+	})
+
+	Test(t, "Compute: non-literal returns false", func(t *T) {
+		ok, _ := Compute(ast.NewIdent("x"))
+		t.NotOk(ok)
+		t.End()
+	})
+
+	Test(t, "Compute: unparseable int returns false", func(t *T) {
+		ok, _ := Compute(&ast.BasicLit{Kind: token.INT, Value: "not-a-number"})
+		t.NotOk(ok)
+		t.End()
+	})
+
+	Test(t, "Compute: unparseable float returns false", func(t *T) {
+		ok, _ := Compute(&ast.BasicLit{Kind: token.FLOAT, Value: "zzz"})
+		t.NotOk(ok)
+		t.End()
+	})
+
+	Test(t, "Compute: unparseable string returns false", func(t *T) {
+		ok, _ := Compute(&ast.BasicLit{Kind: token.STRING, Value: `"unterminated`})
+		t.NotOk(ok)
+		t.End()
+	})
+}
+
+func TestCompareAny(t *testing.T) {
+	block := funcBody(t, "package p\nfunc f() {\n\tt.Equal(a, b)\n\tt.NotOk(x)\n}\n")
+
+	Test(t, "CompareAny: matches when any statement matches", func(t *T) {
+		t.Ok(CompareAny("__a.Equal(__b, __c)", block.List))
+		t.End()
+	})
+
+	Test(t, "CompareAny: returns false when nothing matches", func(t *T) {
+		t.NotOk(CompareAny("t.End()", block.List))
+		t.End()
+	})
+
+	Test(t, "CompareAny: empty statement list returns false", func(t *T) {
+		t.NotOk(CompareAny("t.End()", []ast.Stmt{}))
+		t.End()
+	})
+}
+
+func TestTypeCheckHelpers(t *testing.T) {
+	Test(t, "IsMemberExpr: selector is a member expression", func(t *T) {
+		node := &ast.SelectorExpr{X: ast.NewIdent("a"), Sel: ast.NewIdent("b")}
+		t.Ok(IsMemberExpr(node))
+		t.End()
+	})
+
+	Test(t, "IsMemberExpr: non-selector is not", func(t *T) {
+		t.NotOk(IsMemberExpr(ast.NewIdent("a")))
+		t.End()
+	})
+
+	Test(t, "IsIdent: identifier", func(t *T) {
+		t.Ok(IsIdent(ast.NewIdent("a")))
+		t.End()
+	})
+
+	Test(t, "IsIdent: non-identifier", func(t *T) {
+		t.NotOk(IsIdent(&ast.BasicLit{Kind: token.INT, Value: "1"}))
+		t.End()
+	})
+
+	Test(t, "IsCallExpr: call expression", func(t *T) {
+		t.Ok(IsCallExpr(&ast.CallExpr{Fun: ast.NewIdent("f")}))
+		t.End()
+	})
+
+	Test(t, "IsCallExpr: non-call", func(t *T) {
+		t.NotOk(IsCallExpr(ast.NewIdent("f")))
+		t.End()
+	})
+
+	Test(t, "IsFuncLit: function literal", func(t *T) {
+		t.Ok(IsFuncLit(&ast.FuncLit{Type: &ast.FuncType{}}))
+		t.End()
+	})
+
+	Test(t, "IsFuncLit: non-func-literal", func(t *T) {
+		t.NotOk(IsFuncLit(ast.NewIdent("f")))
+		t.End()
+	})
+
+	Test(t, "IsCompositeLit: composite literal", func(t *T) {
+		t.Ok(IsCompositeLit(&ast.CompositeLit{Type: ast.NewIdent("T")}))
+		t.End()
+	})
+
+	Test(t, "IsCompositeLit: non-composite-literal", func(t *T) {
+		t.NotOk(IsCompositeLit(ast.NewIdent("a")))
+		t.End()
+	})
+}
+
+func TestIsPrimitive(t *testing.T) {
+	Test(t, "isPrimitive: int literal", func(t *T) {
+		t.Ok(isPrimitive(&ast.BasicLit{Kind: token.INT, Value: "1"}))
+		t.End()
+	})
+
+	Test(t, "isPrimitive: float literal", func(t *T) {
+		t.Ok(isPrimitive(&ast.BasicLit{Kind: token.FLOAT, Value: "1.5"}))
+		t.End()
+	})
+
+	Test(t, "isPrimitive: char literal", func(t *T) {
+		t.Ok(isPrimitive(&ast.BasicLit{Kind: token.CHAR, Value: "'c'"}))
+		t.End()
+	})
+
+	Test(t, "isPrimitive: string literal", func(t *T) {
+		t.Ok(isPrimitive(&ast.BasicLit{Kind: token.STRING, Value: `"x"`}))
+		t.End()
+	})
+
+	Test(t, "isPrimitive: nil identifier", func(t *T) {
+		t.Ok(isPrimitive(ast.NewIdent("nil")))
+		t.End()
+	})
+
+	Test(t, "isPrimitive: true identifier", func(t *T) {
+		t.Ok(isPrimitive(ast.NewIdent("true")))
+		t.End()
+	})
+
+	Test(t, "isPrimitive: named identifier is not primitive", func(t *T) {
+		t.NotOk(isPrimitive(ast.NewIdent("x")))
+		t.End()
+	})
+
+	Test(t, "isPrimitive: composite literal is not primitive", func(t *T) {
+		t.NotOk(isPrimitive(&ast.CompositeLit{Type: ast.NewIdent("T")}))
+		t.End()
+	})
+
+	Test(t, "isPrimitive: unsupported literal kind is not primitive", func(t *T) {
+		t.NotOk(isPrimitive(&ast.BasicLit{Kind: token.IMAG, Value: "1i"}))
+		t.End()
+	})
+}
+

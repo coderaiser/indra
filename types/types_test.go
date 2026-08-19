@@ -110,6 +110,87 @@ func TestParentPath(t *testing.T) {
 	})
 }
 
+func TestPrevSibling(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\ta := 1\n\tb := 2\n}\n"
+	fset := token.NewFileSet()
+	file, _ := parser.ParseFile(fset, "", src, 0)
+	fn := file.Decls[0].(*ast.FuncDecl)
+	block := fn.Body
+
+	Test(t, "Path.PrevSibling: returns previous statement", func(t *T) {
+		p := types.Path{Node: block.List[1], Stack: []ast.Node{file, fn, block}}
+		prev, ok := p.PrevSibling()
+		t.Ok(ok && prev.Node == block.List[0])
+		t.End()
+	})
+
+	Test(t, "Path.PrevSibling: first statement has no prev sibling", func(t *T) {
+		p := types.Path{Node: block.List[0], Stack: []ast.Node{file, fn, block}}
+		_, ok := p.PrevSibling()
+		t.NotOk(ok)
+		t.End()
+	})
+
+	Test(t, "Path.PrevSibling: empty stack returns false", func(t *T) {
+		_, ok := types.Path{Node: block.List[0], Stack: nil}.PrevSibling()
+		t.NotOk(ok)
+		t.End()
+	})
+
+	Test(t, "Path.PrevSibling: non-list parent returns false", func(t *T) {
+		p := types.Path{Node: ast.NewIdent("x"), Stack: []ast.Node{(ast.Node)(&ast.ExprStmt{X: ast.NewIdent("y")})}}
+		_, ok := p.PrevSibling()
+		t.NotOk(ok)
+		t.End()
+	})
+
+	Test(t, "Path.PrevSibling: node not found in parent list returns false", func(t *T) {
+		p := types.Path{Node: ast.NewIdent("x"), Stack: []ast.Node{file, fn, block}}
+		_, ok := p.PrevSibling()
+		t.NotOk(ok)
+		t.End()
+	})
+
+	Test(t, "Path.PrevSibling: file-level declarations have prev siblings", func(t *T) {
+		// file.Decls[0] is the single func; give it a sibling to observe reordering
+		importDecl := &ast.GenDecl{Tok: token.IMPORT}
+		file.Decls = append([]ast.Decl{importDecl}, file.Decls...)
+		p := types.Path{Node: file.Decls[1], Stack: []ast.Node{file}}
+		prev, ok := p.PrevSibling()
+		t.Ok(ok && prev.Node == importDecl)
+		t.End()
+	})
+}
+
+func TestCompareHelpers(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tt.Equal(a, b)\n}\n"
+	fset := token.NewFileSet()
+	file, _ := parser.ParseFile(fset, "", src, 0)
+	stmt := file.Decls[0].(*ast.FuncDecl).Body.List[0]
+
+	Test(t, "Compare: matches a statement against a pattern", func(t *T) {
+		t.Ok(types.Compare(stmt, "__a.Equal(__b, __c)"))
+		t.End()
+	})
+
+	Test(t, "Compare: non-matching pattern is rejected", func(t *T) {
+		t.NotOk(types.Compare(stmt, "t.End()"))
+		t.End()
+	})
+
+	Test(t, "GetTemplateValues: binds holes from a matching pattern", func(t *T) {
+		vars := types.GetTemplateValues(stmt, "__a.Equal(__b, __c)")
+		t.Ok(vars != nil && vars["__b"].(*ast.Ident).Name == "a")
+		t.End()
+	})
+
+	Test(t, "GetTemplateValues: returns nil for a non-match", func(t *T) {
+		t.NotOk(types.GetTemplateValues(stmt, "t.End()") != nil)
+		t.End()
+	})
+}
+
+
 func TestPathReplace(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tx := 1\n\ty := 2\n}\n"
 	fset := token.NewFileSet()

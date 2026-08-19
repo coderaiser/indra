@@ -130,6 +130,99 @@ func GetBinding(path types.Path, name string) *types.Path {
 // GetBindingPath is an alias for GetBinding. Mirrors putout naming.
 var GetBindingPath = GetBinding
 
+// Compute evaluates node as a constant expression and returns its go value.
+// Returns (true, value) when the node reduces to a constant bool, int, float,
+// or string. Returns (false, nil) otherwise.
+//
+// Mirrors putout's operator compute(path). In Go the compiler already rejects
+// non-constant operations in constant context, so Compute covers *ast.BasicLit
+// only; named constants are resolved via GetBinding + Compute on the init expr.
+func Compute(node ast.Node) (bool, any) {
+	lit, ok := node.(*ast.BasicLit)
+	if !ok {
+		return false, nil
+	}
+	switch lit.Kind {
+	case token.INT:
+		if v, err := strconv.ParseInt(lit.Value, 0, 64); err == nil {
+			return true, v
+		}
+	case token.FLOAT:
+		if v, err := strconv.ParseFloat(lit.Value, 64); err == nil {
+			return true, v
+		}
+	case token.STRING:
+		if v, err := strconv.Unquote(lit.Value); err == nil {
+			return true, v
+		}
+	case token.CHAR:
+		return true, lit.Value
+	}
+	return false, nil
+}
+
+// CompareAny reports whether any statement in stmts matches pattern.
+// Mirrors putout's operator compareAny(pattern, body).
+func CompareAny(pattern string, stmts []ast.Stmt) bool {
+	for _, stmt := range stmts {
+		if types.Compare(stmt, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
+// IsMemberExpr reports whether node is a selector expression (a.b).
+// Mirrors putout's types.isMemberExpression.
+func IsMemberExpr(node ast.Node) bool {
+	_, ok := node.(*ast.SelectorExpr)
+	return ok
+}
+
+// IsIdent reports whether node is an identifier.
+// Mirrors putout's types.isIdentifier.
+func IsIdent(node ast.Node) bool {
+	_, ok := node.(*ast.Ident)
+	return ok
+}
+
+// IsCallExpr reports whether node is a call expression.
+// Mirrors putout's types.isCallExpression.
+func IsCallExpr(node ast.Node) bool {
+	_, ok := node.(*ast.CallExpr)
+	return ok
+}
+
+// IsFuncLit reports whether node is a function literal.
+// Mirrors putout's types.isFunction (for the FuncLit case).
+func IsFuncLit(node ast.Node) bool {
+	_, ok := node.(*ast.FuncLit)
+	return ok
+}
+
+// IsCompositeLit reports whether node is a composite literal (slice/struct/map).
+func IsCompositeLit(node ast.Node) bool {
+	_, ok := node.(*ast.CompositeLit)
+	return ok
+}
+
+// isPrimitive reports whether node is a basic literal or a nil/true/false
+// identifier — the primitives for which Equal and DeepEqual are interchangeable.
+func isPrimitive(node ast.Node) bool {
+	lit, ok := node.(*ast.BasicLit)
+	if !ok {
+		if ident, ok := node.(*ast.Ident); ok {
+			return ident.Name == "nil" || ident.Name == "true" || ident.Name == "false"
+		}
+		return false
+	}
+	switch lit.Kind {
+	case token.INT, token.FLOAT, token.STRING, token.CHAR:
+		return true
+	}
+	return false
+}
+
 // preserveComments appends any comment groups found within path.Node to the
 // file's Comments slice, skipping groups the file already tracks.
 func preserveComments(path types.Path) {

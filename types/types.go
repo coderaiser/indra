@@ -235,6 +235,33 @@ func (p Path) ParentPath() (Path, bool) {
 	return Path{Node: parent, Stack: p.Stack[:len(p.Stack)-1]}, true
 }
 
+// PrevSibling returns the sibling path immediately before p in its parent
+// slice, and true. Returns a zero Path and false when p has no prev sibling
+// or its parent is not a stmt-list container. Matches Babel's
+// path.getPrevSibling().
+func (p Path) PrevSibling() (Path, bool) {
+	if len(p.Stack) == 0 {
+		return Path{}, false
+	}
+	parent := p.Stack[len(p.Stack)-1]
+	switch par := parent.(type) {
+	case *ast.BlockStmt:
+		for i, stmt := range par.List {
+			if stmt == p.Node && i > 0 {
+				return Path{Node: par.List[i-1], Stack: p.Stack}, true
+			}
+		}
+	case *ast.File:
+		for i, decl := range par.Decls {
+			if decl == p.Node && i > 0 {
+				return Path{Node: par.Decls[i-1], Stack: p.Stack}, true
+			}
+		}
+	}
+	return Path{}, false
+}
+
+
 // Position is a source location — line and column only, matching putout's shape.
 type Position struct {
 	Line   int `json:"line"`
