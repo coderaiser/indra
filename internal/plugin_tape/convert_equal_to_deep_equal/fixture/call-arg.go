@@ -5,7 +5,5 @@ package fixture
 import "github.com/coderaiser/go-tape"
 
 func f() {
-	blocks := []Block{}
-	t.DeepEqual(x, blocks)
-
+	t.Equal(x, foo())
 }

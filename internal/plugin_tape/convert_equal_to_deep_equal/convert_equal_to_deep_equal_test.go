@@ -74,4 +74,24 @@ func TestConvertEqualToDeepEqual(t *testing.T) {
 		t.NoTransform("named-var-no-report")
 		t.End()
 	})
+
+	Test(t, "convert-equal-to-deep-equal: no report: call-arg", func(t *T) {
+		t.NoReport("call-arg")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-deep-equal: no transform: call-arg", func(t *T) {
+		t.NoTransform("call-arg")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-deep-equal: no report: func-binding", func(t *T) {
+		t.NoReport("func-binding")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-deep-equal: no transform: func-binding", func(t *T) {
+		t.NoTransform("func-binding")
+		t.End()
+	})
 }

@@ -13,26 +13,27 @@ func Report() string { return "Equal: use DeepEqual for slices" }
 
 func Replace() Replacer {
 	return Replacer{
-		"__a.Equal(__b, __array)":    "__a.DeepEqual(__b, __array)",
-		"__a.Equal(__array, __b)":    "__a.DeepEqual(__array, __b)",
-		"__a.NotEqual(__b, __array)": "__a.NotDeepEqual(__b, __array)",
+		"__a.Equal(__b, __c)":    "__a.DeepEqual(__b, __c)",
+		"__a.Equal(__c, __b)":    "__a.DeepEqual(__c, __b)",
+		"__a.NotEqual(__b, __c)": "__a.NotDeepEqual(__b, __c)",
 	}
 }
 
 // Match guards so Equal is only upgraded to DeepEqual when the compared value
 // is an actual slice/struct literal (composite literal) or a variable bound to
-// one — matching putout's isArray/isObject checks.
+// one — matching putout's isArray/isObject checks. __c is a free hole here
+// (not the __array sentinel) so identifiers resolve through the binding.
 func Match() Matcher {
 	return Matcher{
-		"__a.Equal(__b, __array)": sliceOrStruct,
-		"__a.Equal(__array, __b)": sliceOrStruct,
+		"__a.Equal(__b, __c)": sliceOrStruct,
+		"__a.Equal(__c, __b)": sliceOrStruct,
 	}
 }
 
-// sliceOrStruct reports whether __array is a composite literal or an identifier
+// sliceOrStruct reports whether __c is a composite literal or an identifier
 // whose binding is a composite literal.
 func sliceOrStruct(vars Vars, path Path) bool {
-	node := vars["__array"]
+	node := vars["__c"]
 	if IsCompositeLit(node) {
 		return true
 	}
