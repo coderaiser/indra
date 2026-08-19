@@ -3,6 +3,7 @@ package add_t_end
 import (
 	"go/ast"
 
+	. "coderaiser/indra/operator"
 	. "coderaiser/indra/types"
 )
 
@@ -24,26 +25,34 @@ func Replace() Replacer {
 	}
 }
 
-// missingEnd is a guard that accepts a test body which does not already end
-// with an End() call. The [match] config already scopes tape rules to
+// missingEnd is a guard that accepts a test body which does not already contain
+// an End() call (whether as a bare statement, an assigned form, or implied by a
+// trailing callback argument). The [match] config already scopes tape rules to
 // *_test.go files, so no import guard is needed here.
 func missingEnd(vars Vars, _ Path) bool {
-	body, ok := vars["__body"].(BodySlice)
-	if !ok {
+	body := vars["__body"].(BodySlice)
+	stmts := body.Stmts
+	if len(stmts) == 0 {
+		return true
+	}
+	// t.End() anywhere in body (putout: compareAny)
+	if CompareAny("__a.End()", stmts) {
 		return false
 	}
-	return !stmtsContainEnd(body.Stmts)
-}
-
-// stmtsContainEnd reports whether any statement in stmts is a call to an End
-// method (t.End()).
-func stmtsContainEnd(stmts []ast.Stmt) bool {
-	for _, s := range stmts {
-		if Compare(s, "__.End()") {
-			return true
+	// const result = t.End() assigned form
+	if CompareAny("__a := __b.End()", stmts) {
+		return false
+	}
+	last := stmts[len(stmts)-1]
+	// last stmt is a call whose last arg is a func literal → callback pattern
+	if expr, ok := last.(*ast.ExprStmt); ok {
+		if call, ok := expr.X.(*ast.CallExpr); ok && len(call.Args) > 0 {
+			if IsFuncLit(call.Args[len(call.Args)-1]) {
+				return false
+			}
 		}
 	}
-	return false
+	return true
 }
 
 // Plugin wraps the rule for the registry: a replacer with a Match guard.

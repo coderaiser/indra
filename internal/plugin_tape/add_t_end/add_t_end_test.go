@@ -49,4 +49,44 @@ func TestAddTEnd(t *testing.T) {
 		t.NoTransform("has-end")
 		t.End()
 	})
+
+	Test(t, "add-t-end: no report: assign-end", func(t *T) {
+		t.NoReport("assign-end")
+		t.End()
+	})
+
+	Test(t, "add-t-end: no transform: assign-end", func(t *T) {
+		t.NoTransform("assign-end")
+		t.End()
+	})
+
+	Test(t, "add-t-end: no report: contains-end", func(t *T) {
+		t.NoReport("contains-end")
+		t.End()
+	})
+
+	Test(t, "add-t-end: no transform: contains-end", func(t *T) {
+		t.NoTransform("contains-end")
+		t.End()
+	})
+
+	Test(t, "add-t-end: no report: callback-end", func(t *T) {
+		t.NoReport("callback-end")
+		t.End()
+	})
+
+	Test(t, "add-t-end: no transform: callback-end", func(t *T) {
+		t.NoTransform("callback-end")
+		t.End()
+	})
+
+	Test(t, "add-t-end: report: empty-body", func(t *T) {
+		t.Report("empty-body", "tape: missing t.End()")
+		t.End()
+	})
+
+	Test(t, "add-t-end: transform: empty-body", func(t *T) {
+		t.Transform("empty-body")
+		t.End()
+	})
 }
