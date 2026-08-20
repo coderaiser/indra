@@ -44,4 +44,24 @@ func TestConvertEqualToNotOk(t *testing.T) {
 		t.Transform("empty-string")
 		t.End()
 	})
+
+	Test(t, "convert-equal-to-not-ok: report: zero-int", func(t *T) {
+		t.Report("zero-int", "convert Equal(x, nil/false) to NotOk(x)")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-not-ok: transform: zero-int", func(t *T) {
+		t.Transform("zero-int")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-not-ok: no report: zero-float", func(t *T) {
+		t.NoReport("zero-float")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-not-ok: no transform: zero-float", func(t *T) {
+		t.NoTransform("zero-float")
+		t.End()
+	})
 }

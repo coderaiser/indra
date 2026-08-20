@@ -29,4 +29,34 @@ func TestConvertEqualToOk(t *testing.T) {
 		t.NoTransform("ok")
 		t.End()
 	})
+
+	Test(t, "convert-equal-to-ok: report: message", func(t *T) {
+		t.Report("message", "convert Equal(x, true) to Ok(x)")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-ok: transform: message", func(t *T) {
+		t.Transform("message")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-ok: report: deep-equal", func(t *T) {
+		t.Report("deep-equal", "convert Equal(x, true) to Ok(x)")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-ok: transform: deep-equal", func(t *T) {
+		t.Transform("deep-equal")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-ok: report: deep-equal-message", func(t *T) {
+		t.Report("deep-equal-message", "convert Equal(x, true) to Ok(x)")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-ok: transform: deep-equal-message", func(t *T) {
+		t.Transform("deep-equal-message")
+		t.End()
+	})
 }

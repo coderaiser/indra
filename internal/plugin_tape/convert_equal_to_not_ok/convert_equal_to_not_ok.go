@@ -55,7 +55,10 @@ func isFalsyLiteral(c ast.Node) bool {
 	if !ok {
 		return false
 	}
-	if lit.Kind == token.INT || lit.Kind == token.FLOAT {
+	// Float literals are never treated as falsy here: an integral 0 (e.g.
+	// t.Equal(x, 0)) reduces to the int value 0 and is convertible, while a
+	// float 0.0 falls through to the generic "no report" path below.
+	if lit.Kind == token.FLOAT {
 		return false
 	}
 	ok2, val := Compute(c)

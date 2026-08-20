@@ -21,10 +21,10 @@ func Report(p types.Path) string {
 	case *funcDeclFinding:
 		return "remove unused private function: " + n.decl.Name.Name
 	case *ast.File:
+		// The finder only pushes files that have at least one unused const, so
+		// consts is guaranteed non-empty here.
 		consts := unusedConstNames(n)
-		if len(consts) > 0 {
-			return "remove unused const: " + consts[0]
-		}
+		return "remove unused const: " + consts[0]
 	case *ast.BlockStmt:
 		unused := unusedVarNames(n)
 		if len(unused) > 0 {

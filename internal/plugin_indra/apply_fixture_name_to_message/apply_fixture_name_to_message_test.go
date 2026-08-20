@@ -44,4 +44,24 @@ func TestApplyFixtureNameToMessage(t *testing.T) {
 		t.Transform("mixed-message")
 		t.End()
 	})
+
+	Test(t, "apply-fixture-name-to-message: report: short-calls", func(t *T) {
+		t.Report("short-calls", "apply fixture name to message")
+		t.End()
+	})
+
+	Test(t, "apply-fixture-name-to-message: transform: short-calls", func(t *T) {
+		t.Transform("short-calls")
+		t.End()
+	})
+
+	Test(t, "apply-fixture-name-to-message: report: prefix-only", func(t *T) {
+		t.Report("prefix-only", "apply fixture name to message")
+		t.End()
+	})
+
+	Test(t, "apply-fixture-name-to-message: transform: prefix-only", func(t *T) {
+		t.Transform("prefix-only")
+		t.End()
+	})
 }

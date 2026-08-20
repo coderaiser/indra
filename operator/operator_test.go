@@ -750,3 +750,28 @@ func TestIsPrimitive(t *testing.T) {
 	})
 }
 
+func TestGetBindingPath(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tx := 1\n\t_ = x\n}\n"
+	fset := token.NewFileSet()
+	file, _ := parser.ParseFile(fset, "", src, 0)
+	funcDecl := file.Decls[0].(*ast.FuncDecl)
+	body := funcDecl.Body
+	refStmt := body.List[1].(*ast.ExprStmt)
+	path := types.Path{
+		Node:  refStmt,
+		Stack: []ast.Node{file, funcDecl, body},
+	}
+
+	Test(t, "operator: GetBindingPath returns path for declared name", func(t *T) {
+		result := GetBindingPath(path, "x")
+		t.Ok(result != nil)
+		t.End()
+	})
+
+	Test(t, "operator: GetBindingPath returns nil for undeclared name", func(t *T) {
+		result := GetBindingPath(path, "notDeclared")
+		t.Equal(result, (*types.Path)(nil))
+		t.End()
+	})
+}
+

@@ -69,4 +69,44 @@ func TestReplaceTestMessage(t *testing.T) {
 		t.Transform("mixed-args")
 		t.End()
 	})
+
+	Test(t, "replace-test-message: report: no-report-verb", func(t *T) {
+		t.Report("no-report-verb", "replace test message")
+		t.End()
+	})
+
+	Test(t, "replace-test-message: transform: no-report-verb", func(t *T) {
+		t.Transform("no-report-verb")
+		t.End()
+	})
+
+	Test(t, "replace-test-message: report: no-transform-verb", func(t *T) {
+		t.Report("no-transform-verb", "replace test message")
+		t.End()
+	})
+
+	Test(t, "replace-test-message: transform: no-transform-verb", func(t *T) {
+		t.Transform("no-transform-verb")
+		t.End()
+	})
+
+	Test(t, "replace-test-message: report: wrong-verb", func(t *T) {
+		t.Report("wrong-verb", "replace test message")
+		t.End()
+	})
+
+	Test(t, "replace-test-message: transform: wrong-verb", func(t *T) {
+		t.Transform("wrong-verb")
+		t.End()
+	})
+
+	Test(t, "replace-test-message: report: wrong-fixture", func(t *T) {
+		t.Report("wrong-fixture", "replace test message")
+		t.End()
+	})
+
+	Test(t, "replace-test-message: transform: wrong-fixture", func(t *T) {
+		t.Transform("wrong-fixture")
+		t.End()
+	})
 }
