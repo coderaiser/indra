@@ -261,7 +261,6 @@ func (p Path) PrevSibling() (Path, bool) {
 	return Path{}, false
 }
 
-
 // Position is a source location — line and column only, matching putout's shape.
 type Position struct {
 	Line   int `json:"line"`

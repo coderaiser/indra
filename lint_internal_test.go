@@ -50,7 +50,7 @@ func TestFilterPluginsDropsOthers(t *testing.T) {
 	Test(t, "filterPlugins: drops non matching rules", func(t *T) {
 		out := filterPlugins(pluginItems("a", "b"), []string{"grp"})
 		result := len(out)
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})

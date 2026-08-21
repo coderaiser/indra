@@ -35,4 +35,3 @@ type Plugin struct{}
 func (Plugin) Report() string    { return Report() }
 func (Plugin) Match() Matcher    { return Match() }
 func (Plugin) Replace() Replacer { return Replace() }
-

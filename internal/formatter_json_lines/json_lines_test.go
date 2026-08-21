@@ -44,7 +44,7 @@ func TestFormatterJsonLines(t *testing.T) {
 		var m map[string]any
 		json.Unmarshal([]byte(strings.TrimSpace(out)), &m)
 		result := len(m["places"].([]any))
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})

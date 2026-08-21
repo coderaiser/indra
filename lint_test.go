@@ -61,7 +61,7 @@ func TestLintClean(t *testing.T) {
 	Test(t, "lint: Lint returns no places for clean source", func(t *T) {
 		_, places, _ := indra.Lint(testRegistry, []byte(cleanSrc), false)
 		result := len(places)
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})

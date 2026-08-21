@@ -142,20 +142,22 @@ func Compute(node ast.Node) (bool, any) {
 	if !ok {
 		return false, nil
 	}
-	switch lit.Kind {
-	case token.INT:
+	if lit.Kind == token.INT {
 		if v, err := strconv.ParseInt(lit.Value, 0, 64); err == nil {
 			return true, v
 		}
-	case token.FLOAT:
+	}
+	if lit.Kind == token.FLOAT {
 		if v, err := strconv.ParseFloat(lit.Value, 64); err == nil {
 			return true, v
 		}
-	case token.STRING:
+	}
+	if lit.Kind == token.STRING {
 		if v, err := strconv.Unquote(lit.Value); err == nil {
 			return true, v
 		}
-	case token.CHAR:
+	}
+	if lit.Kind == token.CHAR {
 		return true, lit.Value
 	}
 	return false, nil

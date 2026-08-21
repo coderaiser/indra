@@ -237,7 +237,7 @@ func TestRemoveUnusedDeclarations(t *testing.T) {
 		t.End()
 	})
 
-		Test(t, "remove-unused-variables: transform: partial-const", func(t *T) {
+	Test(t, "remove-unused-variables: transform: partial-const", func(t *T) {
 		t.Transform("partial-const")
 		t.End()
 	})

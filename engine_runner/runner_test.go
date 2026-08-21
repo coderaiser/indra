@@ -270,7 +270,7 @@ func TestRunEmptyPlugins(t *testing.T) {
 
 	Test(t, "runner: empty plugins return no places", func(t *T) {
 		result := len(places)
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -292,7 +292,7 @@ func TestRunGuardRejects(t *testing.T) {
 
 	Test(t, "runner: guard rejecting match yields no places", func(t *T) {
 		result := len(places)
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -342,7 +342,7 @@ func TestRunTraverserBlockFix(t *testing.T) {
 
 	Test(t, "runner: block fix empties stmt list", func(t *T) {
 		result := len(fileBlock.List)
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -701,7 +701,7 @@ func TestRunDeclRewritesGuardRejects(t *testing.T) {
 
 	Test(t, "runner: decl guard rejecting yields no places", func(t *T) {
 		result := len(places)
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -728,7 +728,7 @@ func TestRunDeclRewritesNoMatch(t *testing.T) {
 
 	Test(t, "runner: decl non-match yields no places", func(t *T) {
 		result := len(places)
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -765,7 +765,7 @@ func TestApplyDeclRewritesRemovesMultiple(t *testing.T) {
 
 	Test(t, "runner: multiple empty templates removed", func(t *T) {
 		result := len(file.Decls)
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})

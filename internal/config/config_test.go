@@ -23,7 +23,7 @@ func TestLoadMissingFileEmptyPatterns(t *testing.T) {
 	Test(t, "config: Load returns empty patterns for missing file", func(t *T) {
 		cfg, _ := config.Load(t.TB().TempDir())
 		result := len(cfg.Ignore.Patterns)
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -251,7 +251,7 @@ func TestOverrideRulesNoMatch(t *testing.T) {
 		m := config.MatchConfig{"*_test.go": {"tape/add-t-end": "off"}}
 		out := m.OverrideRules("plain.go")
 		result := len(out)
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -261,7 +261,7 @@ func TestOverrideRulesEmpty(t *testing.T) {
 	Test(t, "match: empty config returns empty", func(t *T) {
 		out := config.MatchConfig{}.OverrideRules("foo.go")
 		result := len(out)
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -281,7 +281,7 @@ func TestOverrideRulesInvalidPattern(t *testing.T) {
 		m := config.MatchConfig{"[": {"a": "off"}}
 		out := m.OverrideRules("foo.go")
 		result := len(out)
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})

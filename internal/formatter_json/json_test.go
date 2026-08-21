@@ -46,7 +46,7 @@ func TestJson(t *testing.T) {
 		json.Unmarshal([]byte(strings.TrimSpace(out)), &m)
 		errors := m["errors"].([]any)
 		result := len(errors)
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -85,7 +85,7 @@ func TestJson(t *testing.T) {
 		json.Unmarshal([]byte(strings.TrimSpace(out)), &m)
 		errors := m["errors"].([]any)
 		result := len(errors)
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})

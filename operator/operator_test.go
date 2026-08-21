@@ -483,7 +483,7 @@ func TestFindFile(t *testing.T) {
 func TestCommentGroups(t *testing.T) {
 	Test(t, "commentGroups: nil node", func(t *T) {
 		result := len(commentGroups(nil))
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -491,7 +491,7 @@ func TestCommentGroups(t *testing.T) {
 	Test(t, "commentGroups: typed nil pointer", func(t *T) {
 		var id *ast.Ident
 		result := len(commentGroups(id))
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -513,7 +513,7 @@ func TestCommentGroups(t *testing.T) {
 	Test(t, "commentGroups: skips a nil pointer child", func(t *T) {
 		fd := &ast.FuncDecl{Name: ast.NewIdent("f"), Body: nil, Doc: nil}
 		result := len(commentGroups(fd))
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -524,7 +524,7 @@ func TestCommentGroups(t *testing.T) {
 			Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ExprStmt{X: ast.NewIdent("x")}}},
 		}
 		result := len(commentGroups(fd))
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -532,7 +532,7 @@ func TestCommentGroups(t *testing.T) {
 	Test(t, "commentGroups: recurses into an interface child", func(t *T) {
 		e := &ast.ExprStmt{X: ast.NewIdent("x")}
 		result := len(commentGroups(e))
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -540,7 +540,7 @@ func TestCommentGroups(t *testing.T) {
 	Test(t, "commentGroups: skips a non-node pointer field (File.Scope)", func(t *T) {
 		span := &ast.File{Name: ast.NewIdent("p"), Scope: ast.NewScope(nil)}
 		result := len(commentGroups(span))
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -764,7 +764,8 @@ func TestGetBindingPath(t *testing.T) {
 
 	Test(t, "operator: GetBindingPath returns path for declared name", func(t *T) {
 		result := GetBindingPath(path, "x")
-		t.Ok(result != nil)
+		t.Ok(result)
+
 		t.End()
 	})
 
@@ -774,4 +775,3 @@ func TestGetBindingPath(t *testing.T) {
 		t.End()
 	})
 }
-

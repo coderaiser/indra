@@ -104,7 +104,7 @@ func TestParentPath(t *testing.T) {
 	Test(t, "Path.ParentPath: parent has empty stack at root", func(t *T) {
 		parent, _ := path.ParentPath()
 		result := len(parent.Stack)
-		t.Equal(result, 0)
+		t.NotOk(result)
 
 		t.End()
 	})
@@ -189,7 +189,6 @@ func TestCompareHelpers(t *testing.T) {
 		t.End()
 	})
 }
-
 
 func TestPathReplace(t *testing.T) {
 	src := "package p\n\nfunc f() {\n\tx := 1\n\ty := 2\n}\n"
@@ -396,7 +395,8 @@ func TestPathTraversePatternKey(t *testing.T) {
 		p.Traverse(map[string]func(types.Path){
 			"t.Equal(__a, __b, __c)": func(_ types.Path) { count++ },
 		})
-		t.Equal(count, 0)
+		t.NotOk(count)
+
 		t.End()
 	})
 
@@ -446,8 +446,10 @@ func TestPathTraversePatternKey(t *testing.T) {
 			"t.Equal(__a, __b)": func(child types.Path) { child.Skip() },
 			"*ast.CallExpr":     func(_ types.Path) { callExprs++ },
 		})
-		// the t.Equal(a, b) CallExpr is a child of the skipped ExprStmt
-		t.Equal(callExprs, 0)
+		t.NotOk(
+			// the t.Equal(a, b) CallExpr is a child of the skipped ExprStmt
+			callExprs)
+
 		t.End()
 	})
 }
