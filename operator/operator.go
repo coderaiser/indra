@@ -206,9 +206,9 @@ func IsCompositeLit(node ast.Node) bool {
 	return ok
 }
 
-// isPrimitive reports whether node is a basic literal or a nil/true/false
+// IsPrimitive reports whether node is a basic literal or a nil/true/false
 // identifier — the primitives for which Equal and DeepEqual are interchangeable.
-func isPrimitive(node ast.Node) bool {
+func IsPrimitive(node ast.Node) bool {
 	lit, ok := node.(*ast.BasicLit)
 	if !ok {
 		if ident, ok := node.(*ast.Ident); ok {

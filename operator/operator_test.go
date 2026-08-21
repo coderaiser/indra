@@ -705,47 +705,47 @@ func TestTypeCheckHelpers(t *testing.T) {
 
 func TestIsPrimitive(t *testing.T) {
 	Test(t, "isPrimitive: int literal", func(t *T) {
-		t.Ok(isPrimitive(&ast.BasicLit{Kind: token.INT, Value: "1"}))
+		t.Ok(IsPrimitive(&ast.BasicLit{Kind: token.INT, Value: "1"}))
 		t.End()
 	})
 
 	Test(t, "isPrimitive: float literal", func(t *T) {
-		t.Ok(isPrimitive(&ast.BasicLit{Kind: token.FLOAT, Value: "1.5"}))
+		t.Ok(IsPrimitive(&ast.BasicLit{Kind: token.FLOAT, Value: "1.5"}))
 		t.End()
 	})
 
 	Test(t, "isPrimitive: char literal", func(t *T) {
-		t.Ok(isPrimitive(&ast.BasicLit{Kind: token.CHAR, Value: "'c'"}))
+		t.Ok(IsPrimitive(&ast.BasicLit{Kind: token.CHAR, Value: "'c'"}))
 		t.End()
 	})
 
 	Test(t, "isPrimitive: string literal", func(t *T) {
-		t.Ok(isPrimitive(&ast.BasicLit{Kind: token.STRING, Value: `"x"`}))
+		t.Ok(IsPrimitive(&ast.BasicLit{Kind: token.STRING, Value: `"x"`}))
 		t.End()
 	})
 
 	Test(t, "isPrimitive: nil identifier", func(t *T) {
-		t.Ok(isPrimitive(ast.NewIdent("nil")))
+		t.Ok(IsPrimitive(ast.NewIdent("nil")))
 		t.End()
 	})
 
 	Test(t, "isPrimitive: true identifier", func(t *T) {
-		t.Ok(isPrimitive(ast.NewIdent("true")))
+		t.Ok(IsPrimitive(ast.NewIdent("true")))
 		t.End()
 	})
 
 	Test(t, "isPrimitive: named identifier is not primitive", func(t *T) {
-		t.NotOk(isPrimitive(ast.NewIdent("x")))
+		t.NotOk(IsPrimitive(ast.NewIdent("x")))
 		t.End()
 	})
 
 	Test(t, "isPrimitive: composite literal is not primitive", func(t *T) {
-		t.NotOk(isPrimitive(&ast.CompositeLit{Type: ast.NewIdent("T")}))
+		t.NotOk(IsPrimitive(&ast.CompositeLit{Type: ast.NewIdent("T")}))
 		t.End()
 	})
 
 	Test(t, "isPrimitive: unsupported literal kind is not primitive", func(t *T) {
-		t.NotOk(isPrimitive(&ast.BasicLit{Kind: token.IMAG, Value: "1i"}))
+		t.NotOk(IsPrimitive(&ast.BasicLit{Kind: token.IMAG, Value: "1i"}))
 		t.End()
 	})
 }
