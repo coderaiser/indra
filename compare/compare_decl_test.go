@@ -39,13 +39,13 @@ func TestCompareDecl(t *testing.T) {
 	Test(t, "CompareDecl: non-matching decl returns nil", func(t *T) {
 		other := parseDecl(`func Other() {}`)
 		vars := compare.CompareDecl(other, `func Match() Matcher { return Matcher{__a: nil} }`)
-		t.Equal(vars, compare.Vars(nil))
+		t.Ok(vars == nil)
 		t.End()
 	})
 
 	Test(t, "CompareDecl: unparsable pattern returns nil", func(t *T) {
 		vars := compare.CompareDecl(decl, `not valid go {{{{`)
-		t.Equal(vars, compare.Vars(nil))
+		t.Ok(vars == nil)
 		t.End()
 	})
 
@@ -59,13 +59,13 @@ func TestCompareDecl(t *testing.T) {
 
 	Test(t, "CompareDecl: nil node returns nil", func(t *T) {
 		vars := compare.CompareDecl(nil, `func Match() Matcher { return Matcher{} }`)
-		t.Equal(vars, compare.Vars(nil))
+		t.Ok(vars == nil)
 		t.End()
 	})
 
 	Test(t, "CompareDecl: pattern with no decl returns nil", func(t *T) {
 		vars := compare.CompareDecl(decl, `// just a comment`)
-		t.Equal(vars, compare.Vars(nil))
+		t.Ok(vars == nil)
 		t.End()
 	})
 
