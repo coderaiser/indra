@@ -2,6 +2,8 @@
 
 package fixture
 
-const used = 1
+const (
+	used = 1
+)
 
 var _ = used

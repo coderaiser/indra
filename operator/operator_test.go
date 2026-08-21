@@ -756,7 +756,7 @@ func TestGetBindingPath(t *testing.T) {
 	file, _ := parser.ParseFile(fset, "", src, 0)
 	funcDecl := file.Decls[0].(*ast.FuncDecl)
 	body := funcDecl.Body
-	refStmt := body.List[1].(*ast.ExprStmt)
+	refStmt := body.List[1]
 	path := types.Path{
 		Node:  refStmt,
 		Stack: []ast.Node{file, funcDecl, body},
