@@ -176,13 +176,11 @@ func applyPrefix(p Path, ruleName string) {
 					if changed {
 						inner = inner + ": " + fixtureName
 					} else {
+						// inner starts with prefix, and prefix ends with ": ",
+						// so there is always at least one segment to re-write.
 						parts := strings.Split(inner, ": ")
-						if len(parts) >= 2 {
-							parts[len(parts)-1] = fixtureName
-							inner = strings.Join(parts, ": ")
-						} else {
-							inner = inner + ": " + fixtureName
-						}
+						parts[len(parts)-1] = fixtureName
+						inner = strings.Join(parts, ": ")
 					}
 					changed = true
 				}
