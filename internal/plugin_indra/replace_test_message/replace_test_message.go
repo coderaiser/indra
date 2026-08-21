@@ -163,10 +163,7 @@ func applyFix(path Path) {
 }
 
 func fixTestCall(callPath Path) {
-	call, ok := callPath.Node.(*ast.CallExpr)
-	if !ok {
-		return
-	}
+	call := callPath.Node.(*ast.CallExpr)
 
 	msgLit, fnLit, ok := testCallParts(call)
 	if !ok {

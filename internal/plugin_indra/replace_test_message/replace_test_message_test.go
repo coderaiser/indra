@@ -109,4 +109,24 @@ func TestReplaceTestMessage(t *testing.T) {
 		t.Transform("wrong-fixture")
 		t.End()
 	})
+
+	Test(t, "replace-test-message: report: extract-verb-skips", func(t *T) {
+		t.Report("extract-verb-skips", "replace test message")
+		t.End()
+	})
+
+	Test(t, "replace-test-message: transform: extract-verb-skips", func(t *T) {
+		t.Transform("extract-verb-skips")
+		t.End()
+	})
+
+	Test(t, "replace-test-message: report: short-message", func(t *T) {
+		t.Report("short-message", "replace test message")
+		t.End()
+	})
+
+	Test(t, "replace-test-message: transform: short-message", func(t *T) {
+		t.Transform("short-message")
+		t.End()
+	})
 }

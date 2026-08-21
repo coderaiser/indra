@@ -64,4 +64,44 @@ func TestApplyFixtureNameToMessage(t *testing.T) {
 		t.Transform("prefix-only")
 		t.End()
 	})
+
+	Test(t, "apply-fixture-name-to-message: report: both-missing", func(t *T) {
+		t.Report("both-missing", "apply fixture name to message")
+		t.End()
+	})
+
+	Test(t, "apply-fixture-name-to-message: transform: both-missing", func(t *T) {
+		t.Transform("both-missing")
+		t.End()
+	})
+
+	Test(t, "apply-fixture-name-to-message: report: direct-call", func(t *T) {
+		t.Report("direct-call", "apply fixture name to message")
+		t.End()
+	})
+
+	Test(t, "apply-fixture-name-to-message: transform: direct-call", func(t *T) {
+		t.Transform("direct-call")
+		t.End()
+	})
+
+	Test(t, "apply-fixture-name-to-message: report: non-literal-report", func(t *T) {
+		t.Report("non-literal-report", "apply fixture name to message")
+		t.End()
+	})
+
+	Test(t, "apply-fixture-name-to-message: transform: non-literal-report", func(t *T) {
+		t.Transform("non-literal-report")
+		t.End()
+	})
+
+	Test(t, "apply-fixture-name-to-message: report: non-func-callback", func(t *T) {
+		t.Report("non-func-callback", "apply fixture name to message")
+		t.End()
+	})
+
+	Test(t, "apply-fixture-name-to-message: transform: non-func-callback", func(t *T) {
+		t.Transform("non-func-callback")
+		t.End()
+	})
 }

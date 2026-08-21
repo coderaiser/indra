@@ -44,16 +44,17 @@ func Match() Matcher {
 // false, the integer 0, or the empty string. It rejects numerics and non-empty
 // strings so those fall through to putout's explicit Replace keys or stay
 // untouched.
-func isFalsyLiteralGuard(vars Vars, _ Path) bool {
-	return isFalsyLiteral(vars["__c"])
+func isFalsyLiteralGuard(vars Vars, p Path) bool {
+	return isFalsyLiteral(vars["__c"], p)
 }
 
-// isFalsyLiteral reports whether c is a BasicLit that Compute reduces to a
-// falsy scalar (false, 0, "").
-func isFalsyLiteral(c ast.Node) bool {
+// isFalsyLiteral reports whether c is a falsy scalar value: a BasicLit that
+// Compute reduces to false, 0, or "", or a named constant/identifier that
+// resolves to one of those values.
+func isFalsyLiteral(c ast.Node, p Path) bool {
 	lit, ok := c.(*ast.BasicLit)
 	if !ok {
-		return false
+		return isFalsyNamedConst(p, c)
 	}
 	// Float literals are never treated as falsy here: an integral 0 (e.g.
 	// t.Equal(x, 0)) reduces to the int value 0 and is convertible, while a
@@ -69,6 +70,42 @@ func isFalsyLiteral(c ast.Node) bool {
 		return false
 	}
 	return val == int64(0) || val == false || val == ""
+}
+
+// isFalsyNamedConst resolves c (expected to be an *ast.Ident) to its declaration
+// and reports whether the declared value is falsy. Built-in identifiers false,
+// nil, and true are handled directly; other names are resolved via GetBinding.
+func isFalsyNamedConst(p Path, c ast.Node) bool {
+	ident, ok := c.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	if ident.Name == "true" {
+		return false
+	}
+	if ident.Name == "false" || ident.Name == "nil" {
+		return true
+	}
+	binding := GetBinding(p, ident.Name)
+	if binding == nil {
+		return false
+	}
+	genDecl, ok := binding.Node.(*ast.GenDecl)
+	if !ok {
+		return false
+	}
+	for _, spec := range genDecl.Specs {
+		vs, ok := spec.(*ast.ValueSpec)
+		if !ok {
+			continue
+		}
+		for i, name := range vs.Names {
+			if name.Name == ident.Name && i < len(vs.Values) {
+				return isFalsyLiteral(vs.Values[i], p)
+			}
+		}
+	}
+	return false
 }
 
 type Plugin struct{}

@@ -1,10 +1,12 @@
 package remove_unused_variables_test
 
 import (
+	"go/ast"
 	"testing"
 
 	remove_unused_variables "coderaiser/indra/internal/plugin_remove_unused_variables"
 	. "coderaiser/indra/internal/test"
+	"coderaiser/indra/types"
 )
 
 var Test = CreateTest("remove-unused-variables", remove_unused_variables.Plugin{})
@@ -235,8 +237,16 @@ func TestRemoveUnusedDeclarations(t *testing.T) {
 		t.End()
 	})
 
-	Test(t, "remove-unused-variables: transform: partial-const", func(t *T) {
+		Test(t, "remove-unused-variables: transform: partial-const", func(t *T) {
 		t.Transform("partial-const")
 		t.End()
 	})
+}
+
+func TestReportUnsupportedNode(t *testing.T) {
+	plugin := remove_unused_variables.Plugin{}
+	p := types.Path{Node: &ast.Ident{Name: "x"}}
+	if got := plugin.Report(p); got != "remove unused variable" {
+		t.Errorf("Report() = %q, want %q", got, "remove unused variable")
+	}
 }

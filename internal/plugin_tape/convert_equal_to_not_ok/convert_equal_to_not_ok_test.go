@@ -64,4 +64,54 @@ func TestConvertEqualToNotOk(t *testing.T) {
 		t.NoTransform("zero-float")
 		t.End()
 	})
+
+	Test(t, "convert-equal-to-not-ok: report: named-false", func(t *T) {
+		t.Report("named-false", "convert Equal(x, nil/false) to NotOk(x)")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-not-ok: transform: named-false", func(t *T) {
+		t.Transform("named-false")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-not-ok: report: named-zero", func(t *T) {
+		t.Report("named-zero", "convert Equal(x, nil/false) to NotOk(x)")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-not-ok: transform: named-zero", func(t *T) {
+		t.Transform("named-zero")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-not-ok: no report: non-empty-string", func(t *T) {
+		t.NoReport("non-empty-string")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-not-ok: no transform: non-empty-string", func(t *T) {
+		t.NoTransform("non-empty-string")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-not-ok: no report: non-falsy-args", func(t *T) {
+		t.NoReport("non-falsy-args")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-not-ok: no transform: non-falsy-args", func(t *T) {
+		t.NoTransform("non-falsy-args")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-not-ok: no report: imaginary-literal", func(t *T) {
+		t.NoReport("imaginary-literal")
+		t.End()
+	})
+
+	Test(t, "convert-equal-to-not-ok: no transform: imaginary-literal", func(t *T) {
+		t.NoTransform("imaginary-literal")
+		t.End()
+	})
 }
