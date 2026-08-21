@@ -129,4 +129,15 @@ func TestReplaceTestMessage(t *testing.T) {
 		t.Transform("short-message")
 		t.End()
 	})
+
+	Test(t, "replace-test-message: report: no-fixture-name", func(t *T) {
+		t.Report("no-fixture-name", "replace test message")
+		t.End()
+	})
+
+	Test(t, "replace-test-message: transform: no-fixture-name", func(t *T) {
+		t.Transform("no-fixture-name")
+		t.End()
+	})
+
 }
