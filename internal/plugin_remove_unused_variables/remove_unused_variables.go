@@ -34,13 +34,8 @@ func Report(p types.Path) string {
 	return "remove unused variable"
 }
 
-func Traverse() types.Traverser {
-	return types.Traverser{
-		"*ast.File":      findUnusedImportsAndConsts,
-		"*ast.BlockStmt": findUnusedVars,
-	}
-}
-
+// Fix dispatches the pushed finding to its concrete fixer: an unused import
+// spec, a private func decl, unused consts (file), or unused vars (block).
 func Fix(p types.Path, _ map[string]any) {
 	switch n := p.Node.(type) {
 	case *importFinding:
@@ -54,11 +49,18 @@ func Fix(p types.Path, _ map[string]any) {
 	}
 }
 
+func Traverse() types.Traverser {
+	return types.Traverser{
+		"*ast.File":      findUnusedImportsAndConsts,
+		"*ast.BlockStmt": findUnusedVars,
+	}
+}
+
 type Plugin struct{}
 
 func (Plugin) Report(p types.Path) string            { return Report(p) }
-func (Plugin) Traverse() types.Traverser             { return Traverse() }
 func (Plugin) Fix(p types.Path, opts map[string]any) { Fix(p, opts) }
+func (Plugin) Traverse() types.Traverser             { return Traverse() }
 
 type importInfo struct {
 	spec      *ast.ImportSpec

@@ -12,6 +12,30 @@ import (
 
 func Report(_ Path) string { return "use 'if' instead of 'switch'" }
 
+// Fix replaces the switch with a chain of if tag == val { ... } statements.
+// The shared sw.Tag node is reused as X in every generated BinaryExpr.
+func Fix(p Path, _ map[string]any) {
+	sw := p.Node.(*ast.SwitchStmt)
+	for _, clause := range sw.Body.List {
+		cc := clause.(*ast.CaseClause)
+		p.InsertBefore(&ast.IfStmt{
+			Cond: &ast.BinaryExpr{
+				X:  sw.Tag,
+				Op: token.EQL,
+				Y:  cc.List[0],
+			},
+			Body: &ast.BlockStmt{List: removeBreaks(cc.Body)},
+		})
+	}
+	p.Delete()
+	// Normalize the enclosing block's source positions so go/printer flows the
+	// new ifs and the trailing statements contiguously instead of "catching up"
+	// to the stale positions left behind by the removed switch.
+	if block := switchBlock(p); block != nil {
+		stripPositions(block)
+	}
+}
+
 func Traverse() Traverser {
 	return Traverser{
 		"*ast.SwitchStmt": func(p Path, push func(Path)) {
@@ -41,30 +65,6 @@ func isConvertible(p Path) bool {
 		}
 	}
 	return true
-}
-
-// Fix replaces the switch with a chain of if tag == val { ... } statements.
-// The shared sw.Tag node is reused as X in every generated BinaryExpr.
-func Fix(p Path, _ map[string]any) {
-	sw := p.Node.(*ast.SwitchStmt)
-	for _, clause := range sw.Body.List {
-		cc := clause.(*ast.CaseClause)
-		p.InsertBefore(&ast.IfStmt{
-			Cond: &ast.BinaryExpr{
-				X:  sw.Tag,
-				Op: token.EQL,
-				Y:  cc.List[0],
-			},
-			Body: &ast.BlockStmt{List: removeBreaks(cc.Body)},
-		})
-	}
-	p.Delete()
-	// Normalize the enclosing block's source positions so go/printer flows the
-	// new ifs and the trailing statements contiguously instead of "catching up"
-	// to the stale positions left behind by the removed switch.
-	if block := switchBlock(p); block != nil {
-		stripPositions(block)
-	}
 }
 
 // switchBlock returns the *ast.BlockStmt that directly contains the switch, or
@@ -143,5 +143,5 @@ func removeBreaks(stmts []ast.Stmt) []ast.Stmt {
 type Plugin struct{}
 
 func (Plugin) Report(p Path) string            { return Report(p) }
-func (Plugin) Traverse() Traverser             { return Traverse() }
 func (Plugin) Fix(p Path, opts map[string]any) { Fix(p, opts) }
+func (Plugin) Traverse() Traverser             { return Traverse() }

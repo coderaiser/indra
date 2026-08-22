@@ -10,6 +10,18 @@ import (
 
 func Report() string { return "convert Equal(x, nil/false) to NotOk(x)" }
 
+// Match guards the generic three-argument Equal/DeepEqual form against falsy
+// *literal* constants, mirroring putout's convert-equal-to-not-ok. Dedicated
+// Replace keys below handle the nil/false/empty-string identifier and literal
+// forms directly; this guard covers numeric/string literals that reduce to a
+// falsy value (e.g. t.Equal(x, 0)).
+func Match() Matcher {
+	return Matcher{
+		"__a.Equal(__b, __c)":     isFalsyLiteralGuard,
+		"__a.DeepEqual(__b, __c)": isFalsyLiteralGuard,
+	}
+}
+
 func Replace() Replacer {
 	return Replacer{
 		"__a.Equal(__b, nil)":            "__a.NotOk(__b)",
@@ -25,18 +37,6 @@ func Replace() Replacer {
 		"__a.DeepEqual(__b, __c)":        "__a.NotOk(__b)",
 		"__a.Equal(__b)":                 "__a.NotOk(__b)",
 		"__a.NotEqual(__b)":              "__a.Ok(__b)",
-	}
-}
-
-// Match guards the generic three-argument Equal/DeepEqual form against falsy
-// *literal* constants, mirroring putout's convert-equal-to-not-ok. Dedicated
-// Replace keys above handle the nil/false/empty-string identifier and literal
-// forms directly; this guard covers numeric/string literals that reduce to a
-// falsy value (e.g. t.Equal(x, 0)).
-func Match() Matcher {
-	return Matcher{
-		"__a.Equal(__b, __c)":     isFalsyLiteralGuard,
-		"__a.DeepEqual(__b, __c)": isFalsyLiteralGuard,
 	}
 }
 

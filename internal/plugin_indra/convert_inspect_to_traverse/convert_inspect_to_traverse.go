@@ -8,6 +8,11 @@ import (
 
 func Report(_ Path) string { return "convert ast.Inspect to path.Traverse" }
 
+// Fix is a no-op: converting ast.Inspect to path.Traverse is report-only.
+func Fix(Path, map[string]any) {
+	_ = "report only"
+}
+
 func Traverse() Traverser {
 	return Traverser{"*ast.File": findInspectCalls}
 }
@@ -69,14 +74,9 @@ func returnsTraverser(ft *ast.FuncType) bool {
 	return false
 }
 
-// Fix is a no-op: converting ast.Inspect to path.Traverse is report-only.
-func Fix(Path, map[string]any) {
-	_ = "report only"
-}
-
 // Plugin wraps the rule for the registry: a report-only AST-walking plugin.
 type Plugin struct{}
 
 func (Plugin) Report(p Path) string            { return Report(p) }
-func (Plugin) Traverse() Traverser             { return Traverse() }
 func (Plugin) Fix(p Path, opts map[string]any) { Fix(p, opts) }
+func (Plugin) Traverse() Traverser             { return Traverse() }

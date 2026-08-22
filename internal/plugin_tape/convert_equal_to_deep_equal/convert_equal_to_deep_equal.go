@@ -11,14 +11,6 @@ import (
 
 func Report() string { return "Equal: use DeepEqual for slices" }
 
-func Replace() Replacer {
-	return Replacer{
-		"__a.Equal(__b, __c)":    "__a.DeepEqual(__b, __c)",
-		"__a.Equal(__c, __b)":    "__a.DeepEqual(__c, __b)",
-		"__a.NotEqual(__b, __c)": "__a.NotDeepEqual(__b, __c)",
-	}
-}
-
 // Match guards so Equal is only upgraded to DeepEqual when the compared value
 // is an actual slice/struct literal (composite literal) or a variable bound to
 // one — matching putout's isArray/isObject checks. __c is a free hole here
@@ -28,6 +20,14 @@ func Match() Matcher {
 		"__a.Equal(__b, __c)":    sliceOrStruct,
 		"__a.Equal(__c, __b)":    sliceOrStruct,
 		"__a.NotEqual(__b, __c)": sliceOrStruct,
+	}
+}
+
+func Replace() Replacer {
+	return Replacer{
+		"__a.Equal(__b, __c)":    "__a.DeepEqual(__b, __c)",
+		"__a.Equal(__c, __b)":    "__a.DeepEqual(__c, __b)",
+		"__a.NotEqual(__b, __c)": "__a.NotDeepEqual(__b, __c)",
 	}
 }
 

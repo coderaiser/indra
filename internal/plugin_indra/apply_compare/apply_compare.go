@@ -17,6 +17,20 @@ import (
 
 func Report(_ Path) string { return "use Compare instead of GetTemplateValues != nil" }
 
+// Fix rewrites the found binary into a bare Compare(...) call and retargets the
+// compare import to the operator dot-import.
+func Fix(p Path, _ map[string]any) {
+	binary := p.Node.(*ast.BinaryExpr)
+	call := binary.X.(*ast.CallExpr)
+	call.Fun = ast.NewIdent("Compare")
+	p.Replace(call)
+	file, _ := p.FindParent(func(parent Path) bool {
+		_, isFile := parent.Node.(*ast.File)
+		return isFile
+	})
+	retargetImport(file.Node.(*ast.File))
+}
+
 func Traverse() Traverser {
 	return Traverser{"*ast.File": findUselessComparisons}
 }
@@ -85,20 +99,6 @@ func isCompareNil(binary *ast.BinaryExpr) bool {
 	return ok && nilIdent.Name == "nil"
 }
 
-// Fix rewrites the found binary into a bare Compare(...) call and retargets the
-// compare import to the operator dot-import.
-func Fix(p Path, _ map[string]any) {
-	binary := p.Node.(*ast.BinaryExpr)
-	call := binary.X.(*ast.CallExpr)
-	call.Fun = ast.NewIdent("Compare")
-	p.Replace(call)
-	file, _ := p.FindParent(func(parent Path) bool {
-		_, isFile := parent.Node.(*ast.File)
-		return isFile
-	})
-	retargetImport(file.Node.(*ast.File))
-}
-
 // retargetImport turns the "coderaiser/indra/compare" import spec into the
 // operator dot-import.
 func retargetImport(file *ast.File) {
@@ -116,5 +116,5 @@ func retargetImport(file *ast.File) {
 type Plugin struct{}
 
 func (Plugin) Report(p Path) string            { return Report(p) }
-func (Plugin) Traverse() Traverser             { return Traverse() }
 func (Plugin) Fix(p Path, opts map[string]any) { Fix(p, opts) }
+func (Plugin) Traverse() Traverser             { return Traverse() }

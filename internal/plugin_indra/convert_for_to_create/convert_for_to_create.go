@@ -12,6 +12,15 @@ func Report(_ Path) string {
 	return "convert indratest.For to CreateTest"
 }
 
+// Fix rewrites indratest.For usages (call site, import alias, and *T type)
+// to the createTest form. node is *ast.File; options is unused.
+func Fix(p Path, _ map[string]any) {
+	file := p.Node.(*ast.File)
+	rewriteImport(file)
+	rewriteCalls(p)
+	rewriteT(p)
+}
+
 func Traverse() Traverser {
 	return Traverser{"*ast.File": findForCalls}
 }
@@ -37,15 +46,6 @@ func hasForCall(p Path) bool {
 		},
 	})
 	return found
-}
-
-// Fix rewrites indratest.For usages (call site, import alias, and *T type)
-// to the createTest form. node is *ast.File; options is unused.
-func Fix(p Path, _ map[string]any) {
-	file := p.Node.(*ast.File)
-	rewriteImport(file)
-	rewriteCalls(p)
-	rewriteT(p)
 }
 
 // rewriteImport turns `indratest "coderaiser/indra/internal/test"` into a dot
@@ -100,5 +100,5 @@ func rewriteT(p Path) {
 type Plugin struct{}
 
 func (Plugin) Report(p Path) string            { return Report(p) }
-func (Plugin) Traverse() Traverser             { return Traverse() }
 func (Plugin) Fix(p Path, opts map[string]any) { Fix(p, opts) }
+func (Plugin) Traverse() Traverser             { return Traverse() }

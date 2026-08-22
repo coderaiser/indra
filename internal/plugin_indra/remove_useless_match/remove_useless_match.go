@@ -8,6 +8,21 @@ import (
 
 func Report(_ Path) string { return "remove useless Match" }
 
+// Fix removes useless Match() decls from file.Decls. node is *ast.File;
+// options is unused.
+func Fix(p Path, _ map[string]any) {
+	file := p.Node.(*ast.File)
+	kept := file.Decls[:0]
+	for _, decl := range file.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if ok && fn.Name != nil && fn.Name.Name == "Match" && isUselessMatch(fn) {
+			continue
+		}
+		kept = append(kept, decl)
+	}
+	file.Decls = kept
+}
+
 func Traverse() Traverser {
 	return Traverser{"*ast.File": findUselessMatch}
 }
@@ -27,21 +42,6 @@ func findUselessMatch(p Path, push func(Path)) {
 			}
 		},
 	})
-}
-
-// Fix removes useless Match() decls from file.Decls. node is *ast.File;
-// options is unused.
-func Fix(p Path, _ map[string]any) {
-	file := p.Node.(*ast.File)
-	kept := file.Decls[:0]
-	for _, decl := range file.Decls {
-		fn, ok := decl.(*ast.FuncDecl)
-		if ok && fn.Name != nil && fn.Name.Name == "Match" && isUselessMatch(fn) {
-			continue
-		}
-		kept = append(kept, decl)
-	}
-	file.Decls = kept
 }
 
 // isUselessMatch reports whether fn returns an empty Matcher or a Matcher
@@ -94,5 +94,5 @@ func matcherLit(fn *ast.FuncDecl) *ast.CompositeLit {
 type Plugin struct{}
 
 func (Plugin) Report(p Path) string            { return Report(p) }
-func (Plugin) Traverse() Traverser             { return Traverse() }
 func (Plugin) Fix(p Path, opts map[string]any) { Fix(p, opts) }
+func (Plugin) Traverse() Traverser             { return Traverse() }

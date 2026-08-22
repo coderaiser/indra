@@ -8,6 +8,22 @@ import (
 
 func Report(_ Path) string { return "Apply assertions order" }
 
+// Fix swaps the interleaved statement with the assertion before it inside
+// the parent block: [assertion, gap, End] becomes [gap, assertion, End].
+// The Traverse guard already validated the window shape.
+func Fix(path Path, _ map[string]any) {
+	parent, _ := path.ParentPath()
+	block := parent.Node.(*ast.BlockStmt)
+	idx := -1
+	for i, stmt := range block.List {
+		if stmt == path.Node {
+			idx = i
+			break
+		}
+	}
+	block.List[idx-2], block.List[idx-1] = block.List[idx-1], block.List[idx-2]
+}
+
 // Traverse pushes every <recv>.End() preceded by [<recv> assertion,
 // non-assertion, End] — the interleaved statement belongs before the
 // assertions so they stay adjacent ahead of End.
@@ -35,22 +51,6 @@ func Traverse() Traverser {
 			push(path)
 		},
 	}
-}
-
-// Fix swaps the interleaved statement with the assertion before it inside
-// the parent block: [assertion, gap, End] becomes [gap, assertion, End].
-// The Traverse guard already validated the window shape.
-func Fix(path Path, _ map[string]any) {
-	parent, _ := path.ParentPath()
-	block := parent.Node.(*ast.BlockStmt)
-	idx := -1
-	for i, stmt := range block.List {
-		if stmt == path.Node {
-			idx = i
-			break
-		}
-	}
-	block.List[idx-2], block.List[idx-1] = block.List[idx-1], block.List[idx-2]
 }
 
 // assertionRecv returns the receiver identifier of a <recv>.<method>(...)
@@ -82,5 +82,5 @@ func isAssertion(node ast.Node, recv *ast.Ident) bool {
 type Plugin struct{}
 
 func (Plugin) Report(p Path) string            { return Report(p) }
-func (Plugin) Traverse() Traverser             { return Traverse() }
 func (Plugin) Fix(p Path, opts map[string]any) { Fix(p, opts) }
+func (Plugin) Traverse() Traverser             { return Traverse() }

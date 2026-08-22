@@ -11,22 +11,6 @@ const goTapePath = `"github.com/coderaiser/go-tape"`
 
 func Report(_ Path) string { return "remove useless tape prefix" }
 
-func Traverse() Traverser {
-	return Traverser{"*ast.File": findUselessPrefix}
-}
-
-func findUselessPrefix(p Path, push func(Path)) {
-	file := p.Node.(*ast.File)
-	alias, _ := findTapeImport(file)
-	if alias == "" {
-		return
-	}
-	if hasLocalCollision(p, alias) {
-		return
-	}
-	push(p)
-}
-
 // Fix rewrites a named go-tape import to a dot import and drops the alias
 // prefix from every selector use (tape.X → X). It is only ever invoked on a
 // pushed file, so findUselessPrefix has already guaranteed a non-empty alias
@@ -46,6 +30,22 @@ func Fix(p Path, _ map[string]any) {
 			ReplaceWith(sp, sel.Sel)
 		},
 	})
+}
+
+func Traverse() Traverser {
+	return Traverser{"*ast.File": findUselessPrefix}
+}
+
+func findUselessPrefix(p Path, push func(Path)) {
+	file := p.Node.(*ast.File)
+	alias, _ := findTapeImport(file)
+	if alias == "" {
+		return
+	}
+	if hasLocalCollision(p, alias) {
+		return
+	}
+	push(p)
 }
 
 // findTapeImport returns the local alias (and its import spec) for a named
@@ -144,5 +144,5 @@ func selMatchesAlias(sel *ast.SelectorExpr, alias string) bool {
 type Plugin struct{}
 
 func (Plugin) Report(p Path) string            { return Report(p) }
-func (Plugin) Traverse() Traverser             { return Traverse() }
 func (Plugin) Fix(p Path, opts map[string]any) { Fix(p, opts) }
+func (Plugin) Traverse() Traverser             { return Traverse() }

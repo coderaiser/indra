@@ -10,6 +10,14 @@ import (
 
 func Report(_ Path) string { return "apply dedent" }
 
+// Fix removes the dedent.Dedent(...) wrapper, keeping the string literal
+// verbatim. A later remove-unused-import pass drops the now-unused dedent
+// import. p.Node is the pushed CallExpr; nothing here needs options.
+func Fix(p Path, _ map[string]any) {
+	call := p.Node.(*ast.CallExpr)
+	p.Replace(call.Args[0])
+}
+
 func Traverse() Traverser {
 	return Traverser{"*ast.CallExpr": findDedent}
 }
@@ -35,17 +43,9 @@ func findDedent(p Path, push func(Path)) {
 	push(p)
 }
 
-// Fix removes the dedent.Dedent(...) wrapper, keeping the string literal
-// verbatim. A later remove-unused-import pass drops the now-unused dedent
-// import. p.Node is the pushed CallExpr; nothing here needs options.
-func Fix(p Path, _ map[string]any) {
-	call := p.Node.(*ast.CallExpr)
-	p.Replace(call.Args[0])
-}
-
 // Plugin wraps the rule for the registry: an AST-walking plugin.
 type Plugin struct{}
 
 func (Plugin) Report(p Path) string            { return Report(p) }
-func (Plugin) Traverse() Traverser             { return Traverse() }
 func (Plugin) Fix(p Path, opts map[string]any) { Fix(p, opts) }
+func (Plugin) Traverse() Traverser             { return Traverse() }
