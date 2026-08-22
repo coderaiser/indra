@@ -1,64 +1,91 @@
 # tape
 
-Rules for go-tape test files.
+Rules for go-tape test files: 17 rules across five categories.
 
 ## Rules
 
+### skips and onlys
+
 - ✅ [remove-skip](#remove-skip)
+- ✅ [remove-only](#remove-only)
+
+### t.End()
+
 - ✅ [add-t-end](#add-t-end)
+- ✅ [remove-useless-t-end](#remove-useless-t-end)
+
+### assertions
+
+- ✅ [apply-assertions-order](#apply-assertions-order)
+- ✅ [switch-expected-with-result](#switch-expected-with-result)
+- ✅ [remove-default-messages](#remove-default-messages)
+- ✅ [convert-deep-equal-to-equal](#convert-deep-equal-to-equal)
+
+### operator conversions
+
 - ✅ [convert-equal-to-deep-equal](#convert-equal-to-deep-equal)
+- ✅ [convert-equal-to-ok](#convert-equal-to-ok)
 - ✅ [convert-equal-to-not-ok](#convert-equal-to-not-ok)
 - ✅ [convert-ok-to-not-ok](#convert-ok-to-not-ok)
-- ✅ [extract-result-from-assertion](#extract-result-from-assertion)
-- ✅ [remove-useless-prefix](#remove-useless-prefix)
 - ✅ [convert-no-error-to-not-ok](#convert-no-error-to-not-ok)
+- ✅ [extract-result-from-assertion](#extract-result-from-assertion)
+
+### formatting
+
+- ✅ [apply-dedent](#apply-dedent)
+- ✅ [remove-useless-prefix](#remove-useless-prefix)
+- ✅ [remove-useless-condition](#remove-useless-condition)
 
 ## Configuration
 
 ```toml
 [match]
 "*_test.go" = { "tape" = "on" }
+
+[rules."tape/remove-skip"]
+allowed = ["Suite"]
 ```
 
 ## remove-skip
 
-Removes t.Skip() calls from test functions.
+Removes Test.Skip() calls from test functions. Extra allowed receivers come
+from the `allowed` option.
 
 ### ❌ Incorrect
 
 ```go
-package fixture
-
-import (
-	Test "github.com/coderaiser/go-tape"
-	"testing"
-)
-
-func TestFoo(t *testing.T) {
-	Test.Skip(t, "foo: something", func(t *Test.T) {
-		t.Equal(1, 1)
-		t.End()
-	})
-}
+Test.Skip(t, "foo: something", func(t *Test.T) {
+	t.Equal(1, 1)
+})
 ```
 
 ### ✅ Correct
 
 ```go
-package fixture
+Test(t, "foo: something", func(t *Test.T) {
+	t.Equal(1, 1)
+})
+```
 
-import (
-	Test "github.com/coderaiser/go-tape"
-	"testing"
-)
+## remove-only
 
-func TestFoo(t *testing.T) {
-	Test(t, "foo: something", func(t *Test.T) {
-		t.Equal(1, 1)
-		t.End()
-	})
+Removes Test.Only() calls from test functions. Accepts the same `allowed`
+option as remove-skip.
 
-}
+### ❌ Incorrect
+
+```go
+Test.Only(t, "foo: something", func(t *Test.T) {
+	t.Equal(1, 1)
+})
+```
+
+### ✅ Correct
+
+```go
+Test(t, "foo: something", func(t *Test.T) {
+	t.Equal(1, 1)
+})
 ```
 
 ## add-t-end
@@ -68,161 +95,32 @@ Adds a missing t.End() call at the end of a test function.
 ### ❌ Incorrect
 
 ```go
-package fixture
-
-import (
-	Test "github.com/coderaiser/go-tape"
-	"testing"
-)
-
-func TestFoo(t *testing.T) {
-	Test(t, "foo: something", func(t *Test.T) {
-		t.Equal(1, 1)
-	})
-}
+Test(t, "foo: something", func(t *T) {
+	t.Equal(1, 1)
+})
 ```
 
 ### ✅ Correct
 
 ```go
-package fixture
+Test(t, "foo: something", func(t *T) {
+	t.Equal(1, 1)
+	t.End()
+})
+```
 
-import (
-	Test "github.com/coderaiser/go-tape"
-	"testing"
-)
+## remove-useless-t-end
 
-func TestFoo(t *testing.T) {
-	Test(t, "foo: something", func(t *Test.T) {
+Removes duplicate t.End() calls: every End beyond the first is a runtime
+no-op.
+
+### ❌ Incorrect
+
+```go
+func f(t *testing.T) {
+	Test(t, "two ends", func(t *T) {
 		t.Equal(1, 1)
 		t.End()
-	})
-
-}
-```
-
-## convert-equal-to-deep-equal
-
-Uses DeepEqual instead of Equal when comparing slices.
-
-### ❌ Incorrect
-
-```go
-package fixture
-
-// convert-equal-to-deep-equal is the canonical happy path: Equal used on a slice.
-func f() {
-	t.Equal(x, []Block{})
-}
-```
-
-### ✅ Correct
-
-```go
-package fixture
-
-// convert-equal-to-deep-equal is the canonical happy path: Equal used on a slice.
-func f() {
-	t.DeepEqual(x, []Block{})
-
-}
-```
-
-## convert-equal-to-not-ok
-
-Converts Equal(err, nil) to NotOk(err).
-
-### ❌ Incorrect
-
-```go
-package fixture
-
-func f() {
-	t.Equal(err, nil)
-}
-```
-
-### ✅ Correct
-
-```go
-package fixture
-
-func f() {
-	t.NotOk(err)
-
-}
-```
-
-## convert-ok-to-not-ok
-
-Converts Ok(err == nil) and Ok(!err) to NotOk(err).
-
-### ❌ Incorrect
-
-```go
-package fixture
-
-func f() {
-	t.Ok(err == nil)
-	t.Ok(!err)
-}
-```
-
-### ✅ Correct
-
-```go
-package fixture
-
-func f() {
-	t.NotOk(err)
-	t.NotOk(err)
-}
-```
-
-## extract-result-from-assertion
-
-Extracts an inline expression from an assertion into a named result variable.
-
-### ❌ Incorrect
-
-```go
-package fixture
-
-func f() {
-	t.DeepEqual(someFunc(a, b), expected)
-}
-```
-
-### ✅ Correct
-
-```go
-package fixture
-
-func f() {
-	result := someFunc(a, b)
-	t.DeepEqual(result, expected)
-
-}
-```
-
-## remove-useless-prefix
-
-Removes the redundant tape prefix so the tape package is dot-imported.
-
-### ❌ Incorrect
-
-```go
-package fixture
-
-import (
-	"testing"
-
-	tape "github.com/coderaiser/go-tape"
-)
-
-func TestFoo(t *testing.T) {
-	tape.Test(t, "foo: bar", func(t *tape.T) {
-		t.Equal(1, 1)
 		t.End()
 	})
 }
@@ -231,52 +129,10 @@ func TestFoo(t *testing.T) {
 ### ✅ Correct
 
 ```go
-package fixture
-
-import (
-	"testing"
-
-	. "github.com/coderaiser/go-tape"
-)
-
-func TestFoo(t *testing.T) {
-	Test(t, "foo: bar", func(t *T) {
+func f(t *testing.T) {
+	Test(t, "two ends", func(t *T) {
 		t.Equal(1, 1)
 		t.End()
 	})
-}
-```
-
-## convert-no-error-to-not-ok
-
-Converts NoError(err) to NotOk(err).
-
-### ❌ Incorrect
-
-```go
-package fixture
-
-import tape "github.com/coderaiser/go-tape"
-
-func f() {
-	x := 1
-	foo()
-	t.NotOk(other)
-	t.NoError(err)
-}
-```
-
-### ✅ Correct
-
-```go
-package fixture
-
-import tape "github.com/coderaiser/go-tape"
-
-func f() {
-	x := 1
-	foo()
-	t.NotOk(other)
-	t.NotOk(err)
 }
 ```
