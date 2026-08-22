@@ -9,6 +9,11 @@ import (
 
 func Report(_ Path) string { return "apply fixture name to message" }
 
+func Fix(p Path, _ map[string]any) {
+	ruleName := extractRuleName(p)
+	applyPrefix(p, ruleName)
+}
+
 func Traverse() Traverser {
 	return Traverser{
 		"*ast.File": func(p Path, push func(Path)) {
@@ -21,11 +26,6 @@ func Traverse() Traverser {
 			}
 		},
 	}
-}
-
-func Fix(p Path, _ map[string]any) {
-	ruleName := extractRuleName(p)
-	applyPrefix(p, ruleName)
 }
 
 // extractRuleName walks the file's declarations using Path.Traverse, finds
@@ -196,5 +196,5 @@ func applyPrefix(p Path, ruleName string) {
 type Plugin struct{}
 
 func (Plugin) Report(p Path) string            { return Report(p) }
-func (Plugin) Traverse() Traverser             { return Traverse() }
 func (Plugin) Fix(p Path, opts map[string]any) { Fix(p, opts) }
+func (Plugin) Traverse() Traverser             { return Traverse() }

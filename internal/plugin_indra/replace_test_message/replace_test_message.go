@@ -16,6 +16,8 @@ var fixtureMethods = map[string]bool{
 
 func Report(_ Path) string { return "replace test message" }
 
+func Fix(p Path, _ map[string]any) { applyFix(p) }
+
 func Traverse() Traverser {
 	return Traverser{
 		"*ast.File": func(p Path, push func(Path)) {
@@ -25,8 +27,6 @@ func Traverse() Traverser {
 		},
 	}
 }
-
-func Fix(p Path, _ map[string]any) { applyFix(p) }
 
 // extractVerb returns the canonical verb for the first t.X method call in the
 // callback body.
@@ -248,5 +248,5 @@ func fixMessage(msgLit *ast.BasicLit, verb, fixtureName string) {
 type Plugin struct{}
 
 func (Plugin) Report(p Path) string            { return Report(p) }
-func (Plugin) Traverse() Traverser             { return Traverse() }
 func (Plugin) Fix(p Path, opts map[string]any) { Fix(p, opts) }
+func (Plugin) Traverse() Traverser             { return Traverse() }
