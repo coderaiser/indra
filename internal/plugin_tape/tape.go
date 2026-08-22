@@ -9,9 +9,11 @@ import (
 	"coderaiser/indra/internal/plugin_tape/convert_no_error_to_not_ok"
 	"coderaiser/indra/internal/plugin_tape/convert_ok_to_not_ok"
 	"coderaiser/indra/internal/plugin_tape/extract_result_from_assertion"
+	"coderaiser/indra/internal/plugin_tape/remove_only"
 	"coderaiser/indra/internal/plugin_tape/remove_skip"
 	"coderaiser/indra/internal/plugin_tape/remove_useless_condition"
 	"coderaiser/indra/internal/plugin_tape/remove_useless_prefix"
+	"coderaiser/indra/internal/plugin_tape/switch_expected_with_result"
 	"coderaiser/indra/types"
 )
 
@@ -21,6 +23,8 @@ import (
 func Rules() []types.Rule {
 	return []types.Rule{
 		{Name: "remove-skip", Plugin: remove_skip.Plugin{}},
+		{Name: "remove-only", Plugin: remove_only.Plugin{}},
+		{Name: "switch-expected-with-result", Plugin: switch_expected_with_result.Plugin{}},
 		{Name: "add-t-end", Plugin: add_t_end.Plugin{}},
 		{Name: "apply-dedent", Plugin: apply_dedent.Plugin{}},
 		{Name: "convert-equal-to-deep-equal", Plugin: convert_equal_to_deep_equal.Plugin{}},
