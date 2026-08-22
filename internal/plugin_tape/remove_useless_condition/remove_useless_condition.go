@@ -12,10 +12,12 @@ func Report() string { return "remove useless condition" }
 
 func Replace() Replacer {
 	return Replacer{
-		"__a.Ok(__b != nil)":      "__a.Ok(__b)",
-		"__a.NotOk(__b == nil)":   "__a.NotOk(__b)",
-		"__a.Ok(__b != false)":    "__a.Ok(__b)",
-		"__a.NotOk(__b == false)": "__a.NotOk(__b)",
+		"__a.Ok(__b != nil)":         "__a.Ok(__b)",
+		"__a.Ok(__b != nil, __c)":    "__a.Ok(__b, __c)",
+		"__a.NotOk(__b == nil)":      "__a.NotOk(__b)",
+		"__a.NotOk(__b == nil, __c)": "__a.NotOk(__b, __c)",
+		"__a.Ok(__b != false)":       "__a.Ok(__b)",
+		"__a.NotOk(__b == false)":    "__a.NotOk(__b)",
 	}
 }
 

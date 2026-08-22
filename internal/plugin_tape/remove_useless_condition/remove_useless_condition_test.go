@@ -45,3 +45,28 @@ func TestRemoveUselessCondition(t *testing.T) {
 		t.End()
 	})
 }
+
+// TestRemoveUselessConditionMessages covers the 3-arg forms where an assertion
+// carries a message string: Ok(err != nil, msg) -> Ok(err, msg) and the
+// NotOk == nil equivalent.
+func TestRemoveUselessConditionMessages(t *testing.T) {
+	Test(t, "tape/remove-useless-condition: report: ok-message", func(t *T) {
+		t.Report("ok-message", "remove useless condition")
+		t.End()
+	})
+
+	Test(t, "tape/remove-useless-condition: transform: ok-message", func(t *T) {
+		t.Transform("ok-message")
+		t.End()
+	})
+
+	Test(t, "tape/remove-useless-condition: report: not-ok-message", func(t *T) {
+		t.Report("not-ok-message", "remove useless condition")
+		t.End()
+	})
+
+	Test(t, "tape/remove-useless-condition: transform: not-ok-message", func(t *T) {
+		t.Transform("not-ok-message")
+		t.End()
+	})
+}
