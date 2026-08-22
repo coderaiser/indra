@@ -25,8 +25,9 @@ func Replace() Replacer {
 // (not the __array sentinel) so identifiers resolve through the binding.
 func Match() Matcher {
 	return Matcher{
-		"__a.Equal(__b, __c)": sliceOrStruct,
-		"__a.Equal(__c, __b)": sliceOrStruct,
+		"__a.Equal(__b, __c)":    sliceOrStruct,
+		"__a.Equal(__c, __b)":    sliceOrStruct,
+		"__a.NotEqual(__b, __c)": sliceOrStruct,
 	}
 }
 
