@@ -73,17 +73,18 @@ func isFalsyLiteral(c ast.Node, p Path) bool {
 }
 
 // isFalsyNamedConst resolves c (expected to be an *ast.Ident) to its declaration
-// and reports whether the declared value is falsy. Built-in identifiers false,
-// nil, and true are handled directly; other names are resolved via GetBinding.
+// and reports whether the declared value is falsy. Boolean literals are
+// detected via IsBoolLit; the nil identifier and named constants are handled
+// below.
 func isFalsyNamedConst(p Path, c ast.Node) bool {
 	ident, ok := c.(*ast.Ident)
 	if !ok {
 		return false
 	}
-	if ident.Name == "true" {
+	if IsBoolLit(ident, true) {
 		return false
 	}
-	if ident.Name == "false" || ident.Name == "nil" {
+	if IsBoolLit(ident, false) || ident.Name == "nil" {
 		return true
 	}
 	binding := GetBinding(p, ident.Name)
