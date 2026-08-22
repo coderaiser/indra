@@ -174,38 +174,14 @@ func CompareAny(pattern string, stmts []ast.Stmt) bool {
 	return false
 }
 
-// IsMemberExpr reports whether node is a selector expression (a.b).
-// Mirrors putout's types.isMemberExpression.
-func IsMemberExpr(node ast.Node) bool {
-	_, ok := node.(*ast.SelectorExpr)
-	return ok
-}
-
-// IsIdent reports whether node is an identifier.
-// Mirrors putout's types.isIdentifier.
-func IsIdent(node ast.Node) bool {
-	_, ok := node.(*ast.Ident)
-	return ok
-}
-
-// IsCallExpr reports whether node is a call expression.
-// Mirrors putout's types.isCallExpression.
-func IsCallExpr(node ast.Node) bool {
-	_, ok := node.(*ast.CallExpr)
-	return ok
-}
-
-// IsFuncLit reports whether node is a function literal.
-// Mirrors putout's types.isFunction (for the FuncLit case).
-func IsFuncLit(node ast.Node) bool {
-	_, ok := node.(*ast.FuncLit)
-	return ok
-}
-
-// IsCompositeLit reports whether node is a composite literal (slice/struct/map).
-func IsCompositeLit(node ast.Node) bool {
-	_, ok := node.(*ast.CompositeLit)
-	return ok
+// SetLiteralValue sets the raw value of a BasicLit.
+// For STRING kind, wraps value in double quotes automatically.
+func SetLiteralValue(lit *ast.BasicLit, value string) {
+	if lit.Kind == token.STRING {
+		lit.Value = `"` + value + `"`
+		return
+	}
+	lit.Value = value
 }
 
 // IsPrimitive reports whether node is a basic literal or a nil/true/false

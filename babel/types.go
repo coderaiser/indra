@@ -80,3 +80,20 @@ func IsFile(node ast.Node) bool {
 	_, ok := node.(*ast.File)
 	return ok
 }
+
+// IsBoolLit mirrors putout types.isBooleanLiteral(node, {value}).
+// Reports whether node is an identifier with name "true" or "false"
+// and its value matches val.
+func IsBoolLit(node ast.Node, val bool) bool {
+	ident, ok := node.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	switch ident.Name {
+	case "true":
+		return val
+	case "false":
+		return !val
+	}
+	return false
+}

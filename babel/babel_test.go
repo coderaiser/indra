@@ -315,3 +315,35 @@ func TestIsFile(t *testing.T) {
 		t.End()
 	})
 }
+
+func TestIsBoolLit(t *testing.T) {
+	Test(t, "IsBoolLit: true literal matches true", func(t *T) {
+		t.Ok(IsBoolLit(ast.NewIdent("true"), true))
+		t.End()
+	})
+
+	Test(t, "IsBoolLit: true literal rejects false", func(t *T) {
+		t.NotOk(IsBoolLit(ast.NewIdent("true"), false))
+		t.End()
+	})
+
+	Test(t, "IsBoolLit: false literal matches false", func(t *T) {
+		t.Ok(IsBoolLit(ast.NewIdent("false"), false))
+		t.End()
+	})
+
+	Test(t, "IsBoolLit: false literal rejects true", func(t *T) {
+		t.NotOk(IsBoolLit(ast.NewIdent("false"), true))
+		t.End()
+	})
+
+	Test(t, "IsBoolLit: non-identifier is not a bool literal", func(t *T) {
+		t.NotOk(IsBoolLit(&ast.BasicLit{Kind: token.STRING, Value: `"true"`}, true))
+		t.End()
+	})
+
+	Test(t, "IsBoolLit: other identifier is not a bool literal", func(t *T) {
+		t.NotOk(IsBoolLit(ast.NewIdent("t"), true))
+		t.End()
+	})
+}

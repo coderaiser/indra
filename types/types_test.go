@@ -572,3 +572,110 @@ func TestPathSkip(t *testing.T) {
 		t.End()
 	})
 }
+
+func TestBabelReexports(t *testing.T) {
+	sel := &ast.SelectorExpr{X: ident("a"), Sel: ident("b")}
+	arrayLit := &ast.CompositeLit{Type: &ast.ArrayType{Elt: ident("int")}}
+	structLit := &ast.CompositeLit{Type: ident("T")}
+	anonLit := &ast.CompositeLit{Elts: []ast.Expr{ident("a")}}
+	call := &ast.CallExpr{Fun: ident("f")}
+	stmt := &ast.ExprStmt{X: call}
+	intLit := &ast.BasicLit{Kind: token.INT, Value: "1"}
+
+	Test(t, "re-export: IsIdent accepts an identifier", func(t *T) {
+		t.Ok(types.IsIdent(ident("a")))
+		t.End()
+	})
+	Test(t, "re-export: IsIdent rejects a literal", func(t *T) {
+		t.NotOk(types.IsIdent(intLit))
+		t.End()
+	})
+	Test(t, "re-export: IsCallExpr accepts a call", func(t *T) {
+		t.Ok(types.IsCallExpr(call))
+		t.End()
+	})
+	Test(t, "re-export: IsCallExpr rejects an ident", func(t *T) {
+		t.NotOk(types.IsCallExpr(ident("f")))
+		t.End()
+	})
+	Test(t, "re-export: IsSelector accepts a selector", func(t *T) {
+		t.Ok(types.IsSelector(sel))
+		t.End()
+	})
+	Test(t, "re-export: IsSelector rejects an ident", func(t *T) {
+		t.NotOk(types.IsSelector(ident("a")))
+		t.End()
+	})
+	Test(t, "re-export: IsCompositeLit accepts a composite literal", func(t *T) {
+		t.Ok(types.IsCompositeLit(structLit))
+		t.End()
+	})
+	Test(t, "re-export: IsCompositeLit rejects an ident", func(t *T) {
+		t.NotOk(types.IsCompositeLit(ident("a")))
+		t.End()
+	})
+	Test(t, "re-export: IsArrayExpr accepts a slice composite", func(t *T) {
+		t.Ok(types.IsArrayExpr(arrayLit))
+		t.End()
+	})
+	Test(t, "re-export: IsArrayExpr rejects anonymous and non-slice composites", func(t *T) {
+		t.NotOk(types.IsArrayExpr(anonLit) || types.IsArrayExpr(structLit) || types.IsArrayExpr(ident("a")))
+		t.End()
+	})
+	Test(t, "re-export: IsObjectExpr accepts a named struct composite", func(t *T) {
+		t.Ok(types.IsObjectExpr(structLit))
+		t.End()
+	})
+	Test(t, "re-export: IsObjectExpr accepts a qualified struct composite", func(t *T) {
+		t.Ok(types.IsObjectExpr(&ast.CompositeLit{Type: sel}))
+		t.End()
+	})
+	Test(t, "re-export: IsObjectExpr rejects slice, anonymous and non-composites", func(t *T) {
+		t.NotOk(types.IsObjectExpr(arrayLit) || types.IsObjectExpr(anonLit) || types.IsObjectExpr(ident("a")))
+		t.End()
+	})
+	Test(t, "re-export: IsFuncLit accepts a func literal", func(t *T) {
+		t.Ok(types.IsFuncLit(&ast.FuncLit{Type: &ast.FuncType{}}))
+		t.End()
+	})
+	Test(t, "re-export: IsFuncLit rejects an ident", func(t *T) {
+		t.NotOk(types.IsFuncLit(ident("f")))
+		t.End()
+	})
+	Test(t, "re-export: IsBasicLit accepts a literal", func(t *T) {
+		t.Ok(types.IsBasicLit(intLit))
+		t.End()
+	})
+	Test(t, "re-export: IsBasicLit rejects an ident", func(t *T) {
+		t.NotOk(types.IsBasicLit(ident("a")))
+		t.End()
+	})
+	Test(t, "re-export: IsStatement accepts a statement", func(t *T) {
+		t.Ok(types.IsStatement(stmt))
+		t.End()
+	})
+	Test(t, "re-export: IsStatement rejects an expression", func(t *T) {
+		t.NotOk(types.IsStatement(ident("a")))
+		t.End()
+	})
+	Test(t, "re-export: IsFile accepts a file", func(t *T) {
+		t.Ok(types.IsFile(&ast.File{}))
+		t.End()
+	})
+	Test(t, "re-export: IsFile rejects a non-file", func(t *T) {
+		t.NotOk(types.IsFile(ident("a")))
+		t.End()
+	})
+	Test(t, "re-export: IsBoolLit matches true and false literals", func(t *T) {
+		t.Ok(types.IsBoolLit(ident("true"), true) && types.IsBoolLit(ident("false"), false))
+		t.End()
+	})
+	Test(t, "re-export: IsBoolLit rejects mismatches and non-bool idents", func(t *T) {
+		t.NotOk(types.IsBoolLit(ident("true"), false) || types.IsBoolLit(ident("x"), true))
+		t.End()
+	})
+	Test(t, "re-export: IsBoolLit rejects non-identifiers", func(t *T) {
+		t.NotOk(types.IsBoolLit(intLit, true))
+		t.End()
+	})
+}
