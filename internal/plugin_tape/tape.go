@@ -2,15 +2,17 @@ package tape
 
 import (
 	"coderaiser/indra/internal/plugin_tape/add_t_end"
+	"coderaiser/indra/internal/plugin_tape/apply_assertions_order"
 	"coderaiser/indra/internal/plugin_tape/apply_dedent"
+	"coderaiser/indra/internal/plugin_tape/convert_deep_equal_to_equal"
 	"coderaiser/indra/internal/plugin_tape/convert_equal_to_deep_equal"
 	"coderaiser/indra/internal/plugin_tape/convert_equal_to_not_ok"
 	"coderaiser/indra/internal/plugin_tape/convert_equal_to_ok"
 	"coderaiser/indra/internal/plugin_tape/convert_no_error_to_not_ok"
 	"coderaiser/indra/internal/plugin_tape/convert_ok_to_not_ok"
 	"coderaiser/indra/internal/plugin_tape/extract_result_from_assertion"
-	"coderaiser/indra/internal/plugin_tape/remove_only"
 	"coderaiser/indra/internal/plugin_tape/remove_default_messages"
+	"coderaiser/indra/internal/plugin_tape/remove_only"
 	"coderaiser/indra/internal/plugin_tape/remove_skip"
 	"coderaiser/indra/internal/plugin_tape/remove_useless_condition"
 	"coderaiser/indra/internal/plugin_tape/remove_useless_prefix"
@@ -30,6 +32,8 @@ func Rules() []types.Rule {
 		{Name: "remove-useless-t-end", Plugin: remove_useless_t_end.Plugin{}},
 		{Name: "switch-expected-with-result", Plugin: switch_expected_with_result.Plugin{}},
 		{Name: "add-t-end", Plugin: add_t_end.Plugin{}},
+		{Name: "apply-assertions-order", Plugin: apply_assertions_order.Plugin{}},
+		{Name: "convert-deep-equal-to-equal", Plugin: convert_deep_equal_to_equal.Plugin{}},
 		{Name: "apply-dedent", Plugin: apply_dedent.Plugin{}},
 		{Name: "convert-equal-to-deep-equal", Plugin: convert_equal_to_deep_equal.Plugin{}},
 		{Name: "convert-equal-to-ok", Plugin: convert_equal_to_ok.Plugin{}},
