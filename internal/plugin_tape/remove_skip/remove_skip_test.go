@@ -61,12 +61,12 @@ func TestRemoveSkip(t *testing.T) {
 		t.End()
 	})
 
-	Test(t, "remove-skip: no report: allowed-receiver without options", func(t *T) {
+	Test(t, "remove-skip: no report: allowed-receiver", func(t *T) {
 		t.NoReport("allowed-receiver")
 		t.End()
 	})
 
-	Test(t, "remove-skip: no transform: allowed-receiver without options", func(t *T) {
+	Test(t, "remove-skip: no transform: allowed-receiver", func(t *T) {
 		t.NoTransform("allowed-receiver")
 		t.End()
 	})

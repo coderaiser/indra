@@ -28,16 +28,16 @@ func GetTemplateValues(node ast.Node, pattern string) map[string]ast.Node {
 }
 
 // Re-export babel type-check functions so plugins need only dot-import types.
-func IsIdent(node ast.Node) bool            { return babel.IsIdent(node) }
-func IsCallExpr(node ast.Node) bool         { return babel.IsCallExpr(node) }
-func IsSelector(node ast.Node) bool         { return babel.IsSelector(node) }
-func IsCompositeLit(node ast.Node) bool     { return babel.IsCompositeLit(node) }
-func IsArrayExpr(node ast.Node) bool        { return babel.IsArrayExpr(node) }
-func IsObjectExpr(node ast.Node) bool       { return babel.IsObjectExpr(node) }
-func IsFuncLit(node ast.Node) bool          { return babel.IsFuncLit(node) }
-func IsBasicLit(node ast.Node) bool         { return babel.IsBasicLit(node) }
-func IsStatement(node ast.Node) bool        { return babel.IsStatement(node) }
-func IsFile(node ast.Node) bool             { return babel.IsFile(node) }
+func IsIdent(node ast.Node) bool             { return babel.IsIdent(node) }
+func IsCallExpr(node ast.Node) bool          { return babel.IsCallExpr(node) }
+func IsSelector(node ast.Node) bool          { return babel.IsSelector(node) }
+func IsCompositeLit(node ast.Node) bool      { return babel.IsCompositeLit(node) }
+func IsArrayExpr(node ast.Node) bool         { return babel.IsArrayExpr(node) }
+func IsObjectExpr(node ast.Node) bool        { return babel.IsObjectExpr(node) }
+func IsFuncLit(node ast.Node) bool           { return babel.IsFuncLit(node) }
+func IsBasicLit(node ast.Node) bool          { return babel.IsBasicLit(node) }
+func IsStatement(node ast.Node) bool         { return babel.IsStatement(node) }
+func IsFile(node ast.Node) bool              { return babel.IsFile(node) }
 func IsBoolLit(node ast.Node, val bool) bool { return babel.IsBoolLit(node, val) }
 
 // MatchFn is a guard run after pattern match. Its second argument is the Path

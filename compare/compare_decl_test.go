@@ -39,13 +39,15 @@ func TestCompareDecl(t *testing.T) {
 	Test(t, "CompareDecl: non-matching decl returns nil", func(t *T) {
 		other := parseDecl(`func Other() {}`)
 		vars := compare.CompareDecl(other, `func Match() Matcher { return Matcher{__a: nil} }`)
-		t.Ok(vars == nil)
+		t.NotOk(vars)
+
 		t.End()
 	})
 
 	Test(t, "CompareDecl: unparsable pattern returns nil", func(t *T) {
 		vars := compare.CompareDecl(decl, `not valid go {{{{`)
-		t.Ok(vars == nil)
+		t.NotOk(vars)
+
 		t.End()
 	})
 
@@ -59,24 +61,24 @@ func TestCompareDecl(t *testing.T) {
 
 	Test(t, "CompareDecl: nil node returns nil", func(t *T) {
 		vars := compare.CompareDecl(nil, `func Match() Matcher { return Matcher{} }`)
-		t.Ok(vars == nil)
+		t.NotOk(vars)
+
 		t.End()
 	})
 
 	Test(t, "CompareDecl: pattern with no decl returns nil", func(t *T) {
 		vars := compare.CompareDecl(decl, `// just a comment`)
-		t.Ok(vars == nil)
+		t.NotOk(vars)
+
 		t.End()
 	})
 
 	Test(t, "CompareDecl: doc comment on decl is ignored", func(t *T) {
 		f, err := parser.ParseFile(token.NewFileSet(), "", "package p\n\n// Comment above Match.\nfunc Match() Matcher { return Matcher{} }\n", parser.ParseComments)
-		if err != nil || len(f.Decls) == 0 {
-			t.Ok(false)
-			t.End()
-			return
+		vars := compare.Vars(nil)
+		if err == nil && len(f.Decls) > 0 {
+			vars = compare.CompareDecl(f.Decls[0], `func Match() Matcher { return Matcher{} }`)
 		}
-		vars := compare.CompareDecl(f.Decls[0], `func Match() Matcher { return Matcher{} }`)
 		t.Ok(vars)
 
 		t.End()

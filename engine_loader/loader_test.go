@@ -294,9 +294,11 @@ func (testReplacerEmptyFilter) Replace() types.Replacer { return types.Replacer{
 // testReplacerBoth exposes a Match and a non-empty Filter — Filter must win.
 type testReplacerBoth struct{}
 
-func (testReplacerBoth) Report() string          { return "rb" }
-func (testReplacerBoth) Match() types.Matcher    { return types.Matcher{"p": nil} }
-func (testReplacerBoth) Filter() types.Filter    { return types.Filter{"q": func(types.Vars, types.Path, types.Options) bool { return true }} }
+func (testReplacerBoth) Report() string       { return "rb" }
+func (testReplacerBoth) Match() types.Matcher { return types.Matcher{"p": nil} }
+func (testReplacerBoth) Filter() types.Filter {
+	return types.Filter{"q": func(types.Vars, types.Path, types.Options) bool { return true }}
+}
 func (testReplacerBoth) Replace() types.Replacer { return types.Replacer{"p": "q", "q": "r"} }
 
 func TestResolvePrefersNonEmptyFilter(t *testing.T) {

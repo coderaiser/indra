@@ -89,10 +89,10 @@ func IsBoolLit(node ast.Node, val bool) bool {
 	if !ok {
 		return false
 	}
-	switch ident.Name {
-	case "true":
+	if ident.Name == "true" {
 		return val
-	case "false":
+	}
+	if ident.Name == "false" {
 		return !val
 	}
 	return false

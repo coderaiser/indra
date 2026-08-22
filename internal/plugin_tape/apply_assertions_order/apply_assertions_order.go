@@ -53,7 +53,7 @@ func Fix(path Path, _ map[string]any) {
 	block.List[idx-2], block.List[idx-1] = block.List[idx-1], block.List[idx-2]
 }
 
-// assertionRecv returns the receiver identifier of a <recv>.<method>(...) 
+// assertionRecv returns the receiver identifier of a <recv>.<method>(...)
 // expression statement, or nil.
 func assertionRecv(node ast.Node) *ast.Ident {
 	stmt, ok := node.(*ast.ExprStmt)

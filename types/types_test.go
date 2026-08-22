@@ -682,7 +682,8 @@ func TestBabelReexports(t *testing.T) {
 
 func TestOptionsStringSlice(t *testing.T) {
 	Test(t, "Options.StringSlice: missing key returns nil", func(t *T) {
-		t.Ok(types.Options{}.StringSlice("allowed") == nil)
+		t.NotOk(types.Options{}.StringSlice("allowed"))
+
 		t.End()
 	})
 
@@ -711,7 +712,8 @@ func TestOptionsStringSlice(t *testing.T) {
 	})
 
 	Test(t, "Options.StringSlice: unsupported value type returns nil", func(t *T) {
-		t.Ok(types.Options{"allowed": 42}.StringSlice("allowed") == nil)
+		t.NotOk(types.Options{"allowed": 42}.StringSlice("allowed"))
+
 		t.End()
 	})
 }
