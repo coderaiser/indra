@@ -49,6 +49,12 @@ type MatchFn = func(Vars, Path) bool
 // Matcher maps pattern string → optional guard. Returned by Match().
 type Matcher map[string]MatchFn
 
+// MatchWithOpts is the putout-aligned match signature: called once with the
+// rule's Options, it returns a Matcher whose guards close over opts. Mirrors
+// putout's match({options}) => { pattern: fn } — options are parsed once at
+// plugin-load time, not threaded through the guard at each matched node.
+type MatchWithOpts = func(Options) Matcher
+
 // Replacer maps pattern string → replacement template. Returned by Replace().
 type Replacer map[string]string
 

@@ -341,6 +341,75 @@ func TestLoadWithoutConfigPassesNilOptions(t *testing.T) {
 	}
 }
 
+// testReplacerMatchOpts exposes the putout-aligned Match(Options) Matcher:
+// the guard closes over opts and is otherwise identical to the Filter version.
+type testReplacerMatchOpts struct{}
+
+func (testReplacerMatchOpts) Report() string { return "rmo" }
+func (testReplacerMatchOpts) Replace() types.Replacer {
+	return types.Replacer{"__a.Skip(__b)": "__a.NotOk(__b)"}
+}
+func (testReplacerMatchOpts) Match(opts types.Options) types.Matcher {
+	return types.Matcher{
+		"__a.Skip(__b)": func(vars types.Vars, _ types.Path) bool {
+			ident, ok := vars["__a"].(*ast.Ident)
+			return ok && ident.Name == "Suite" && len(opts.StringSlice("allowed")) > 0
+		},
+	}
+}
+
+func TestLoadBindsRuleOptionsToMatchOpts(t *testing.T) {
+	kinds := Load([]PluginFuncs{{Name: "x", Plugin: testReplacerMatchOpts{}}}, Config{
+		"x": {Enabled: true, Options: map[string]any{"allowed": []string{"Suite"}}},
+	})
+	rp := kinds[0].(ReplacerPlugin)
+	vars := types.Vars{"__a": &ast.Ident{Name: "Suite"}}
+	if !rp.Match()["__a.Skip(__b)"](vars, types.Path{}) {
+		t.Fatal("expected rule options to reach the Match(Options) guard")
+	}
+}
+
+func TestLoadMatchOptsWithoutOptions(t *testing.T) {
+	kinds := Load([]PluginFuncs{{Name: "x", Plugin: testReplacerMatchOpts{}}}, DefaultConfig())
+	rp := kinds[0].(ReplacerPlugin)
+	vars := types.Vars{"__a": &ast.Ident{Name: "Suite"}}
+	if rp.Match()["__a.Skip(__b)"](vars, types.Path{}) {
+		t.Fatal("expected nil options to reject the Match(Options) guard")
+	}
+}
+
+// testReplacerMatchOptsAndFilter exposes both a non-empty Filter and a
+// Match(Options) — the non-empty Filter must take precedence.
+type testReplacerMatchOptsAndFilter struct{}
+
+func (testReplacerMatchOptsAndFilter) Report() string { return "rmf" }
+func (testReplacerMatchOptsAndFilter) Replace() types.Replacer {
+	return types.Replacer{"__a.Skip(__b)": "__a.NotOk(__b)"}
+}
+func (testReplacerMatchOptsAndFilter) Match(_ types.Options) types.Matcher {
+	return types.Matcher{"__a.Skip(__b)": func(types.Vars, types.Path) bool { return true }}
+}
+func (testReplacerMatchOptsAndFilter) Filter() types.Filter {
+	return types.Filter{"__a.Skip(__b)": func(types.Vars, types.Path, types.Options) bool { return false }}
+}
+
+func TestResolvePrefersFilterOverMatchOpts(t *testing.T) {
+	k := resolve(testReplacerMatchOptsAndFilter{}, "rmf", "rmf", nil)
+	rp := k.(ReplacerPlugin)
+	vars := types.Vars{"__a": &ast.Ident{Name: "Suite"}}
+	if rp.Match()["__a.Skip(__b)"](vars, types.Path{}) {
+		t.Fatal("expected Filter to take precedence over Match(Options)")
+	}
+}
+
+func TestResolvePlainMatchStillWorks(t *testing.T) {
+	k := resolve(testReplacerMatch{}, "x", "x", nil)
+	rp := k.(ReplacerPlugin)
+	if _, ok := rp.Match()["p"]; !ok {
+		t.Fatal("expected plain Match() Matcher to still be resolved")
+	}
+}
+
 func TestRuleOptionsNilSafe(t *testing.T) {
 	if ruleOptions(Config{}, "missing") != nil {
 		t.Fatal("expected nil options for an unknown rule")

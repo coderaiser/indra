@@ -129,13 +129,14 @@ func isEnabled(c candidate, cfg Config) bool {
 // resolve detects a plugin's kind from its exported methods, naming it rule.
 // A plugin with a Replace method is a replacer; one with a Traverse method is
 // a traverser. It panics on a malformed shape at init time.
-// A replacer may expose Filter() types.Filter instead of (or in addition to)
-// Match() types.Matcher: when a non-empty Filter exists it takes precedence,
-// and each FilterFn is wrapped into a MatchFn bound to the rule's Options.
+// A replacer may expose Filter() types.Filter, Match(Options) types.Matcher,
+// or Match() types.Matcher. Priority: a non-empty Filter wins (includer
+// pattern); otherwise Match(Options) (putout-aligned, closes over the rule's
+// Options); otherwise a plain Match(); otherwise an empty matcher.
 func resolve(plugin any, rule, owner string, opts types.Options) PluginKind {
 	v := reflect.ValueOf(plugin)
 	if r, ok := method[func() types.Replacer](v, "Replace"); ok {
-		match := matchOrEmpty(v)
+		match := matchFactory(v, opts)
 		if f, ok := method[func() types.Filter](v, "Filter"); ok && len(f()) > 0 {
 			match = filterToMatch(f(), opts)
 		}
@@ -155,6 +156,27 @@ func resolve(plugin any, rule, owner string, opts types.Options) PluginKind {
 		}
 	}
 	panic("engine-loader: " + owner + ": unknown plugin kind (need Replace or Traverse)")
+}
+
+// matchFactory returns a Matcher factory for the plugin's Match method.
+// Priority: Match(Options) types.Matcher closes over opts (putout-aligned);
+// otherwise the plain Match() types.Matcher; otherwise an empty matcher.
+// Signature detection is probed by reflect type rather than the strict
+// `method` helper, so a plugin with a plain Match() (0-arg) is not treated as
+// a malformed Match(Options) (1-arg). A Match that is neither signature — e.g.
+// Match() int — still panics so a broken plugin is caught at load time.
+func matchFactory(v reflect.Value, opts types.Options) func() types.Matcher {
+	m := v.MethodByName("Match")
+	if !m.IsValid() {
+		return func() types.Matcher { return types.Matcher{} }
+	}
+	switch m.Type() {
+	case reflect.TypeOf(types.MatchWithOpts(nil)):
+		return func() types.Matcher { return m.Interface().(types.MatchWithOpts)(opts) }
+	case reflect.TypeOf(func() types.Matcher(nil)):
+		return func() types.Matcher { return m.Interface().(func() types.Matcher)() }
+	}
+	panic("engine-loader: method Match has wrong signature")
 }
 
 // filterToMatch wraps a Filter into a Matcher factory, closing over the rule's
@@ -205,13 +227,4 @@ func mustMethod[T any](v reflect.Value, name string) T {
 		panic("engine-loader: missing " + name + " method")
 	}
 	return fn
-}
-
-// matchOrEmpty returns the Match method if present, else a func returning an
-// empty Matcher (the guard for a replacer without Match is a no-op).
-func matchOrEmpty(v reflect.Value) func() types.Matcher {
-	if m, ok := method[func() types.Matcher](v, "Match"); ok {
-		return m
-	}
-	return func() types.Matcher { return types.Matcher{} }
 }
