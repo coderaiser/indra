@@ -9,13 +9,6 @@ import (
 
 func Report() string { return `Remove "Test.Only"` }
 
-func Replace() types.Replacer {
-	return types.Replacer{
-		`__a.Only(__b, __c, func(__d *__a.T) { __body })`:      "__a(__b, __c, func(__d *__a.T) {\n__body\n})",
-		`__a.Only(__b, __c, func(__d *__a.T) { __body }, __e)`: "__a(__b, __c, func(__d *__a.T) {\n__body\n}, __e)",
-	}
-}
-
 // Match builds the guard map once, closing each guard over the rule's Options
 // (putout's match({options})). Test is always an allowed receiver; extra
 // allowed receivers come from rule options (allowed = [...] in .indra.toml).
@@ -23,6 +16,12 @@ func Match(opts types.Options) types.Matcher {
 	return types.Matcher{
 		`__a.Only(__b, __c, func(__d *__a.T) { __body })`:      allowedReceiver(opts),
 		`__a.Only(__b, __c, func(__d *__a.T) { __body }, __e)`: allowedReceiver(opts),
+	}
+}
+func Replace() types.Replacer {
+	return types.Replacer{
+		`__a.Only(__b, __c, func(__d *__a.T) { __body })`:      "__a(__b, __c, func(__d *__a.T) {\n__body\n})",
+		`__a.Only(__b, __c, func(__d *__a.T) { __body }, __e)`: "__a(__b, __c, func(__d *__a.T) {\n__body\n}, __e)",
 	}
 }
 
@@ -40,6 +39,6 @@ func allowedReceiver(opts types.Options) types.MatchFn {
 // option-aware.
 type Plugin struct{}
 
-func (Plugin) Report() string               { return Report() }
+func (Plugin) Report() string                         { return Report() }
 func (Plugin) Match(opts types.Options) types.Matcher { return Match(opts) }
-func (Plugin) Replace() types.Replacer      { return Replace() }
+func (Plugin) Replace() types.Replacer                { return Replace() }

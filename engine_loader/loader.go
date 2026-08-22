@@ -168,13 +168,19 @@ func resolve(plugin any, rule, owner string, opts types.Options) PluginKind {
 func matchFactory(v reflect.Value, opts types.Options) func() types.Matcher {
 	m := v.MethodByName("Match")
 	if !m.IsValid() {
-		return func() types.Matcher { return types.Matcher{} }
+		return func() types.Matcher {
+			return types.Matcher{}
+		}
 	}
-	switch m.Type() {
-	case reflect.TypeOf(types.MatchWithOpts(nil)):
-		return func() types.Matcher { return m.Interface().(types.MatchWithOpts)(opts) }
-	case reflect.TypeOf(func() types.Matcher(nil)):
-		return func() types.Matcher { return m.Interface().(func() types.Matcher)() }
+	if m.Type() == reflect.TypeOf(types.MatchWithOpts(nil)) {
+		return func() types.Matcher {
+			return m.Interface().(types.MatchWithOpts)(opts)
+		}
+	}
+	if m.Type() == reflect.TypeOf((func() types.Matcher)(nil)) {
+		return func() types.Matcher {
+			return m.Interface().(func() types.Matcher)()
+		}
 	}
 	panic("engine-loader: method Match has wrong signature")
 }
