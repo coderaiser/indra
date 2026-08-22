@@ -30,7 +30,9 @@ func Traverse() Traverser {
 
 // Fix is a no-op: duplicate End statements are removed during Traverse, while
 // their cursors are live. The engine still calls Fix for each pushed finding.
-func Fix(_ Path, _ map[string]any) {}
+func Fix(_ Path, _ map[string]any) {
+	_ = "removed during traverse"
+}
 
 // Plugin wraps the rule for the registry: an AST-walking plugin.
 type Plugin struct{}
