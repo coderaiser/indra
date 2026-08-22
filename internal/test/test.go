@@ -4,6 +4,12 @@
 package test
 
 import (
+	"path/filepath"
+	"runtime"
+	"testing"
+
+	tape "github.com/coderaiser/go-tape"
+
 	loader "coderaiser/indra/engine_loader"
 	processor "coderaiser/indra/engine_processor"
 	runner "coderaiser/indra/engine_runner"
@@ -23,12 +29,33 @@ func indraLint(src []byte, fix bool, plugins []any) (types.LintResult, error) {
 	items := make([]runner.PluginItem, 0, len(plugins))
 	for _, payload := range plugins {
 		arg := payload.(indratest.PluginArg)
-		kinds := loader.Load([]loader.PluginFuncs{{Name: arg.Rule, Plugin: arg.Plugin}}, loader.Config{})
+		cfg := arg.Config
+		if cfg == nil {
+			cfg = loader.Config{}
+		}
+		kinds := loader.Load([]loader.PluginFuncs{{Name: arg.Rule, Plugin: arg.Plugin}}, cfg)
 		validatePlugin(kinds[0])
 		items = append(items, runner.PluginItem{Rule: kinds[0].Name(), Plugin: kinds[0]})
 	}
 	result, err := processor.Process(processor.Params{Src: src, Fix: fix, Plugins: items})
 	return types.LintResult(result), err
+}
+
+// CreateTestConfig is CreateTest with a loader.Config applied when resolving
+// the plugin — used to exercise option-driven rules (Filter + Options).
+func CreateTestConfig(rule string, plugin any, cfg loader.Config) func(*testing.T, string, func(*T)) {
+	plugins := []any{indratest.PluginArg{Rule: rule, Plugin: plugin, Config: cfg}}
+	dir := callerFixtureDir(1)
+	return tape.Extend(func(base *tape.T) *T {
+		return indratest.New(base, indraLint, plugins, dir)
+	})
+}
+
+// callerFixtureDir returns the fixture/ directory next to the test file that
+// called CreateTestConfig. depth is the position of the caller's frame.
+func callerFixtureDir(depth int) string {
+	_, file, _, _ := runtime.Caller(depth + 1)
+	return filepath.Join(filepath.Dir(file), "fixture")
 }
 
 // validatePlugin enforces consistency on a resolved ReplacerPlugin before it is

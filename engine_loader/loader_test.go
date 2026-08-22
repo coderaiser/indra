@@ -163,7 +163,7 @@ func TestLoadGroupRuleOffByConfig(t *testing.T) {
 }
 
 func TestResolveReplacerAccessors(t *testing.T) {
-	k := resolve(testReplacer{}, "rp", "rp")
+	k := resolve(testReplacer{}, "rp", "rp", nil)
 	rp, ok := k.(ReplacerPlugin)
 	if !ok {
 		t.Fatalf("expected ReplacerPlugin, got %T", k)
@@ -178,7 +178,7 @@ func TestResolveReplacerAccessors(t *testing.T) {
 }
 
 func TestResolveReplacerWithMatch(t *testing.T) {
-	k := resolve(testReplacerMatch{}, "rm", "rm")
+	k := resolve(testReplacerMatch{}, "rm", "rm", nil)
 	rp := k.(ReplacerPlugin)
 	if rp.Match()["p"] != nil || rp.Replace()["p"] != "q" {
 		t.Fatal("unexpected Match/Replace values")
@@ -186,7 +186,7 @@ func TestResolveReplacerWithMatch(t *testing.T) {
 }
 
 func TestResolveTraverserAccessors(t *testing.T) {
-	k := resolve(testTraverser{}, "tp", "tp")
+	k := resolve(testTraverser{}, "tp", "tp", nil)
 	tp, ok := k.(TraverserPlugin)
 	if !ok {
 		t.Fatalf("expected TraverserPlugin, got %T", k)
@@ -264,5 +264,83 @@ func TestMatchWrongSignaturePanics(t *testing.T) {
 	// A struct with an invalid Match alongside a valid Replace must panic.
 	if msg := catchPanic(func() { Load([]PluginFuncs{{Name: "x", Plugin: badMatchSignature{}}}, Config{}) }); msg == "" {
 		t.Fatal("expected panic for wrong Match signature")
+	}
+}
+
+// testReplacerFilter is a replacer exposing a Filter instead of a Match.
+type testReplacerFilter struct{}
+
+func (testReplacerFilter) Report() string { return "rf" }
+func (testReplacerFilter) Replace() types.Replacer {
+	return types.Replacer{"__a.Skip(__b)": "__a.NotOk(__b)"}
+}
+func (testReplacerFilter) Filter() types.Filter {
+	return types.Filter{
+		"__a.Skip(__b)": func(vars types.Vars, _ types.Path, opts types.Options) bool {
+			ident, ok := vars["__a"].(*ast.Ident)
+			return ok && ident.Name == "Suite" && len(opts.StringSlice("allowed")) > 0
+		},
+	}
+}
+
+// testReplacerEmptyFilter has an empty Filter plus a Match — Match wins.
+type testReplacerEmptyFilter struct{}
+
+func (testReplacerEmptyFilter) Report() string          { return "ref" }
+func (testReplacerEmptyFilter) Match() types.Matcher    { return types.Matcher{"p": nil} }
+func (testReplacerEmptyFilter) Filter() types.Filter    { return types.Filter{} }
+func (testReplacerEmptyFilter) Replace() types.Replacer { return types.Replacer{"p": "q"} }
+
+// testReplacerBoth exposes a Match and a non-empty Filter — Filter must win.
+type testReplacerBoth struct{}
+
+func (testReplacerBoth) Report() string          { return "rb" }
+func (testReplacerBoth) Match() types.Matcher    { return types.Matcher{"p": nil} }
+func (testReplacerBoth) Filter() types.Filter    { return types.Filter{"q": func(types.Vars, types.Path, types.Options) bool { return true }} }
+func (testReplacerBoth) Replace() types.Replacer { return types.Replacer{"p": "q", "q": "r"} }
+
+func TestResolvePrefersNonEmptyFilter(t *testing.T) {
+	k := resolve(testReplacerBoth{}, "rb", "rb", nil)
+	rp := k.(ReplacerPlugin)
+	m := rp.Match()
+	if _, hasOld := m["p"]; hasOld {
+		t.Fatal("expected Match keys to be replaced by Filter keys")
+	}
+	if _, ok := m["q"]; !ok {
+		t.Fatal("expected a matcher synthesized from the Filter")
+	}
+}
+
+func TestResolveFallsBackToMatchOnEmptyFilter(t *testing.T) {
+	k := resolve(testReplacerEmptyFilter{}, "ref", "ref", nil)
+	rp := k.(ReplacerPlugin)
+	if _, ok := rp.Match()["p"]; !ok {
+		t.Fatal("expected Match keys after empty-Filter fallback")
+	}
+}
+
+func TestLoadBindsRuleOptionsToFilter(t *testing.T) {
+	kinds := Load([]PluginFuncs{{Name: "x", Plugin: testReplacerFilter{}}}, Config{
+		"x": {Enabled: true, Options: map[string]any{"allowed": []string{"Suite"}}},
+	})
+	rp := kinds[0].(ReplacerPlugin)
+	vars := types.Vars{"__a": &ast.Ident{Name: "Suite"}}
+	if !rp.Match()["__a.Skip(__b)"](vars, types.Path{}) {
+		t.Fatal("expected rule options to reach the Filter guard")
+	}
+}
+
+func TestLoadWithoutConfigPassesNilOptions(t *testing.T) {
+	kinds := Load([]PluginFuncs{{Name: "x", Plugin: testReplacerFilter{}}}, DefaultConfig())
+	rp := kinds[0].(ReplacerPlugin)
+	vars := types.Vars{"__a": &ast.Ident{Name: "Suite"}}
+	if rp.Match()["__a.Skip(__b)"](vars, types.Path{}) {
+		t.Fatal("expected nil options to reject the guard")
+	}
+}
+
+func TestRuleOptionsNilSafe(t *testing.T) {
+	if ruleOptions(Config{}, "missing") != nil {
+		t.Fatal("expected nil options for an unknown rule")
 	}
 }

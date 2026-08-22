@@ -82,11 +82,14 @@ func filterPlugins(items []runner.PluginItem, names []string) []runner.PluginIte
 }
 
 // configForFile returns the effective loader.Config for a filename: the global
-// [rules] merged with any [match] overrides that apply to that file.
+// [rules] merged with any [match] overrides that apply to that file. An
+// override flips only Enabled; rule Options are preserved.
 func configForFile(cfg config.Config, filename string) loader.Config {
 	lc := cfg.ToLoaderConfig()
 	for rule, val := range cfg.Match.OverrideRules(filename) {
-		lc[rule] = loader.RuleState{Enabled: val == "on"}
+		st := lc[rule]
+		st.Enabled = val == "on"
+		lc[rule] = st
 	}
 	return lc
 }

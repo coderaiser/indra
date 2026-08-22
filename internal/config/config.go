@@ -15,12 +15,15 @@ import (
 )
 
 // Config is the parsed .indra.toml.
+// Rules values are either "on"/"off" strings or option tables
+// ([rules."tape/remove-skip"] allowed = [...]) which enable the rule and
+// carry its Options.
 type Config struct {
-	Rules    map[string]string `toml:"rules"`
-	Plugins  []string          `toml:"plugins"`
-	Ignore   IgnoreConfig      `toml:"ignore"`
-	Progress ProgressConfig    `toml:"progress"`
-	Match    MatchConfig       `toml:"match"`
+	Rules    map[string]any `toml:"rules"`
+	Plugins  []string       `toml:"plugins"`
+	Ignore   IgnoreConfig   `toml:"ignore"`
+	Progress ProgressConfig `toml:"progress"`
+	Match    MatchConfig    `toml:"match"`
 }
 
 // MatchConfig maps a file glob pattern to per-rule on/off overrides. It backs
@@ -90,7 +93,7 @@ func Merge(defaults, user Config) Config {
 
 	// merge rules — user wins
 	if result.Rules == nil {
-		result.Rules = make(map[string]string)
+		result.Rules = make(map[string]any)
 	}
 	for rule, val := range user.Rules {
 		result.Rules[rule] = val
@@ -170,11 +173,16 @@ var DefaultIgnorePatterns = []string{
 }
 
 // ToLoaderConfig translates the [rules] section into a loader.Config.
-// "on" → enabled, "off" → disabled.
+// "on" → enabled, "off" → disabled; an option table → enabled with Options.
 func (c Config) ToLoaderConfig() loader.Config {
 	lc := make(loader.Config, len(c.Rules))
 	for rule, val := range c.Rules {
-		lc[rule] = loader.RuleState{Enabled: val == "on"}
+		switch v := val.(type) {
+		case string:
+			lc[rule] = loader.RuleState{Enabled: v == "on"}
+		case map[string]any:
+			lc[rule] = loader.RuleState{Enabled: true, Options: v}
+		}
 	}
 	return lc
 }

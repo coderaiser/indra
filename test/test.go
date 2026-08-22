@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"testing"
 
+	loader "coderaiser/indra/engine_loader"
 	"coderaiser/indra/types"
 
 	tape "github.com/coderaiser/go-tape"
@@ -25,6 +26,9 @@ import (
 type PluginArg struct {
 	Rule   string
 	Plugin any
+	// Config optionally carries loader rule state (options) applied when
+	// resolving this plugin; nil means default (enabled, no options).
+	Config loader.Config
 }
 
 // T wraps tape.T with plugin-level lint assertions.

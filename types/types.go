@@ -52,6 +52,41 @@ type Matcher map[string]MatchFn
 // Replacer maps pattern string → replacement template. Returned by Replace().
 type Replacer map[string]string
 
+// Options is a per-rule config map passed to Filter functions.
+// Values come from .indra.toml rule options.
+type Options map[string]any
+
+// StringSlice extracts a []string from Options by key.
+// Accepts string (single value) or []string (array).
+func (o Options) StringSlice(key string) []string {
+	v, ok := o[key]
+	if !ok {
+		return nil
+	}
+	switch val := v.(type) {
+	case string:
+		return []string{val}
+	case []string:
+		return val
+	case []any:
+		out := make([]string, 0, len(val))
+		for _, item := range val {
+			if s, ok := item.(string); ok {
+				out = append(out, s)
+			}
+		}
+		return out
+	}
+	return nil
+}
+
+// FilterFn is the signature for filter functions.
+// Mirrors putout's filter(path, {options}) => bool.
+type FilterFn = func(Vars, Path, Options) bool
+
+// Filter is a map of pattern → FilterFn — like Matcher but receives Options.
+type Filter map[string]FilterFn
+
 // FindFn is called by the engine for each traversed node. It calls push once
 // per finding with the Path the engine should pass to Fix and Report.
 // A Path carries the found node and its ancestor stack, so plugins can reach

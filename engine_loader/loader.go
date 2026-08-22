@@ -92,11 +92,11 @@ func Load(plugins []PluginFuncs, cfg Config) []PluginKind {
 		if p.Rules != nil {
 			for _, r := range p.Rules {
 				rule := p.Name + "/" + r.Name
-				cands = append(cands, candidate{rule: rule, kind: resolve(r.Plugin, rule, p.Name)})
+				cands = append(cands, candidate{rule: rule, kind: resolve(r.Plugin, rule, p.Name, ruleOptions(cfg, rule))})
 			}
 			continue
 		}
-		cands = append(cands, candidate{rule: p.Name, kind: resolve(p.Plugin, p.Name, p.Name)})
+		cands = append(cands, candidate{rule: p.Name, kind: resolve(p.Plugin, p.Name, p.Name, ruleOptions(cfg, p.Name))})
 	}
 
 	out := make([]PluginKind, 0, len(cands))
@@ -129,13 +129,20 @@ func isEnabled(c candidate, cfg Config) bool {
 // resolve detects a plugin's kind from its exported methods, naming it rule.
 // A plugin with a Replace method is a replacer; one with a Traverse method is
 // a traverser. It panics on a malformed shape at init time.
-func resolve(plugin any, rule, owner string) PluginKind {
+// A replacer may expose Filter() types.Filter instead of (or in addition to)
+// Match() types.Matcher: when a non-empty Filter exists it takes precedence,
+// and each FilterFn is wrapped into a MatchFn bound to the rule's Options.
+func resolve(plugin any, rule, owner string, opts types.Options) PluginKind {
 	v := reflect.ValueOf(plugin)
 	if r, ok := method[func() types.Replacer](v, "Replace"); ok {
+		match := matchOrEmpty(v)
+		if f, ok := method[func() types.Filter](v, "Filter"); ok && len(f()) > 0 {
+			match = filterToMatch(f(), opts)
+		}
 		return ReplacerPlugin{
 			rule:    rule,
 			report:  mustMethod[func() string](v, "Report"),
-			match:   matchOrEmpty(v),
+			match:   match,
 			replace: r,
 		}
 	}
@@ -148,6 +155,28 @@ func resolve(plugin any, rule, owner string) PluginKind {
 		}
 	}
 	panic("engine-loader: " + owner + ": unknown plugin kind (need Replace or Traverse)")
+}
+
+// filterToMatch wraps a Filter into a Matcher factory, closing over the rule's
+// Options so each FilterFn receives them at guard time.
+func filterToMatch(f types.Filter, opts types.Options) func() types.Matcher {
+	return func() types.Matcher {
+		m := make(types.Matcher, len(f))
+		for pattern, fn := range f {
+			m[pattern] = func(vars types.Vars, p types.Path) bool {
+				return fn(vars, p, opts)
+			}
+		}
+		return m
+	}
+}
+
+// ruleOptions returns the configured Options for rule, or nil.
+func ruleOptions(cfg Config, rule string) types.Options {
+	if st, ok := cfg[rule]; ok {
+		return st.Options
+	}
+	return nil
 }
 
 // method returns the named method of plugin value v asserted to type T.

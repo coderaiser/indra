@@ -58,7 +58,7 @@ func TestFilterPluginsDropsOthers(t *testing.T) {
 
 func TestConfigForFileNoOverride(t *testing.T) {
 	Test(t, "configForFile: keeps base rules with no match", func(t *T) {
-		cfg := config.Config{Rules: map[string]string{"tape": "on"}}
+		cfg := config.Config{Rules: map[string]any{"tape": "on"}}
 		lc := configForFile(cfg, "plain.go")
 		t.Ok(lc["tape"].Enabled)
 
@@ -69,7 +69,7 @@ func TestConfigForFileNoOverride(t *testing.T) {
 func TestConfigForFileOverrideUnmatched(t *testing.T) {
 	Test(t, "configForFile: ignored when pattern does not match file", func(t *T) {
 		cfg := config.Config{
-			Rules: map[string]string{"tape": "on"},
+			Rules: map[string]any{"tape": "on"},
 			Match: config.MatchConfig{"skip_*.go": {"tape": "off"}},
 		}
 		lc := configForFile(cfg, "plain.go")
@@ -82,7 +82,7 @@ func TestConfigForFileOverrideUnmatched(t *testing.T) {
 func TestConfigForFileOverrideOff(t *testing.T) {
 	Test(t, "configForFile: match override switches a rule off", func(t *T) {
 		cfg := config.Config{
-			Rules: map[string]string{"tape": "on"},
+			Rules: map[string]any{"tape": "on"},
 			Match: config.MatchConfig{"skip_*.go": {"tape": "off"}},
 		}
 		lc := configForFile(cfg, "skip_a.go")
@@ -95,7 +95,7 @@ func TestConfigForFileOverrideOff(t *testing.T) {
 func TestConfigForFileOverrideOn(t *testing.T) {
 	Test(t, "configForFile: match override switches a rule on", func(t *T) {
 		cfg := config.Config{
-			Rules: map[string]string{"tape": "off"},
+			Rules: map[string]any{"tape": "off"},
 			Match: config.MatchConfig{"skip_*.go": {"tape": "on"}},
 		}
 		lc := configForFile(cfg, "skip_a.go")

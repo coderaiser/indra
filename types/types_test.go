@@ -679,3 +679,39 @@ func TestBabelReexports(t *testing.T) {
 		t.End()
 	})
 }
+
+func TestOptionsStringSlice(t *testing.T) {
+	Test(t, "Options.StringSlice: missing key returns nil", func(t *T) {
+		t.Ok(types.Options{}.StringSlice("allowed") == nil)
+		t.End()
+	})
+
+	Test(t, "Options.StringSlice: string becomes a single-element slice", func(t *T) {
+		got := types.Options{"allowed": "Suite"}.StringSlice("allowed")
+		t.Ok(len(got) == 1 && got[0] == "Suite")
+		t.End()
+	})
+
+	Test(t, "Options.StringSlice: string slice passes through", func(t *T) {
+		got := types.Options{"allowed": []string{"a", "b"}}.StringSlice("allowed")
+		t.Ok(len(got) == 2 && got[0] == "a" && got[1] == "b")
+		t.End()
+	})
+
+	Test(t, "Options.StringSlice: any slice of strings is collected", func(t *T) {
+		got := types.Options{"allowed": []any{"a", "b"}}.StringSlice("allowed")
+		t.Ok(len(got) == 2 && got[1] == "b")
+		t.End()
+	})
+
+	Test(t, "Options.StringSlice: non-string any elements are skipped", func(t *T) {
+		got := types.Options{"allowed": []any{"a", 1, "c"}}.StringSlice("allowed")
+		t.Ok(len(got) == 2 && got[0] == "a" && got[1] == "c")
+		t.End()
+	})
+
+	Test(t, "Options.StringSlice: unsupported value type returns nil", func(t *T) {
+		t.Ok(types.Options{"allowed": 42}.StringSlice("allowed") == nil)
+		t.End()
+	})
+}

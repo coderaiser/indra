@@ -96,3 +96,14 @@ func TestValidatePluginTraverserNoPanic(t *testing.T) {
 		tt.End()
 	})
 }
+
+func TestCreateTestConfigOptions(t *testing.T) {
+	suite := CreateTestConfig("remove-skip", remove_skip.Plugin{}, loader.Config{
+		"remove-skip": {Enabled: true, Options: map[string]any{"allowed": []string{"Suite"}}},
+	})
+
+	suite(t, "internal-test: CreateTestConfig: allowed receiver reports", func(tt *T) {
+		tt.Report("suite-skip", "remove Test.Skip call")
+		tt.End()
+	})
+}

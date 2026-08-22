@@ -196,7 +196,7 @@ func TestDefaultIgnoreKeepsInternal(t *testing.T) {
 
 func TestToLoaderConfigOnEnabled(t *testing.T) {
 	Test(t, "ToLoaderConfig: on maps to Enabled true", func(t *T) {
-		cfg := config.Config{Rules: map[string]string{"tape": "on"}}
+		cfg := config.Config{Rules: map[string]any{"tape": "on"}}
 		lc := cfg.ToLoaderConfig()
 		t.Ok(lc["tape"].Enabled)
 
@@ -206,7 +206,7 @@ func TestToLoaderConfigOnEnabled(t *testing.T) {
 
 func TestToLoaderConfigOffDisabled(t *testing.T) {
 	Test(t, "ToLoaderConfig: off maps to Enabled false", func(t *T) {
-		cfg := config.Config{Rules: map[string]string{"tape": "off"}}
+		cfg := config.Config{Rules: map[string]any{"tape": "off"}}
 		lc := cfg.ToLoaderConfig()
 		t.NotOk(lc["tape"].Enabled)
 
@@ -344,7 +344,7 @@ func TestDefaultEnablesTapeForTestFiles(t *testing.T) {
 func TestMergeUserRuleOverridesDefault(t *testing.T) {
 	Test(t, "config: Merge user rule overrides default", func(t *T) {
 		defaults := config.Default()
-		user := config.Config{Rules: map[string]string{"remove-unused-variables": "off"}}
+		user := config.Config{Rules: map[string]any{"remove-unused-variables": "off"}}
 		result := config.Merge(defaults, user)
 		t.Equal(result.Rules["remove-unused-variables"], "off")
 		t.End()
@@ -354,7 +354,7 @@ func TestMergeUserRuleOverridesDefault(t *testing.T) {
 func TestMergeDefaultRulePreserved(t *testing.T) {
 	Test(t, "config: Merge preserves default rule when user does not override", func(t *T) {
 		defaults := config.Default()
-		user := config.Config{Rules: map[string]string{"indra": "on"}}
+		user := config.Config{Rules: map[string]any{"indra": "on"}}
 		result := config.Merge(defaults, user)
 		t.Equal(result.Rules["remove-unused-variables"], "on")
 		t.End()
@@ -383,7 +383,7 @@ func TestMergeUserMatchRuleOverridesDefault(t *testing.T) {
 
 func TestMergeInitializesNilRules(t *testing.T) {
 	Test(t, "config: Merge initializes nil default rules", func(t *T) {
-		user := config.Config{Rules: map[string]string{"x": "on"}}
+		user := config.Config{Rules: map[string]any{"x": "on"}}
 		result := config.Merge(config.Config{}, user)
 		t.Equal(result.Rules["x"], "on")
 		t.End()
@@ -482,6 +482,18 @@ func TestLoadUserTomlMergeAddsUserRule(t *testing.T) {
         `), 0644)
 		cfg, _ := config.Load(dir)
 		t.Equal(cfg.Rules["indra"], "on")
+		t.End()
+	})
+}
+
+func TestToLoaderConfigOptionsTable(t *testing.T) {
+	Test(t, "ToLoaderConfig: option table enables rule and carries Options", func(t *T) {
+		cfg := config.Config{Rules: map[string]any{
+			"tape/remove-skip": map[string]any{"allowed": []any{"Suite"}},
+		}}
+		lc := cfg.ToLoaderConfig()
+		st := lc["tape/remove-skip"]
+		t.Ok(st.Enabled && st.Options != nil && len(st.Options["allowed"].([]any)) == 1)
 		t.End()
 	})
 }
