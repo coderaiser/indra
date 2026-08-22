@@ -1,6 +1,7 @@
 package compare
 
 import (
+	"go/ast"
 	"testing"
 )
 
@@ -24,5 +25,18 @@ func TestMatchNodeBodySelectorFun(t *testing.T) {
 	node := parseStmt(t, "{\na.b()\n}")
 	if GetTemplateValues(node, "{\na.b()\n}") == nil {
 		t.Fatal("selector call inside block should match")
+	}
+}
+
+func TestMatchNodeStructNilType(t *testing.T) {
+	vars := make(Vars)
+	pattern := parseStmt(t, "t.DeepEqual(x, __struct)")
+	call := pattern.(*ast.ExprStmt).X.(*ast.CallExpr)
+	patArg := call.Args[1].(*ast.Ident)
+	// A composite literal with a nil Type (only legal nested inside another
+	// literal) must not satisfy __struct.
+	real := &ast.CompositeLit{Elts: []ast.Expr{&ast.Ident{Name: "x"}}}
+	if matchNode(patArg, real, vars) {
+		t.Fatal("__struct must reject a composite literal without a type")
 	}
 }

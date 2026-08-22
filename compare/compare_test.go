@@ -141,3 +141,31 @@ func TestCompareEqual(t *testing.T) {
 		t.Fatal("expected __b to bind b")
 	}
 }
+
+func TestCompareStruct(t *testing.T) {
+	node := parseStmt(t, "t.DeepEqual(x, point{1, 2})")
+	vars := GetTemplateValues(node, "t.DeepEqual(__a, __struct)")
+	if vars == nil {
+		t.Fatal("__struct should match CompositeLit with named type")
+	}
+
+	selLit := parseStmt(t, "t.DeepEqual(x, pkg.Point{})")
+	if GetTemplateValues(selLit, "t.DeepEqual(__a, __struct)") == nil {
+		t.Fatal("__struct should match a qualified struct composite literal")
+	}
+
+	sliceLit := parseStmt(t, "t.DeepEqual(x, []int{1})")
+	if GetTemplateValues(sliceLit, "t.DeepEqual(__a, __struct)") != nil {
+		t.Fatal("__struct must reject an ArrayType composite literal")
+	}
+
+	anonLit := parseStmt(t, "t.DeepEqual(x, struct{}{})")
+	if GetTemplateValues(anonLit, "t.DeepEqual(__a, __struct)") != nil {
+		t.Fatal("__struct must reject an anonymous struct composite literal")
+	}
+
+	nonLit := parseStmt(t, "t.DeepEqual(x, y)")
+	if GetTemplateValues(nonLit, "t.DeepEqual(__a, __struct)") != nil {
+		t.Fatal("__struct must reject a non-composite-literal argument")
+	}
+}

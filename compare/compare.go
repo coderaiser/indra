@@ -93,6 +93,22 @@ func matchNode(pat ast.Node, real ast.Node, vars Vars) bool {
 			}
 			return bind("__array", real, vars)
 		}
+		// __struct only matches a CompositeLit whose type is a named struct
+		// (identifier or qualified selector).
+		if ident.Name == "__struct" {
+			lit, ok := real.(*ast.CompositeLit)
+			if !ok {
+				return false
+			}
+			if lit.Type == nil {
+				return false
+			}
+			switch lit.Type.(type) {
+			case *ast.Ident, *ast.SelectorExpr:
+				return bind("__struct", real, vars)
+			}
+			return false
+		}
 		return bind(ident.Name, real, vars)
 	}
 

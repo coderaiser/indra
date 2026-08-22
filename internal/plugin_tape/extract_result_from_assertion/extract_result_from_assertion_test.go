@@ -49,4 +49,33 @@ func TestExtractResultFromAssertion(t *testing.T) {
 		t.NoTransform("result-declared")
 		t.End()
 	})
+	Test(t, "extract-result-from-assertion: no report: member-expr", func(t *T) {
+		t.NoReport("member-expr")
+		t.End()
+	})
+
+	Test(t, "extract-result-from-assertion: no transform: member-expr", func(t *T) {
+		t.NoTransform("member-expr")
+		t.End()
+	})
+
+	Test(t, "extract-result-from-assertion: report: struct-literal", func(t *T) {
+		t.Report("struct-literal", "extract inline expression from assertion")
+		t.End()
+	})
+
+	Test(t, "extract-result-from-assertion: transform: struct-literal", func(t *T) {
+		t.Transform("struct-literal")
+		t.End()
+	})
+
+	Test(t, "extract-result-from-assertion: no report: both-declared", func(t *T) {
+		t.NoReport("both-declared")
+		t.End()
+	})
+
+	Test(t, "extract-result-from-assertion: no transform: both-declared", func(t *T) {
+		t.NoTransform("both-declared")
+		t.End()
+	})
 }
