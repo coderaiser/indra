@@ -439,3 +439,29 @@ func TestIndraPluginsIncludesRule(t *testing.T) {
 		t.End()
 	})
 }
+
+// TestIndraRuleOptionsAllowed exercises per-rule options from a [rules."rule"]
+// table: with allowed = ["Suite"] in .indra.toml, a Suite.Skip call in a
+// *_test.go file is reported and --fix rewrites it to a plain Suite call.
+func TestIndraRuleOptionsAllowed(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, dir, ".indra.toml", "[rules.\"tape/remove-skip\"]\nstate = \"on\"\nallowed = [\"Suite\"]\n")
+	f := writeFile(t, dir, "suite_test.go", "package p\n\nfunc TestFoo(t *testing.T) {\n\tSuite.Skip(t, \"foo\", func(t *Suite.T) {})\n}\n")
+	t.Setenv("INDRA_FORMATTER", "dump")
+	t.Setenv("CI", "")
+	t.Setenv("INDRA_PROGRESS_BAR", "0")
+	t.Chdir(dir)
+	var buf bytes.Buffer
+	error := indra.Indra(testRegistry, []string{"--fix", f}, &buf)
+	data, _ := os.ReadFile(f)
+
+	Test(t, "rule options: fix runs without error", func(t *T) {
+		t.NotOk(error)
+		t.End()
+	})
+
+	Test(t, "rule options: allowed receiver is rewritten to plain call", func(t *T) {
+		t.Ok(!strings.Contains(string(data), "Suite.Skip") && strings.Contains(string(data), "Suite("))
+		t.End()
+	})
+}
