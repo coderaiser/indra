@@ -2,6 +2,7 @@ package plugin_indra
 
 import (
 	"coderaiser/indra/internal/plugin_indra/apply_compare"
+	"coderaiser/indra/internal/plugin_indra/apply_exports_order"
 	"coderaiser/indra/internal/plugin_indra/apply_fixture_name_to_message"
 	"coderaiser/indra/internal/plugin_indra/convert_for_to_create"
 	"coderaiser/indra/internal/plugin_indra/convert_inspect_to_traverse"
@@ -14,6 +15,7 @@ import (
 func Rules() []types.Rule {
 	return []types.Rule{
 		{Name: "remove-useless-match", Plugin: remove_useless_match.Plugin{}},
+		{Name: "apply-exports-order", Plugin: apply_exports_order.Plugin{}},
 		{Name: "convert-for-to-create-test", Plugin: convert_for_to_create.Plugin{}},
 		{Name: "replace-test-message", Plugin: replace_test_message.Plugin{}},
 		{Name: "apply-fixture-name-to-message", Plugin: apply_fixture_name_to_message.Plugin{}},
