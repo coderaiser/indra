@@ -379,3 +379,17 @@ func TestNoTransformUpdateRemoveError(t *testing.T) {
 		tt.End()
 	})
 }
+
+func TestReadGlobFallback(t *testing.T) {
+	dir := writeDir(t, map[string]string{
+		"cfg.json": "{}",
+	})
+	tape.Test(t, "test: read: falls back to real extension for non-Go fixtures", func(tt *tape.T) {
+		tr := New(tt, noopLint, []any{}, dir)
+		data := tr.read("cfg")
+		if string(data) != "{}" {
+			t.Errorf("expected cfg.json contents, got %q", string(data))
+		}
+		tt.End()
+	})
+}

@@ -122,3 +122,75 @@ func TestCreateTestConfigOptions(t *testing.T) {
 		tt.End()
 	})
 }
+
+var textReplacer = synthReplacer{
+	report:  "normalise version field",
+	replace: types.Replacer{"\"version\": \"__a\"": "\"version\": \"0.0.0\""},
+}
+
+func TestTextFallbackReport(t *testing.T) {
+	run(t, "internal-test: text fallback: reports a place without fix", func(tt *T) {
+		plugins := []any{indratest.PluginArg{Rule: "rename-version", Plugin: textReplacer}}
+		out, _ := indraLint([]byte("{\"version\": \"1.2.3\"}\n"), false, plugins)
+		tt.Ok(len(out.Places) > 0)
+		tt.End()
+	})
+}
+
+func TestTextFallbackFix(t *testing.T) {
+	run(t, "internal-test: text fallback: rewrites matched text on fix", func(tt *T) {
+		plugins := []any{indratest.PluginArg{Rule: "rename-version", Plugin: textReplacer}}
+		out, _ := indraLint([]byte("{\"version\": \"1.2.3\"}\n"), true, plugins)
+		tt.NotOk(strings.Contains(string(out.Out), "1.2.3"))
+		tt.End()
+	})
+}
+
+func TestTextFallbackIdentity(t *testing.T) {
+	identity := synthReplacer{
+		report:  "identity",
+		replace: types.Replacer{"\"version\": \"__a\"": "\"version\": \"__a\""},
+	}
+	run(t, "internal-test: text fallback: identity rewrite reports nothing", func(tt *T) {
+		plugins := []any{indratest.PluginArg{Rule: "identity", Plugin: identity}}
+		out, _ := indraLint([]byte("{\"version\": \"1.2.3\"}\n"), false, plugins)
+		count := len(out.Places)
+		tt.NotOk(count != 0)
+		tt.End()
+	})
+}
+
+func TestTextFallbackSkipsNonReplacer(t *testing.T) {
+	run(t, "internal-test: text fallback: skips non-replacer plugins", func(tt *T) {
+		plugins := []any{
+			indratest.PluginArg{Rule: "synth", Plugin: synthTraverser{}},
+			indratest.PluginArg{Rule: "rename-version", Plugin: textReplacer},
+		}
+		out, _ := indraLint([]byte("{}\n"), false, plugins)
+		count := len(out.Places)
+		tt.NotOk(count != 0)
+		tt.End()
+	})
+}
+
+func TestTextFallbackExtraPlaceholder(t *testing.T) {
+	extra := synthReplacer{
+		report:  "extra placeholder",
+		replace: types.Replacer{"v": "w__a"},
+	}
+	run(t, "internal-test: text fallback: template placeholder beyond captures is empty", func(tt *T) {
+		plugins := []any{indratest.PluginArg{Rule: "extra", Plugin: extra}}
+		out, _ := indraLint([]byte("v x\n"), true, plugins)
+		tt.Ok(strings.Contains(string(out.Out), "w"))
+		tt.End()
+	})
+}
+
+func TestTextFallbackPositionSecondLine(t *testing.T) {
+	run(t, "internal-test: text fallback: reports position on later lines", func(tt *T) {
+		plugins := []any{indratest.PluginArg{Rule: "rename-version", Plugin: textReplacer}}
+		out, _ := indraLint([]byte("{\n\"version\": \"1.2.3\"\n}\n"), false, plugins)
+		tt.Equal(out.Places[0].Position.Line, 2)
+		tt.End()
+	})
+}

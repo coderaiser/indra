@@ -99,4 +99,9 @@ func TestRemoveBoolean(t *testing.T) {
 		t.NoReport("local-type")
 		t.End()
 	})
+
+	Test(t, "conditions/remove-boolean: no report: type-ident", func(t *T) {
+		t.NoReport("type-ident")
+		t.End()
+	})
 }

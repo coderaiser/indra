@@ -111,10 +111,7 @@ func findTextPattern(src string, pattern string) ([]int, []string) {
 			sb.WriteString(`(?s:(.*?))`)
 		}
 	}
-	re, err := regexp.Compile(sb.String())
-	if err != nil {
-		return nil, nil
-	}
+	re := regexp.MustCompile(sb.String())
 	loc := re.FindStringSubmatchIndex(src)
 	if loc == nil {
 		return nil, nil
