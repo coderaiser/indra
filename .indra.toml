@@ -3,4 +3,5 @@
 "indra" = "on"
 
 [match]
-"*_test.go" = { "tape" = "on" }
+"*_test.go"    = { "tape" = "on" }
+"package.json" = { "package-json" = "on" }

@@ -33,8 +33,23 @@ func TestIndraLintSuccess(t *testing.T) {
 }
 
 func TestIndraLintParseError(t *testing.T) {
-	run(t, "internal-test: indraLint: returns parse error", func(tt *T) {
+	run(t, "internal-test: indraLint: invalid Go with replacer returns no error", func(tt *T) {
 		plugins := []any{indratest.PluginArg{Rule: "remove-skip", Plugin: remove_skip.Plugin{}}}
+		_, err := indraLint([]byte("package p\nfunc (\n"), false, plugins)
+		tt.NotOk(err)
+		tt.End()
+	})
+
+	run(t, "internal-test: indraLint: text fallback reports no places on no match", func(tt *T) {
+		plugins := []any{indratest.PluginArg{Rule: "remove-skip", Plugin: remove_skip.Plugin{}}}
+		out, _ := indraLint([]byte("package p\nfunc (\n"), false, plugins)
+		tt.NotOk(len(out.Places))
+
+		tt.End()
+	})
+
+	run(t, "internal-test: indraLint: returns parse error for non-replacer plugins", func(tt *T) {
+		plugins := []any{indratest.PluginArg{Rule: "synth", Plugin: synthTraverser{}}}
 		_, err := indraLint([]byte("package p\nfunc (\n"), false, plugins)
 		tt.Ok(err)
 		tt.End()

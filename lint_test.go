@@ -12,6 +12,7 @@ import (
 	indra "coderaiser/indra"
 	engine_loader "coderaiser/indra/engine_loader"
 	plugin_indra "coderaiser/indra/internal/plugin_indra"
+	plugin_package_json "coderaiser/indra/internal/plugin_package_json"
 	remove_unused_variables "coderaiser/indra/internal/plugin_remove_unused_variables"
 	plugin_tape "coderaiser/indra/internal/plugin_tape"
 
@@ -21,6 +22,7 @@ import (
 var testRegistry = []engine_loader.PluginFuncs{
 	{Name: "tape", Rules: plugin_tape.Rules()},
 	{Name: "indra", Rules: plugin_indra.Rules()},
+	{Name: "package-json", Rules: plugin_package_json.Rules()},
 	{Name: "remove-unused-variables", Plugin: remove_unused_variables.Plugin{}},
 }
 

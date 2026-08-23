@@ -170,7 +170,15 @@ func (t *T) NoTransform(name string) {
 
 func (t *T) read(name string) []byte {
 	t.TB().Helper()
-	data, err := os.ReadFile(filepath.Join(t.dir, name+".go"))
+	path := filepath.Join(t.dir, name+".go")
+	if _, err := os.Stat(path); err != nil {
+		// Non-Go fixtures keep their real extension (e.g. .json).
+		matches, _ := filepath.Glob(filepath.Join(t.dir, name) + ".*")
+		if len(matches) > 0 {
+			path = matches[0]
+		}
+	}
+	data, err := os.ReadFile(path)
 	if err != nil {
 		t.fatal("read fixture %q: %v", name, err)
 		return nil

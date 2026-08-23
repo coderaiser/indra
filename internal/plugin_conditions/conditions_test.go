@@ -10,7 +10,9 @@ import (
 
 func TestRules(t *testing.T) {
 	Test(t, "conditions: Rules returns 9 rules", func(t *T) {
-		t.Equal(len(Rules()), 9)
+		result := len(Rules())
+		t.Equal(result, 9)
+
 		t.End()
 	})
 
