@@ -19,6 +19,27 @@ import (
 
 func Report(_ Path) string { return "remove boolean" }
 
+// Fix rewrites the comparison per the truth table: comparing against true is
+// the operand itself, against false its negation — with NEQ inverting both.
+func Fix(p Path, _ map[string]any) {
+	e := p.Node.(*ast.BinaryExpr)
+
+	negate := e.Y.(*ast.Ident).Name == "false"
+	if e.Op == token.NEQ {
+		negate = !negate
+	}
+
+	var repl ast.Expr = e.X
+	if negate {
+		repl = negateExpr(e.X)
+	}
+	if paren, ok := repl.(*ast.ParenExpr); ok {
+		repl = paren.X
+	}
+
+	p.Replace(repl)
+}
+
 func Traverse() Traverser {
 	return Traverser{"*ast.BinaryExpr": findBooleanComparison}
 }
@@ -157,27 +178,6 @@ func specsSayBool(specs []ast.Spec, name string) bool {
 		}
 	}
 	return declared
-}
-
-// Fix rewrites the comparison per the truth table: comparing against true is
-// the operand itself, against false its negation — with NEQ inverting both.
-func Fix(p Path, _ map[string]any) {
-	e := p.Node.(*ast.BinaryExpr)
-
-	negate := e.Y.(*ast.Ident).Name == "false"
-	if e.Op == token.NEQ {
-		negate = !negate
-	}
-
-	var repl ast.Expr = e.X
-	if negate {
-		repl = negateExpr(e.X)
-	}
-	if paren, ok := repl.(*ast.ParenExpr); ok {
-		repl = paren.X
-	}
-
-	p.Replace(repl)
 }
 
 // negateExpr negates e, collapsing a double negation (!!e becomes e).
