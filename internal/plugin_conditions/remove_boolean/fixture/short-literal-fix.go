@@ -2,6 +2,7 @@
 
 package fixture
 
-func f(ok, no bool) bool {
-	return no != true
+func f() bool {
+	ok, no := true, false
+	return !no
 }

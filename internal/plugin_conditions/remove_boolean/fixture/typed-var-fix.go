@@ -3,6 +3,6 @@
 package fixture
 
 func f() bool {
-	var done bool
+	var p1, done bool
 	return !done
 }
