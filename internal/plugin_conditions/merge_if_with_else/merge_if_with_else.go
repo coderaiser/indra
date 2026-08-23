@@ -27,6 +27,10 @@ func findMergeWithElse(p Path, push func(Path)) {
 	if !ok {
 		return
 	}
+	// Init statements would be dropped by the merge.
+	if ifStmt.Init != nil || elseIf.Init != nil {
+		return
+	}
 	// An else-if that carries its own else would lose that branch on merge.
 	if elseIf.Else != nil {
 		return

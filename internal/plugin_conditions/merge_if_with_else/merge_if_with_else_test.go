@@ -39,4 +39,9 @@ func TestMergeIfWithElse(t *testing.T) {
 		t.NoReport("no-merge-else-chain")
 		t.End()
 	})
+
+	Test(t, "conditions: merge-if-with-else: no report: no-merge-init", func(t *T) {
+		t.NoReport("no-merge-init")
+		t.End()
+	})
 }

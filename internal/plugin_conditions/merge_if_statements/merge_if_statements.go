@@ -1,7 +1,8 @@
 // Package merge_if_statements collapses nested ifs into a single if with a
 // conjunction: if a { if b { x } } becomes if a && b { x }. The rewrite only
-// applies when the outer if has no else, its body holds exactly one statement,
-// and that statement is an else-less if. Ported from putout's
+// applies when the outer if has no else and no init statement, its body holds
+// exactly one statement, and that statement is an else-less if without an init
+// — an init clause would be dropped by the merge. Ported from putout's
 // merge-if-statements.
 package merge_if_statements
 
@@ -23,14 +24,14 @@ func Traverse() Traverser {
 
 func findMergeCandidate(p Path, push func(Path)) {
 	outer := p.Node.(*ast.IfStmt)
-	if outer.Else != nil {
+	if outer.Else != nil || outer.Init != nil {
 		return
 	}
 	if len(outer.Body.List) != 1 {
 		return
 	}
 	inner, ok := outer.Body.List[0].(*ast.IfStmt)
-	if !ok || inner.Else != nil {
+	if !ok || inner.Else != nil || inner.Init != nil {
 		return
 	}
 	push(p)

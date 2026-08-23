@@ -34,4 +34,9 @@ func TestMergeIfStatements(t *testing.T) {
 		t.NoReport("no-merge-multi-stmt")
 		t.End()
 	})
+
+	Test(t, "conditions: merge-if-statements: no report: no-merge-inner-init", func(t *T) {
+		t.NoReport("no-merge-inner-init")
+		t.End()
+	})
 }
