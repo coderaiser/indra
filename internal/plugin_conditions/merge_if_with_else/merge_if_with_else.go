@@ -17,42 +17,14 @@ import (
 
 func Report(_ Path) string { return "merge if with else" }
 
-func Traverse() Traverser {
-	return Traverser{"*ast.IfStmt": findMergeWithElse}
-}
+// Init statements would be dropped by the merge.
 
-func findMergeWithElse(p Path, push func(Path)) {
-	ifStmt := p.Node.(*ast.IfStmt)
-	elseIf, ok := ifStmt.Else.(*ast.IfStmt)
-	if !ok {
-		return
-	}
-	// Init statements would be dropped by the merge.
-	if ifStmt.Init != nil || elseIf.Init != nil {
-		return
-	}
-	// An else-if that carries its own else would lose that branch on merge.
-	if elseIf.Else != nil {
-		return
-	}
-	if !equalBodies(ifStmt.Body, elseIf.Body) {
-		return
-	}
-	push(p)
-}
+// An else-if that carries its own else would lose that branch on merge.
 
 // equalBodies reports whether two blocks print identically. Printing rather
 // than comparing nodes sidesteps position differences between the branches.
-func equalBodies(a, b *ast.BlockStmt) bool {
-	return printed(a) == printed(b)
-}
 
 // printed renders a node the way go/printer does for parsed source.
-func printed(n ast.Node) string {
-	var buf bytes.Buffer
-	printer.Fprint(&buf, token.NewFileSet(), n)
-	return buf.String()
-}
 
 // Fix folds the else-if condition into the outer one with || and drops the
 // else branch. Positions in the enclosing function are stripped afterwards:
@@ -68,6 +40,38 @@ func Fix(p Path, _ map[string]any) {
 	}
 	ifStmt.Else = nil
 	stripPositions(enclosingFuncBody(p))
+}
+func findMergeWithElse(p Path, push func(Path)) {
+	ifStmt := p.Node.(*ast.IfStmt)
+	elseIf, ok := ifStmt.Else.(*ast.IfStmt)
+	if !ok {
+		return
+	}
+
+	if ifStmt.Init != nil || elseIf.Init != nil {
+		return
+	}
+
+	if elseIf.Else != nil {
+		return
+	}
+	if !equalBodies(ifStmt.Body, elseIf.Body) {
+		return
+	}
+	push(p)
+}
+
+func equalBodies(a, b *ast.BlockStmt) bool {
+	return printed(a) == printed(b)
+}
+
+func printed(n ast.Node) string {
+	var buf bytes.Buffer
+	printer.Fprint(&buf, token.NewFileSet(), n)
+	return buf.String()
+}
+func Traverse() Traverser {
+	return Traverser{"*ast.IfStmt": findMergeWithElse}
 }
 
 // enclosingFuncBody returns the body block of the outermost enclosing

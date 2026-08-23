@@ -18,25 +18,6 @@ import (
 
 func Report(_ Path) string { return "merge if statements" }
 
-func Traverse() Traverser {
-	return Traverser{"*ast.IfStmt": findMergeCandidate}
-}
-
-func findMergeCandidate(p Path, push func(Path)) {
-	outer := p.Node.(*ast.IfStmt)
-	if outer.Else != nil || outer.Init != nil {
-		return
-	}
-	if len(outer.Body.List) != 1 {
-		return
-	}
-	inner, ok := outer.Body.List[0].(*ast.IfStmt)
-	if !ok || inner.Else != nil || inner.Init != nil {
-		return
-	}
-	push(p)
-}
-
 // Fix folds the inner condition into the outer one and adopts the inner body.
 // Positions in the enclosing function are stripped afterwards: the merged
 // nodes carry positions from different depths of the file, which makes
@@ -53,6 +34,23 @@ func Fix(p Path, _ map[string]any) {
 	if block := enclosingFuncBody(p); block != nil {
 		stripPositions(block)
 	}
+}
+func findMergeCandidate(p Path, push func(Path)) {
+	outer := p.Node.(*ast.IfStmt)
+	if outer.Else != nil || outer.Init != nil {
+		return
+	}
+	if len(outer.Body.List) != 1 {
+		return
+	}
+	inner, ok := outer.Body.List[0].(*ast.IfStmt)
+	if !ok || inner.Else != nil || inner.Init != nil {
+		return
+	}
+	push(p)
+}
+func Traverse() Traverser {
+	return Traverser{"*ast.IfStmt": findMergeCandidate}
 }
 
 // enclosingFuncBody returns the body block of the outermost enclosing

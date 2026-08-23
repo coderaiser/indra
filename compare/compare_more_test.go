@@ -11,7 +11,7 @@ func TestMatchNodeBodySentinelBranches(t *testing.T) {
 
 	// pat block, single non-ExprStmt -> sentinel does not apply.
 	retBlock := parseStmt(t, "{\nreturn\n}")
-	if matchNode(retBlock, parseStmt(t, "{\nreturn\n}"), vars) == false {
+	if !matchNode(retBlock, parseStmt(t, "{\nreturn\n}"), vars) {
 		t.Fatal("return-only blocks should match")
 	}
 

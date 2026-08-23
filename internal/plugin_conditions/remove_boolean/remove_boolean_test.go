@@ -49,4 +49,54 @@ func TestRemoveBoolean(t *testing.T) {
 		t.NoReport("not-boolean-literal")
 		t.End()
 	})
+
+	Test(t, "conditions: remove-boolean: transform: expr-operand", func(t *T) {
+		t.Transform("expr-operand")
+		t.End()
+	})
+
+	Test(t, "conditions: remove-boolean: transform: unary-operand", func(t *T) {
+		t.Transform("unary-operand")
+		t.End()
+	})
+
+	Test(t, "conditions: remove-boolean: transform: func-lit-param", func(t *T) {
+		t.Transform("func-lit-param")
+		t.End()
+	})
+
+	Test(t, "conditions: remove-boolean: transform: typed-var", func(t *T) {
+		t.Transform("typed-var")
+		t.End()
+	})
+
+	Test(t, "conditions: remove-boolean: transform: literal-var", func(t *T) {
+		t.Transform("literal-var")
+		t.End()
+	})
+
+	Test(t, "conditions: remove-boolean: no report: interface-value", func(t *T) {
+		t.NoReport("interface-value")
+		t.End()
+	})
+
+	Test(t, "conditions: remove-boolean: no report: sum", func(t *T) {
+		t.NoReport("sum")
+		t.End()
+	})
+
+	Test(t, "conditions: remove-boolean: no report: unbound", func(t *T) {
+		t.NoReport("unbound")
+		t.End()
+	})
+
+	Test(t, "conditions: remove-boolean: transform: short-literal", func(t *T) {
+		t.Transform("short-literal")
+		t.End()
+	})
+
+	Test(t, "conditions: remove-boolean: no report: local-type", func(t *T) {
+		t.NoReport("local-type")
+		t.End()
+	})
 }

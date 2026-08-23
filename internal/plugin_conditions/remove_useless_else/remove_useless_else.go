@@ -17,40 +17,9 @@ import (
 
 func Report(_ Path) string { return "remove useless else" }
 
-func Traverse() Traverser {
-	return Traverser{"*ast.IfStmt": findUselessElse}
-}
-
-func findUselessElse(p Path, push func(Path)) {
-	ifStmt := p.Node.(*ast.IfStmt)
-	if ifStmt.Else == nil {
-		return
-	}
-	if _, ok := ifStmt.Else.(*ast.BlockStmt); !ok {
-		return
-	}
-	body := ifStmt.Body.List
-	if len(body) == 0 {
-		return
-	}
-	if !isReturnLike(body[len(body)-1]) {
-		return
-	}
-	push(p)
-}
-
 // isReturnLike reports whether s terminates control flow: a return, break or
 // continue. fallthrough is deliberately excluded — it must stay attached to
 // the switch clause it belongs to.
-func isReturnLike(s ast.Stmt) bool {
-	switch s := s.(type) {
-	case *ast.ReturnStmt:
-		return true
-	case *ast.BranchStmt:
-		return s.Tok == token.BREAK || s.Tok == token.CONTINUE
-	}
-	return false
-}
 
 // Fix moves every else statement after the if (inserting in reverse so each
 // InsertAfter lands directly below the previous one, preserving order), then
@@ -69,6 +38,36 @@ func Fix(p Path, _ map[string]any) {
 	if block := enclosingFuncBody(p); block != nil {
 		stripPositions(block)
 	}
+}
+func findUselessElse(p Path, push func(Path)) {
+	ifStmt := p.Node.(*ast.IfStmt)
+	if ifStmt.Else == nil {
+		return
+	}
+	if _, ok := ifStmt.Else.(*ast.BlockStmt); !ok {
+		return
+	}
+	body := ifStmt.Body.List
+	if len(body) == 0 {
+		return
+	}
+	if !isReturnLike(body[len(body)-1]) {
+		return
+	}
+	push(p)
+}
+
+func isReturnLike(s ast.Stmt) bool {
+	switch s := s.(type) {
+	case *ast.ReturnStmt:
+		return true
+	case *ast.BranchStmt:
+		return s.Tok == token.BREAK || s.Tok == token.CONTINUE
+	}
+	return false
+}
+func Traverse() Traverser {
+	return Traverser{"*ast.IfStmt": findUselessElse}
 }
 
 // enclosingFuncBody returns the body block of the outermost enclosing function

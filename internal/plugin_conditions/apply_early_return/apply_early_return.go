@@ -17,86 +17,24 @@ import (
 
 func Report(_ Path) string { return "apply early return" }
 
-func Traverse() Traverser {
-	return Traverser{"*ast.IfStmt": findEarlyReturn}
-}
+// Only plain else blocks are unwrapped; an else-if chain would change
+// meaning once the added return short-circuits it.
 
-func findEarlyReturn(p Path, push func(Path)) {
-	ifStmt := p.Node.(*ast.IfStmt)
-	if ifStmt.Else == nil {
-		return
-	}
-	// Only plain else blocks are unwrapped; an else-if chain would change
-	// meaning once the added return short-circuits it.
-	if _, ok := ifStmt.Else.(*ast.BlockStmt); !ok {
-		return
-	}
-	body := ifStmt.Body.List
-	if len(body) > 0 && isReturnLike(body[len(body)-1]) {
-		return
-	}
-	// The if must end its immediate function body — otherwise hoisting a bare return
-	// into the consequent would skip the statements that follow it.
-	if lastStmt(nearestFuncBody(p)) != ifStmt {
-		return
-	}
-	push(p)
-}
+// The if must end its immediate function body — otherwise hoisting a bare return
+// into the consequent would skip the statements that follow it.
 
 // lastStmt returns the final statement of a block, or nil when the block is
 // missing or empty.
-func lastStmt(block *ast.BlockStmt) ast.Stmt {
-	var last ast.Stmt
-	if block != nil && len(block.List) > 0 {
-		last = block.List[len(block.List)-1]
-	}
-	return last
-}
 
 // nearestFuncBody returns the body of the function the if sits in directly —
 // the nearest declaration or literal on the stack.
-func nearestFuncBody(p Path) *ast.BlockStmt {
-	var body *ast.BlockStmt
-	for i := len(p.Stack) - 1; i >= 0 && body == nil; i-- {
-		switch fn := p.Stack[i].(type) {
-		case *ast.FuncDecl:
-			body = fn.Body
-		case *ast.FuncLit:
-			body = fn.Body
-		}
-	}
-	return body
-}
 
 // enclosingFuncBody returns the body of the outermost enclosing function —
 // the declaration when there is one, the outermost literal otherwise. The
 // whole subtree is normalized so no stale positions remain on any sibling.
-func enclosingFuncBody(p Path) *ast.BlockStmt {
-	var body *ast.BlockStmt
-	for i := 0; i < len(p.Stack); i++ {
-		switch fn := p.Stack[i].(type) {
-		case *ast.FuncDecl:
-			body = fn.Body
-		case *ast.FuncLit:
-			if body == nil {
-				body = fn.Body
-			}
-		}
-	}
-	return body
-}
 
 // isReturnLike reports whether s terminates control flow: a return, break or
 // continue.
-func isReturnLike(s ast.Stmt) bool {
-	switch s := s.(type) {
-	case *ast.ReturnStmt:
-		return true
-	case *ast.BranchStmt:
-		return s.Tok == token.BREAK || s.Tok == token.CONTINUE
-	}
-	return false
-}
 
 // Fix appends a bare return to the consequent and hoists every else statement
 // after the if (inserting in reverse so each lands directly below the
@@ -112,6 +50,74 @@ func Fix(p Path, _ map[string]any) {
 	}
 	ifStmt.Else = nil
 	stripPositions(enclosingFuncBody(p))
+}
+func findEarlyReturn(p Path, push func(Path)) {
+	ifStmt := p.Node.(*ast.IfStmt)
+	if ifStmt.Else == nil {
+		return
+	}
+
+	if _, ok := ifStmt.Else.(*ast.BlockStmt); !ok {
+		return
+	}
+	body := ifStmt.Body.List
+	if len(body) > 0 && isReturnLike(body[len(body)-1]) {
+		return
+	}
+
+	if lastStmt(nearestFuncBody(p)) != ifStmt {
+		return
+	}
+	push(p)
+}
+
+func lastStmt(block *ast.BlockStmt) ast.Stmt {
+	var last ast.Stmt
+	if block != nil && len(block.List) > 0 {
+		last = block.List[len(block.List)-1]
+	}
+	return last
+}
+
+func nearestFuncBody(p Path) *ast.BlockStmt {
+	var body *ast.BlockStmt
+	for i := len(p.Stack) - 1; i >= 0 && body == nil; i-- {
+		switch fn := p.Stack[i].(type) {
+		case *ast.FuncDecl:
+			body = fn.Body
+		case *ast.FuncLit:
+			body = fn.Body
+		}
+	}
+	return body
+}
+
+func enclosingFuncBody(p Path) *ast.BlockStmt {
+	var body *ast.BlockStmt
+	for i := 0; i < len(p.Stack); i++ {
+		switch fn := p.Stack[i].(type) {
+		case *ast.FuncDecl:
+			body = fn.Body
+		case *ast.FuncLit:
+			if body == nil {
+				body = fn.Body
+			}
+		}
+	}
+	return body
+}
+
+func isReturnLike(s ast.Stmt) bool {
+	switch s := s.(type) {
+	case *ast.ReturnStmt:
+		return true
+	case *ast.BranchStmt:
+		return s.Tok == token.BREAK || s.Tok == token.CONTINUE
+	}
+	return false
+}
+func Traverse() Traverser {
+	return Traverser{"*ast.IfStmt": findEarlyReturn}
 }
 
 // stripPositions zeroes every token.Pos field in the sub-tree rooted at root.

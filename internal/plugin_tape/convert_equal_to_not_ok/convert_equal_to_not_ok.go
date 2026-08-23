@@ -69,7 +69,7 @@ func isFalsyLiteral(c ast.Node, p Path) bool {
 	if s, ok := val.(string); ok && s != "" {
 		return false
 	}
-	return val == int64(0) || val == false || val == ""
+	return val == int64(0) || !val || val == ""
 }
 
 // isFalsyNamedConst resolves c (expected to be an *ast.Ident) to its declaration
