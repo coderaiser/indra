@@ -39,6 +39,8 @@ func TestConfigureMinBelowThreshold(t *testing.T) {
 func TestConfigureMinAtThreshold(t *testing.T) {
 	Test(t, "Configure: MinCount at threshold shows bar", func(t *T) {
 		cfg = Config{Color: defaultColor, MinCount: 0}
+		t.TB().Setenv("CI", "")
+		t.TB().Setenv("INDRA_PROGRESS_BAR", "")
 		Configure(Config{Color: defaultColor, MinCount: 5})
 		result := ShouldShow(5)
 		t.Ok(result)

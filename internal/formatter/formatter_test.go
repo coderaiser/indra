@@ -100,11 +100,11 @@ func TestChooseByName(t *testing.T) {
 		t.End()
 	})
 
-	Test(t, "formatter: ChooseByName CI=true returns dump regardless of name", func(t *T) {
+	Test(t, "formatter: ChooseByName explicit name beats CI=true", func(t *T) {
 		t.TB().Setenv("CI", "true")
 		f := formatter.ChooseByName("json-lines")
 		result := fmt.Sprintf("%p", f)
-		t.Equal(result, fmt.Sprintf("%p", dump.Format))
+		t.Equal(result, fmt.Sprintf("%p", formatter_json_lines.Format))
 		t.End()
 	})
 }

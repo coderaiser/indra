@@ -16,8 +16,10 @@ import (
 // Vars is the hole-bindings map from compare.
 type Vars = compare.Vars
 
-// Re-exported compare symbols for plugin dot-import convenience.
+// BodySlice is re-exported from compare for plugin dot-import convenience.
 type BodySlice = compare.BodySlice
+
+// ArgSlice is re-exported from compare for plugin dot-import convenience.
 type ArgSlice = compare.ArgSlice
 
 func Compare(node ast.Node, pattern string) bool {
@@ -27,17 +29,36 @@ func GetTemplateValues(node ast.Node, pattern string) map[string]ast.Node {
 	return compare.GetTemplateValues(node, pattern)
 }
 
-// Re-export babel type-check functions so plugins need only dot-import types.
-func IsIdent(node ast.Node) bool             { return babel.IsIdent(node) }
-func IsCallExpr(node ast.Node) bool          { return babel.IsCallExpr(node) }
-func IsSelector(node ast.Node) bool          { return babel.IsSelector(node) }
-func IsCompositeLit(node ast.Node) bool      { return babel.IsCompositeLit(node) }
-func IsArrayExpr(node ast.Node) bool         { return babel.IsArrayExpr(node) }
-func IsObjectExpr(node ast.Node) bool        { return babel.IsObjectExpr(node) }
-func IsFuncLit(node ast.Node) bool           { return babel.IsFuncLit(node) }
-func IsBasicLit(node ast.Node) bool          { return babel.IsBasicLit(node) }
-func IsStatement(node ast.Node) bool         { return babel.IsStatement(node) }
-func IsFile(node ast.Node) bool              { return babel.IsFile(node) }
+// IsIdent re-exports babel.IsIdent for plugin dot-import convenience.
+func IsIdent(node ast.Node) bool { return babel.IsIdent(node) }
+// IsCallExpr re-exports babel.IsCallExpr for plugin dot-import convenience.
+func IsCallExpr(node ast.Node) bool { return babel.IsCallExpr(node) }
+
+// IsSelector re-exports babel.IsSelector for plugin dot-import convenience.
+func IsSelector(node ast.Node) bool { return babel.IsSelector(node) }
+
+// IsCompositeLit re-exports babel.IsCompositeLit for plugin dot-import convenience.
+func IsCompositeLit(node ast.Node) bool { return babel.IsCompositeLit(node) }
+
+// IsArrayExpr re-exports babel.IsArrayExpr for plugin dot-import convenience.
+func IsArrayExpr(node ast.Node) bool { return babel.IsArrayExpr(node) }
+
+// IsObjectExpr re-exports babel.IsObjectExpr for plugin dot-import convenience.
+func IsObjectExpr(node ast.Node) bool { return babel.IsObjectExpr(node) }
+
+// IsFuncLit re-exports babel.IsFuncLit for plugin dot-import convenience.
+func IsFuncLit(node ast.Node) bool { return babel.IsFuncLit(node) }
+
+// IsBasicLit re-exports babel.IsBasicLit for plugin dot-import convenience.
+func IsBasicLit(node ast.Node) bool { return babel.IsBasicLit(node) }
+
+// IsStatement re-exports babel.IsStatement for plugin dot-import convenience.
+func IsStatement(node ast.Node) bool { return babel.IsStatement(node) }
+
+// IsFile re-exports babel.IsFile for plugin dot-import convenience.
+func IsFile(node ast.Node) bool { return babel.IsFile(node) }
+
+// IsBoolLit re-exports babel.IsBoolLit for plugin dot-import convenience.
 func IsBoolLit(node ast.Node, val bool) bool { return babel.IsBoolLit(node, val) }
 
 // MatchFn is a guard run after pattern match. Its second argument is the Path

@@ -33,11 +33,9 @@ func Choose() Func {
 }
 
 // ChooseByName returns the formatter for the given name.
-// Empty string or unknown name falls back to env/CI logic.
+// An explicit name always wins. Empty string or unknown name falls back to
+// env/CI logic: CI=true → dump, otherwise progress-bar.
 func ChooseByName(name string) Func {
-	if os.Getenv("CI") == "true" {
-		return dump.Format
-	}
 	switch name {
 	case "json":
 		return formatter_json.Format
@@ -58,6 +56,9 @@ func ChooseByName(name string) Func {
 	case "dump":
 		return dump.Format
 	default:
+		if os.Getenv("CI") == "true" {
+			return dump.Format
+		}
 		return pb.Format
 	}
 }
