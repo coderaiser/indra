@@ -29,7 +29,7 @@ func Fix(p Path, _ map[string]any) {
 		negate = !negate
 	}
 
-	var repl ast.Expr = e.X
+	var repl = e.X
 	if negate {
 		repl = negateExpr(e.X)
 	}

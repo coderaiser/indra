@@ -31,6 +31,7 @@ func GetTemplateValues(node ast.Node, pattern string) map[string]ast.Node {
 
 // IsIdent re-exports babel.IsIdent for plugin dot-import convenience.
 func IsIdent(node ast.Node) bool { return babel.IsIdent(node) }
+
 // IsCallExpr re-exports babel.IsCallExpr for plugin dot-import convenience.
 func IsCallExpr(node ast.Node) bool { return babel.IsCallExpr(node) }
 

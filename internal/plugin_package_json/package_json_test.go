@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	. "coderaiser/indra/internal/plugin_package_json"
+
 	. "github.com/coderaiser/go-tape"
 )
 

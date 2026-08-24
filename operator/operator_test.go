@@ -612,19 +612,19 @@ func TestCompute(t *testing.T) {
 		t.End()
 	})
 
-	Test(t, "Compute: unparseable int returns false", func(t *T) {
+	Test(t, "Compute: unparsable int returns false", func(t *T) {
 		ok, _ := Compute(&ast.BasicLit{Kind: token.INT, Value: "not-a-number"})
 		t.NotOk(ok)
 		t.End()
 	})
 
-	Test(t, "Compute: unparseable float returns false", func(t *T) {
+	Test(t, "Compute: unparsable float returns false", func(t *T) {
 		ok, _ := Compute(&ast.BasicLit{Kind: token.FLOAT, Value: "zzz"})
 		t.NotOk(ok)
 		t.End()
 	})
 
-	Test(t, "Compute: unparseable string returns false", func(t *T) {
+	Test(t, "Compute: unparsable string returns false", func(t *T) {
 		ok, _ := Compute(&ast.BasicLit{Kind: token.STRING, Value: `"unterminated`})
 		t.NotOk(ok)
 		t.End()
